@@ -78,6 +78,7 @@ impl Surface {
         }
     }
 
+    // TODO `force invalidate` (rather than a lazy invalidate)
     pub fn render(&mut self, renderer: &mut impl Renderer) -> std::io::Result<()> {
         let mut state = CursorState::default();
         let mut seen = false;
@@ -133,10 +134,11 @@ impl Surface {
             renderer.reset_fg()?;
             renderer.reset_attr()?;
             renderer.end()?;
-
-            self.back.reset(); // shouldn't we just swap this?
-                               // std::mem::swap(&mut self.front, &mut self.back)
         }
+
+        // this is a forced invalidate. ideally the user knows if we should invalid
+        self.back.reset(); // shouldn't we just swap this?
+                           // std::mem::swap(&mut self.front, &mut self.back)
         Ok(())
     }
 
