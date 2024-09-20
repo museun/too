@@ -3,7 +3,7 @@ use too_crossterm::{setup, Config};
 use too_runner::{
     math::{rect, vec2, Align2, Pos2, Rect, Vec2},
     shapes::{Fill, Text},
-    App, Command, Context, Event, Keybind, Rgba,
+    App, Command, Context, Event, Rgba,
 };
 
 fn main() -> std::io::Result<()> {
