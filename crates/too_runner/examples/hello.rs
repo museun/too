@@ -8,7 +8,7 @@ use too_runner::{
 
 fn main() -> std::io::Result<()> {
     let term = setup(Config::default().hook_panics(true).ctrl_z_switches(true))?;
-    too_runner::run::<Hello>(term)
+    too_runner::run(|_| Hello::new(), term)
 }
 
 struct Hello {
@@ -19,11 +19,8 @@ struct Hello {
     rect: Rect,
 }
 
-impl App for Hello {
-    fn new(_size: too_math::Vec2) -> Self
-    where
-        Self: Sized,
-    {
+impl Hello {
+    const fn new() -> Self {
         Self {
             animation: 0.0,
             up: true,
@@ -31,7 +28,9 @@ impl App for Hello {
             rect: Rect::from_min_size(Pos2::ZERO, vec2(20, 6)),
         }
     }
+}
 
+impl App for Hello {
     fn event(&mut self, event: too_events::Event, mut ctx: Context<'_>, size: Vec2) {
         if event.is_keybind_pressed('q') {
             ctx.command(Command::request_quit());

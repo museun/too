@@ -670,18 +670,15 @@ fn draw_mask(item: Vec3, bg: Rgba, pos: Pos2, surface: &mut Surface) {
 
 fn main() -> std::io::Result<()> {
     let term = too_crossterm::setup(Config::default().hook_panics(true))?;
-    too_runner::run::<DemoApp>(term)
+    too_runner::run(DemoApp::new, term)
 }
 
 struct DemoApp {
     demo: Demo,
 }
 
-impl App for DemoApp {
-    fn new(size: too_math::Vec2) -> Self
-    where
-        Self: Sized,
-    {
+impl DemoApp {
+    fn new(size: Vec2) -> Self {
         let (map, start) = load_map(
             r#"
             XXXXXXXXXXXX
@@ -698,7 +695,9 @@ impl App for DemoApp {
             demo: Demo::new(map, start, size),
         }
     }
+}
 
+impl App for DemoApp {
     fn event(&mut self, event: Event, _: Context<'_>, _size: Vec2) {
         self.demo.event(event);
     }

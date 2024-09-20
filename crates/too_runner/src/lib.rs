@@ -23,10 +23,6 @@ pub use too_math as math;
 pub use too_shapes as shapes;
 
 pub trait App {
-    fn new(size: Vec2) -> Self
-    where
-        Self: Sized;
-
     fn event(&mut self, event: Event, ctx: Context<'_>, size: Vec2) {
         _ = event;
         _ = ctx;
@@ -68,9 +64,12 @@ impl<'a> Context<'a> {
     }
 }
 
-pub fn run<A: App + 'static>(mut term: impl Backend + EventReader) -> std::io::Result<()> {
+pub fn run<A: App + 'static>(
+    app: impl FnOnce(Vec2) -> A,
+    mut term: impl Backend + EventReader,
+) -> std::io::Result<()> {
     let mut surface = Surface::new(term.size());
-    let mut app = A::new(term.size());
+    let mut app = app(surface.rect().size());
 
     let mut target_ups = app.max_ups();
     let mut base_target = Duration::from_secs_f32(1.0 / target_ups);

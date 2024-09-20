@@ -8,7 +8,7 @@ use too_runner::{
 
 fn main() -> std::io::Result<()> {
     let term = too_crossterm::setup(Config::default().hook_panics(true))?;
-    too_runner::run::<Demo>(term)
+    too_runner::run(|_| Demo::new(), term)
 }
 
 struct Demo {
@@ -20,11 +20,8 @@ struct Demo {
     up: bool,
 }
 
-impl App for Demo {
-    fn new(_size: too_math::Vec2) -> Self
-    where
-        Self: Sized,
-    {
+impl Demo {
+    const fn new() -> Self {
         Self {
             pos: 0,
             theta: 0.0,
@@ -55,7 +52,8 @@ impl App for Demo {
             ],
         }
     }
-
+}
+impl App for Demo {
     fn event(&mut self, event: too_events::Event, mut ctx: Context<'_>, _size: too_math::Vec2) {
         const NEXT_GRADIENT: Keybind = Keybind::from_char('d');
         const PREV_GRADIENT: Keybind = Keybind::from_char('a');
