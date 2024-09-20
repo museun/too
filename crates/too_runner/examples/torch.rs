@@ -60,15 +60,50 @@ impl Demo {
     }
 
     fn draw_torch(&self, offset: usize, surface: &mut Surface) {
+        fn blend(demo: &Demo, _: Vec2, pos: Pos2) -> Rgba {
+            if !demo.enabled {
+                return Demo::BG;
+            }
+
+            let x = (pos.x as f32 - demo.cursor.x as f32) * 1.6;
+            let y = (pos.y as f32 - demo.cursor.y as f32) * 3.0;
+
+            let distance = x.hypot(y).sqrt().max(1.5);
+            let blend = lerp(0.0, 0.25, distance);
+
+            Demo::BG.blend_linear(Demo::SHADOW, blend)
+        }
+
         surface
             .draw(Fill::new(if self.enabled { Self::FG } else { Self::BG }))
-            .draw(ShadowText { demo: self, offset });
+            .draw(TorchText {
+                demo: self,
+                offset,
+                blend,
+            });
     }
 
     fn draw_focus(&self, offset: usize, surface: &mut Surface) {
+        fn blend(demo: &Demo, size: Vec2, pos: Pos2) -> Rgba {
+            if !demo.enabled {
+                return Rgba::from_static("#111111");
+            }
+
+            let rect = Rect::from_center_size(demo.cursor, size / 3);
+            if rect.contains(pos) {
+                Rgba::from_static("#AAAAAAAA")
+            } else {
+                Rgba::from_static("#111111")
+            }
+        }
+
         surface
             .draw(Fill::new(Rgba::from_static("#111111")))
-            .draw(FocusText { demo: self, offset });
+            .draw(TorchText {
+                demo: self,
+                offset,
+                blend,
+            });
     }
 }
 
@@ -127,28 +162,14 @@ impl App for Demo {
     }
 }
 
-struct FocusText<'a> {
+struct TorchText<'a> {
     demo: &'a Demo,
     offset: usize,
+    blend: fn(&'a Demo, Vec2, Pos2) -> Rgba,
 }
 
-impl<'a> Shape for FocusText<'a> {
+impl<'a> Shape for TorchText<'a> {
     fn draw(&self, size: Vec2, mut put: impl FnMut(Pos2, Pixel)) {
-        impl Demo {
-            fn maybe_focus(&self, size: Vec2, pos: Pos2) -> Rgba {
-                if !self.enabled {
-                    return Rgba::from_static("#111111");
-                }
-
-                let rect = Rect::from_center_size(self.cursor, size / 3);
-                if rect.contains(pos) {
-                    Rgba::from_static("#AAAAAAAA")
-                } else {
-                    Rgba::from_static("#111111")
-                }
-            }
-        }
-
         let mut start = Pos2::ZERO;
         for line in self.demo.lines.iter().skip(self.offset) {
             if start.y >= size.y {
@@ -160,13 +181,14 @@ impl<'a> Shape for FocusText<'a> {
                     start.x = 0;
                     start.y += 1;
                 }
-                let bg = self.demo.maybe_focus(size, start);
+
+                let bg = (self.blend)(self.demo, size, start);
                 put(start, Pixel::new(ch).fg(Demo::FG).bg(bg));
                 start.x += 1;
             }
 
             while start.x < size.x {
-                let bg = self.demo.maybe_focus(size, start);
+                let bg = (self.blend)(self.demo, size, start);
                 put(start, Pixel::new(' ').fg(Demo::FG).bg(bg));
                 start.x += 1;
             }
@@ -182,70 +204,7 @@ impl<'a> Shape for FocusText<'a> {
         for y in start.y..size.y {
             for x in 0..size.x {
                 let pos = pos2(x, y);
-                let bg = self.demo.maybe_focus(size, start);
-                put(pos, Pixel::new(' ').fg(Demo::FG).bg(bg));
-            }
-        }
-    }
-}
-
-struct ShadowText<'a> {
-    demo: &'a Demo,
-    offset: usize,
-}
-
-impl<'a> Shape for ShadowText<'a> {
-    fn draw(&self, size: Vec2, mut put: impl FnMut(Pos2, Pixel)) {
-        impl Demo {
-            fn maybe_blend(&self, pos: Pos2) -> Rgba {
-                if !self.enabled {
-                    return Self::BG;
-                }
-
-                let x = (pos.x as f32 - self.cursor.x as f32) * 1.6;
-                let y = (pos.y as f32 - self.cursor.y as f32) * 3.0;
-
-                let distance = x.hypot(y).sqrt().max(1.5);
-                let blend = lerp(0.0, 0.25, distance);
-
-                Self::BG.blend_linear(Self::SHADOW, blend)
-            }
-        }
-
-        let mut start = Pos2::ZERO;
-        for line in self.demo.lines.iter().skip(self.offset) {
-            if start.y >= size.y {
-                break;
-            }
-
-            for ch in line.chars() {
-                if start.x >= size.x {
-                    start.x = 0;
-                    start.y += 1;
-                }
-                let bg = self.demo.maybe_blend(start);
-                put(start, Pixel::new(ch).fg(Demo::FG).bg(bg));
-                start.x += 1;
-            }
-
-            while start.x < size.x {
-                let bg = self.demo.maybe_blend(start);
-                put(start, Pixel::new(' ').fg(Demo::FG).bg(bg));
-                start.x += 1;
-            }
-
-            start.x = 0;
-            start.y += 1;
-        }
-
-        if start.y >= size.y {
-            return;
-        }
-
-        for y in start.y..size.y {
-            for x in 0..size.x {
-                let pos = pos2(x, y);
-                let bg = self.demo.maybe_blend(start);
+                let bg = (self.blend)(self.demo, size, start);
                 put(pos, Pixel::new(' ').fg(Demo::FG).bg(bg));
             }
         }
