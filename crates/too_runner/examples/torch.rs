@@ -37,8 +37,6 @@ struct Demo {
 
 impl Demo {
     const FG: Rgba = Rgba::from_static("#000000");
-    const BG: Rgba = Rgba::from_static("#F0E68C");
-    const SHADOW: Rgba = Rgba::from_static("#333333");
 
     fn new(lines: impl IntoIterator<Item = impl ToString>) -> Self {
         let lines: Vec<_> = lines.into_iter().map(|s| s.to_string()).collect();
@@ -60,9 +58,12 @@ impl Demo {
     }
 
     fn draw_torch(&self, offset: usize, surface: &mut Surface) {
+        const BG: Rgba = Rgba::from_static("#F0E68C");
+        const SHADOW: Rgba = Rgba::from_static("#333333");
+
         fn blend(demo: &Demo, _: Vec2, pos: Pos2) -> Rgba {
             if !demo.enabled {
-                return Demo::BG;
+                return BG;
             }
 
             let x = (pos.x as f32 - demo.cursor.x as f32) * 1.6;
@@ -71,11 +72,11 @@ impl Demo {
             let distance = x.hypot(y).sqrt().max(1.5);
             let blend = lerp(0.0, 0.25, distance);
 
-            Demo::BG.blend_linear(Demo::SHADOW, blend)
+            BG.blend_linear(SHADOW, blend)
         }
 
         surface
-            .draw(Fill::new(if self.enabled { Self::FG } else { Self::BG }))
+            .draw(Fill::new(if self.enabled { Self::FG } else { BG }))
             .draw(TorchText {
                 demo: self,
                 offset,
@@ -84,26 +85,27 @@ impl Demo {
     }
 
     fn draw_focus(&self, offset: usize, surface: &mut Surface) {
+        const SHADOW: Rgba = Rgba::from_static("#AAAAAAAA");
+        const BG: Rgba = Rgba::from_static("#111111");
+
         fn blend(demo: &Demo, size: Vec2, pos: Pos2) -> Rgba {
             if !demo.enabled {
-                return Rgba::from_static("#111111");
+                return BG;
             }
 
             let rect = Rect::from_center_size(demo.cursor, size / 3);
             if rect.contains(pos) {
-                Rgba::from_static("#AAAAAAAA")
+                SHADOW
             } else {
-                Rgba::from_static("#111111")
+                BG
             }
         }
 
-        surface
-            .draw(Fill::new(Rgba::from_static("#111111")))
-            .draw(TorchText {
-                demo: self,
-                offset,
-                blend,
-            });
+        surface.draw(Fill::new(BG)).draw(TorchText {
+            demo: self,
+            offset,
+            blend,
+        });
     }
 }
 
