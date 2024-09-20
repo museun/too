@@ -4,7 +4,7 @@ use too_crossterm::Config;
 use too_runner::{
     math::{lerp, pos2, Pos2, Vec2},
     shapes::Fill,
-    App, Context, Event, Key, Pixel, Rgba, Surface,
+    App, Context, Event, Key, Pixel, Rgba, Shape, Surface,
 };
 
 fn main() -> std::io::Result<()> {
@@ -51,22 +51,18 @@ impl Demo {
         self.pos = (self.pos + lines).min(self.lines.len())
     }
 
-    // TODO this can be done with shapes::Text
-    fn maybe_blend(&self, pos: Pos2, ch: char) -> Pixel {
+    fn maybe_blend(&self, pos: Pos2) -> Rgba {
         if !self.enabled {
-            return Pixel::new(ch).fg(Self::FG).bg(Self::BG);
+            return Self::BG;
         }
 
-        let mut x = pos.x as f32 - self.cursor.x as f32;
-        let mut y = pos.y as f32 - self.cursor.y as f32;
-        x *= 1.6;
-        y *= 3.0;
+        let x = (pos.x as f32 - self.cursor.x as f32) * 1.6;
+        let y = (pos.y as f32 - self.cursor.y as f32) * 3.0;
 
         let distance = x.hypot(y).sqrt().max(1.5);
         let blend = lerp(0.0, 0.25, distance);
-        Pixel::new(ch)
-            .fg(Self::FG)
-            .bg(Self::BG.blend_linear(Self::SHADOW, blend))
+
+        Self::BG.blend_linear(Self::SHADOW, blend)
     }
 }
 
@@ -108,44 +104,57 @@ impl App for Demo {
     fn render(&mut self, surface: &mut Surface) {
         surface.draw(Fill::new(if self.enabled { Self::FG } else { Self::BG }));
 
-        let rect = surface.rect();
         let offset = self.lines.len().saturating_sub(self.pos);
         let offset = offset
-            .checked_sub(rect.height().saturating_sub_unsigned(1) as _)
+            .checked_sub(surface.rect().height().saturating_sub_unsigned(1) as _)
             .unwrap_or(offset);
 
-        let width = rect.width();
-        let mut start = rect.left_top();
+        surface.draw(ShadowText { demo: self, offset });
+    }
+}
 
-        // TODO this can be done with shapes::Text
-        for line in self.lines.iter().skip(offset) {
-            if start.y >= rect.height() {
+struct ShadowText<'a> {
+    demo: &'a Demo,
+    offset: usize,
+}
+
+impl<'a> Shape for ShadowText<'a> {
+    fn draw(&self, size: Vec2, mut put: impl FnMut(Pos2, Pixel)) {
+        let mut start = Pos2::ZERO;
+        for line in self.demo.lines.iter().skip(self.offset) {
+            if start.y >= size.y {
                 break;
             }
 
-            for c in line.chars() {
-                if start.x >= width {
-                    start.x = rect.left();
+            for ch in line.chars() {
+                if start.x >= size.x {
+                    start.x = 0;
                     start.y += 1;
                 }
-                surface.put(start, self.maybe_blend(start, c));
+                let bg = self.demo.maybe_blend(start);
+                put(start, Pixel::new(ch).fg(Demo::FG).bg(bg));
                 start.x += 1;
             }
 
-            while start.x < rect.width() {
-                surface.put(start, self.maybe_blend(start, ' '));
+            while start.x < size.x {
+                let bg = self.demo.maybe_blend(start);
+                put(start, Pixel::new(' ').fg(Demo::FG).bg(bg));
                 start.x += 1;
             }
-            start.x = rect.left();
+
+            start.x = 0;
             start.y += 1;
         }
 
-        if start.y < rect.height() {
-            for y in start.y..rect.height() {
-                for x in 0..rect.width() {
-                    let pos = pos2(x, y);
-                    surface.put(pos, self.maybe_blend(pos, ' '));
-                }
+        if start.y >= size.y {
+            return;
+        }
+
+        for y in start.y..size.y {
+            for x in 0..size.x {
+                let pos = pos2(x, y);
+                let bg = self.demo.maybe_blend(start);
+                put(pos, Pixel::new(' ').fg(Demo::FG).bg(bg));
             }
         }
     }
