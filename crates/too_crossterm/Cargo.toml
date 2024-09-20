@@ -1,0 +1,12 @@
+[package]
+name = "too_crossterm"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+crossterm = { version = "0.28.1", default-features = false, features = [ "events", "windows" ] }
+flume = { version = "0.11.0", default-features = false }
+
+too_events.workspace = true
+too_math.workspace = true
+too_renderer.workspace = true

@@ -1,0 +1,18 @@
+[workspace]
+resolver = "2"
+members = [
+    "crates/too_crossterm",
+    "crates/too_events",
+    "crates/too_layout",
+    "crates/too_math",
+    "crates/too_renderer",
+    "crates/too_shapes"
+]
+
+[workspace.dependencies]
+too_crossterm = { path = "crates/too_crossterm", version = "0.1.0" }
+too_events = { path = "crates/too_events", version = "0.1.0" }
+too_layout = { path = "crates/too_layout", version = "0.1.0" }
+too_math = { path = "crates/too_math", version = "0.1.0" }
+too_renderer = { path = "crates/too_renderer", version = "0.1.0" }
+too_shapes = { path = "crates/too_shapes", version = "0.1.0" }

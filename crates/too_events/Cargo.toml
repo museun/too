@@ -1,0 +1,7 @@
+[package]
+name = "too_events"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+too_math.workspace = true

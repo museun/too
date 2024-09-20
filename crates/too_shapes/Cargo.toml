@@ -1,0 +1,9 @@
+[package]
+name = "too_shapes"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+too_math.workspace = true
+too_renderer.workspace = true
+unicode-segmentation = "1.12.0"
