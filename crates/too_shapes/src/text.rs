@@ -109,7 +109,7 @@ impl<T: Label> Shape for Text<T> {
         };
         let y = match self.align.y {
             Align::Min => 0,
-            Align::Center => midpoint(size.y, item_size.y),
+            Align::Center => midpoint(size.y, item_size.y), // BUG this is off by +1
             Align::Max => size.y.saturating_sub(item_size.y),
         };
 

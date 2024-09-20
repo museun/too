@@ -4,7 +4,7 @@ use too_events::{
     Event, EventReader, Key, Keybind, Modifiers, MouseButton, MouseState, TemporalEvent,
 };
 use too_math::{pos2, vec2, Vec2};
-use too_renderer::{Command, CurrentScreen, Renderer, TermRenderer, Terminal};
+use too_renderer::{Backend, Command, CurrentScreen, Renderer, TermRenderer};
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
 pub struct Config {
@@ -144,7 +144,7 @@ pub struct Term {
     commands: VecDeque<Command>,
 }
 
-impl Terminal for Term {
+impl Backend for Term {
     fn size(&self) -> Vec2 {
         self.size
     }
@@ -157,14 +157,24 @@ impl Terminal for Term {
         self.commands.push_back(cmd);
     }
 
-    #[cfg(windows)]
-    fn handle(&mut self) -> &mut impl std::os::windows::io::AsHandle {
-        &mut self.out
-    }
+    fn file(&mut self) -> std::fs::File {
+        #[cfg(windows)]
+        use std::os::windows::io::AsHandle as _;
 
-    #[cfg(not(windows))]
-    fn fd(&mut self) -> &mut impl std::os::fd::AsFd {
-        &mut self.out
+        #[cfg(not(windows))]
+        use std::os::fd::AsFd as _;
+
+        #[cfg(windows)]
+        let owned = self
+            .out
+            .as_handle()
+            .try_clone_to_owned()
+            .expect("ownable handle");
+
+        #[cfg(not(windows))]
+        let owned = self.out.as_fd().try_clone_to_owned().expect("ownable fd");
+
+        std::fs::File::from(owned)
     }
 }
 

@@ -100,7 +100,7 @@ impl<'a> Label for &'a str {
     }
 
     fn chars(&self) -> impl Iterator<Item = char> {
-        flat_map_graphemes(*self)
+        flat_map_graphemes(self)
     }
 }
 
@@ -135,8 +135,7 @@ impl<'a> Label for Cow<'a, str> {
     }
 
     fn chars(&self) -> impl Iterator<Item = char> {
-        let s: &str = &**self;
-        flat_map_graphemes(s)
+        flat_map_graphemes(self)
     }
 }
 
@@ -216,7 +215,7 @@ impl<'a> Label for Ref<'a, str> {
     }
 
     fn chars(&self) -> impl Iterator<Item = char> {
-        flat_map_graphemes(&*self)
+        flat_map_graphemes(self)
     }
 }
 

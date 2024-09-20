@@ -1,0 +1,14 @@
+[package]
+name = "too_runner"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+too_events.workspace = true
+too_math.workspace = true
+too_renderer.workspace = true
+too_shapes.workspace = true
+
+[dev-dependencies]
+rayon = "1.10.0"
+too_crossterm.workspace = true

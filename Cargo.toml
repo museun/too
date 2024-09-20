@@ -6,6 +6,7 @@ members = [
     "crates/too_layout",
     "crates/too_math",
     "crates/too_renderer",
+    "crates/too_runner",
     "crates/too_shapes"
 ]
 

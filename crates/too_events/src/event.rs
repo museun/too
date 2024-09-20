@@ -99,4 +99,17 @@ impl Event {
         let have = Keybind::new(key, modifiers);
         have == expected.into()
     }
+
+    pub fn mouse_pos(&self) -> Option<Pos2> {
+        match self {
+            Self::MouseMove { pos, .. }
+            | Self::MouseClick { pos, .. }
+            | Self::MouseHeld { pos, .. }
+            | Self::MouseDragStart { pos, .. }
+            | Self::MouseDragHeld { pos, .. }
+            | Self::MouseDragRelease { pos, .. }
+            | Self::MouseScroll { pos, .. } => Some(*pos),
+            _ => None,
+        }
+    }
 }

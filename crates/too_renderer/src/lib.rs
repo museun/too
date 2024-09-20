@@ -19,5 +19,5 @@ pub use rgba::Rgba;
 mod gradient;
 pub use gradient::Gradient;
 
-mod terminal;
-pub use terminal::{Command, CurrentScreen, Terminal};
+mod backend;
+pub use backend::{Command, CurrentScreen, Backend};

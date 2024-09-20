@@ -1,3 +1,5 @@
+use std::fs::File;
+
 use too_math::Vec2;
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
@@ -50,30 +52,16 @@ impl Command {
     }
 }
 
-pub trait Terminal {
+pub trait Backend {
     fn size(&self) -> Vec2;
     fn is_in_alt_screen(&self) -> bool;
     fn command(&mut self, cmd: Command);
 
-    fn set_title(&mut self, title: impl ToString) {
-        self.command(Command::set_title(title));
-    }
+    fn file(&mut self) -> File;
 
-    fn switch_main_screen(&mut self) {
-        self.command(Command::switch_main_screen());
-    }
+    // #[cfg(not(windows))]
+    // fn fd(&mut self) -> &mut impl ::std::os::fd::AsFd;
 
-    fn switch_alt_screen(&mut self) {
-        self.command(Command::switch_alt_screen());
-    }
-
-    fn request_quit(&mut self) {
-        self.command(Command::request_quit());
-    }
-
-    #[cfg(not(windows))]
-    fn fd(&mut self) -> &mut impl ::std::os::fd::AsFd;
-
-    #[cfg(windows)]
-    fn handle(&mut self) -> &mut impl ::std::os::windows::io::AsHandle;
+    // #[cfg(windows)]
+    // fn handle(&mut self) -> &mut impl ::std::os::windows::io::AsHandle;
 }

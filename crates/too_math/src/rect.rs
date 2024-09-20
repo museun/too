@@ -139,8 +139,8 @@ impl Rect {
     }
 
     pub const fn right(&self) -> i32 {
-        self.max.x.saturating_sub(1)
-        // self.max.x
+        // self.max.x.saturating_sub(1)
+        self.max.x
     }
 
     pub const fn top(&self) -> i32 {
@@ -148,8 +148,8 @@ impl Rect {
     }
 
     pub const fn bottom(&self) -> i32 {
-        self.max.y.saturating_sub(1)
-        // self.max.y
+        // self.max.y.saturating_sub(1)
+        self.max.y
     }
 
     pub fn center(&self) -> Pos2 {

@@ -1,5 +1,5 @@
-use crate::{pixel::Attribute, Rgba, Terminal};
-use std::io::Write as _;
+use crate::{pixel::Attribute, Backend, Rgba};
+use std::io::{BufWriter, Write as _};
 use too_math::Pos2;
 
 pub trait Renderer {
@@ -30,33 +30,18 @@ pub trait Renderer {
 }
 
 pub struct TermRenderer {
-    out: std::io::BufWriter<std::fs::File>,
+    out: BufWriter<std::fs::File>,
 }
 
 impl TermRenderer {
-    pub fn new(term: &mut impl Terminal) -> Self {
-        #[cfg(windows)]
-        use std::os::windows::io::AsHandle as _;
-
-        #[cfg(not(windows))]
-        use std::os::fd::AsFd as _;
-
+    pub fn new(term: &mut impl Backend) -> Self {
         let size = term.size();
         let estimate = size.x as usize * size.y as usize * 21;
 
-        #[cfg(windows)]
-        let owned = term
-            .handle()
-            .as_handle()
-            .try_clone_to_owned()
-            .expect("ownable handle");
-
-        #[cfg(not(windows))]
-        let owned = term.fd().as_fd().try_clone_to_owned().expect("ownable fd");
-
         // TODO maybe cache this
-        let out = std::io::BufWriter::with_capacity(estimate, std::fs::File::from(owned));
-        Self { out }
+        Self {
+            out: BufWriter::with_capacity(estimate, term.file()),
+        }
     }
 }
 
