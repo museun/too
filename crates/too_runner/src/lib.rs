@@ -94,7 +94,12 @@ pub fn run<A: App + 'static>(
                 backend: &mut term,
             };
             app.event(ev, ctx, surface.rect().size());
-            event_dur += start.elapsed()
+            event_dur += start.elapsed();
+
+            // only spend up to half of the budget on reading events
+            if event_dur >= base_target / 2 {
+                break;
+            }
         }
 
         let mut accum = frame_start.duration_since(prev).as_secs_f32();
