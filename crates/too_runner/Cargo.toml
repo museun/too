@@ -12,3 +12,4 @@ too_shapes.workspace = true
 [dev-dependencies]
 rayon = "1.10.0"
 too_crossterm.workspace = true
+too_layout.workspace = true

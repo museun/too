@@ -39,7 +39,6 @@ impl Direction {
 // cross spacing
 // cross distribution (sizing?)
 
-// linear layout
 // flex layout
 // box layout
 

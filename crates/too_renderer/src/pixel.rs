@@ -2,7 +2,7 @@ use crate::Rgba;
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
 pub struct Pixel {
-    pub char: char,
+    pub char: char, // this has to be a &str
     pub fg: Color,
     pub bg: Color,
     pub attr: Attribute,
@@ -20,7 +20,7 @@ impl Pixel {
         Self {
             char,
             fg: Color::Reset,
-            bg: Color::Reuse, // TODO Reset?
+            bg: Color::Reuse,
             attr: Attribute::RESET,
         }
     }

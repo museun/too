@@ -12,7 +12,7 @@ fn main() -> std::io::Result<()> {
 }
 
 struct Hello {
-    animation: f32,
+    value: f32,
     up: bool,
 
     pos: Pos2,
@@ -22,7 +22,7 @@ struct Hello {
 impl Hello {
     const fn new() -> Self {
         Self {
-            animation: 0.0,
+            value: 0.0,
             up: true,
             pos: Pos2::ZERO,
             rect: Rect::from_min_size(Pos2::ZERO, vec2(20, 6)),
@@ -58,17 +58,17 @@ impl App for Hello {
     }
 
     fn update(&mut self, dt: f32, _size: Vec2) {
-        let duration = 5.0_f32;
-        self.animation += (self.up as u8 as f32 * 2.0 - 1.0) * duration.recip() * dt;
-        self.animation = self.animation.clamp(0.0, 1.0);
-        self.up = self.up ^ (self.animation >= 1.0) ^ (self.animation <= 0.0)
+        let duration = 5.0f32;
+        self.value += (self.up as u8 as f32 * 2.0 - 1.0) * duration.recip() * dt;
+        self.value = self.value.clamp(0.0, 1.0);
+        self.up = self.up ^ (self.value >= 1.0) ^ (self.value <= 0.0)
     }
 
     fn render(&mut self, surface: &mut too_renderer::Surface) {
         let rect = surface.rect();
         surface
             .crop(Rect::from_center_size(rect.center(), rect.size() / 3))
-            .draw(Fill::new(Rgba::sine(self.animation)));
+            .draw(Fill::new(Rgba::sine(self.value)));
 
         surface
             .crop(self.rect)

@@ -1,5 +1,6 @@
-mod rect;
+// TODO should these use f32 instead of i32?
 
+mod rect;
 pub use rect::{rect, Rect};
 
 mod vec2;

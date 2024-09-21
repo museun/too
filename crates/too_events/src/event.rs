@@ -95,6 +95,7 @@ impl Event {
         Self::is_keybind(key, modifiers, keybind)
     }
 
+    // BUG this doesn't work with '!' (e.g. shift-1)
     fn is_keybind(key: Key, modifiers: Modifiers, expected: impl Into<Keybind>) -> bool {
         let have = Keybind::new(key, modifiers);
         have == expected.into()

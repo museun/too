@@ -15,6 +15,10 @@ impl std::fmt::Debug for Pos2 {
 impl Pos2 {
     pub const ZERO: Self = Self::splat(0);
 
+    pub const fn new(x: i32, y: i32) -> Self {
+        pos2(x, y)
+    }
+
     pub const fn splat(d: i32) -> Self {
         pos2(d, d)
     }
