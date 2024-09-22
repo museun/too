@@ -28,6 +28,9 @@ pub mod events {
 pub use too_events::EventReader;
 
 #[doc(inline)]
+pub use too_layout as layout;
+
+#[doc(inline)]
 pub use too_math as math;
 
 /// Shapes are drawable primitives for a Surface

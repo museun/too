@@ -8,9 +8,9 @@ too_events.workspace = true
 too_math.workspace = true
 too_renderer.workspace = true
 too_shapes.workspace = true
+too_layout.workspace = true
 
 [dev-dependencies]
 fastrand = "2.1.1"
 rayon = "1.10.0"
 too_crossterm.workspace = true
-too_layout.workspace = true

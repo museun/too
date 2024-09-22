@@ -1,93 +1,139 @@
-use too_math::{Pos2, Rect, Vec2};
+use too_math::{pos2, Pos2, Rect, Vec2};
 
-use crate::Direction;
+use crate::{Anchor, Anchor2, Axis};
+
+/// A linear allocator
+///
+///
+/// This type is crated by a [`LinearLayout`]
+///
+/// This type allocates sizes in a linear fashion such as:
+/// * left to top
+/// * top to bottom
+/// * right to left
+/// * bottom to top
 
 pub struct LinearAllocator {
-    linear: LinearLayout,
+    state: LinearLayout,
     cursor: Pos2,
     rect: Rect,
     max: Vec2,
+    anchor: Anchor2,
 }
 
 impl LinearAllocator {
+    /// Allocate a new size, returning an rect if possible
+    ///
+    /// This allows you to store sizes of elements in your state
+    /// then using this will give you a 'position' (e.g. a complete rect)
+    /// that can be used for futher layouts or drawing
+    ///
+    /// # Example
+    /// ```rust,no_run
+    /// let mut sizes = [vec2(5,10), vec2(3,1), vec2(4,4)];
+    /// let mut layout = LinearLayout::horizontal().layout(some_rect);
+    /// for size in sizes {
+    ///     if let Some(rect) = layout.allocate(size) {
+    ///         // our rect will have the size, with a computed position
+    ///     }
+    /// }
+    /// ```
     pub fn allocate(&mut self, size: Vec2) -> Option<Rect> {
-        match self.linear.direction {
-            Direction::Horizontal => self.horizontal(size),
-            Direction::Vertical => self.vertical(size),
+        match self.state.axis {
+            Axis::Horizontal => self.allocate_horizontal(size),
+            Axis::Vertical => self.allocate_vertical(size),
         }
     }
 
-    pub fn spacing(&self) -> Vec2 {
-        self.linear.spacing
-    }
+    fn allocate_vertical(&mut self, size: Vec2) -> Option<Rect> {
+        let (main_sign, cross_sign) = self.anchor.sign(self.state.axis);
+        let (main_rect_min, main_rect_max) = match self.anchor.y {
+            Anchor::Min => (self.rect.top(), self.rect.bottom()),
+            Anchor::Max => (self.rect.bottom(), self.rect.top()),
+        };
+        let cross_rect_max = match self.anchor.x {
+            Anchor::Min => self.rect.right(),
+            Anchor::Max => self.rect.left(),
+        };
 
-    pub fn start(&self) -> Pos2 {
-        self.rect.left_top()
-    }
-
-    pub fn max_size(&self) -> Vec2 {
-        self.rect.size()
-    }
-
-    pub fn remaining(&self) -> i32 {
-        match self.linear.direction {
-            Direction::Horizontal => self.rect.right().saturating_sub(self.cursor.x),
-            Direction::Vertical => self.rect.bottom().saturating_sub(self.cursor.y),
-        }
-    }
-
-    pub fn cursor(&self) -> Pos2 {
-        self.cursor
-    }
-
-    fn horizontal(&mut self, size: Vec2) -> Option<Rect> {
-        if self.cursor.x + size.x > self.rect.right() {
-            if !self.linear.wrap {
+        let next_main_pos = self.cursor.y + main_sign * size.y;
+        if self.anchor.y.exceeds_bounds(next_main_pos, main_rect_max) {
+            if !self.state.wrap {
                 return None;
             }
-
-            self.cursor.y += self.linear.spacing.y + size.y.max(self.max.y);
-            self.cursor.x = self.rect.left()
+            self.cursor.y = main_rect_min;
+            self.cursor.x += (self.max.x + self.state.spacing.x) * cross_sign;
+            self.max = Vec2::ZERO;
         }
 
-        if self.cursor.y + (size.y * self.linear.wrap as i32) > self.rect.bottom() + 1 {
+        let next_cross_pos = self.cursor.x + (size.x * cross_sign);
+        if self.anchor.x.exceeds_bounds(next_cross_pos, cross_rect_max) {
             return None;
         }
-        let rect = Rect::from_min_size(self.cursor, size);
-        self.cursor.x += size.x + self.linear.spacing.x;
-        self.max = self.max.max(size);
+
+        let offset = pos2(
+            size.x * self.anchor.x.offset(),
+            size.y * self.anchor.y.offset(),
+        );
+        let rect = Rect::from_min_size(self.cursor - offset, size);
+
+        self.cursor.y += (size.y + self.state.spacing.y) * main_sign;
+        self.max.x = self.max.x.max(size.x);
+
         Some(rect)
     }
 
-    fn vertical(&mut self, size: Vec2) -> Option<Rect> {
-        // let (x, y) = (self.linear.x, self.linear.y);
+    fn allocate_horizontal(&mut self, size: Vec2) -> Option<Rect> {
+        let (main_sign, cross_sign) = self.anchor.sign(self.state.axis);
+        let (main_rect_min, main_rect_max) = match self.anchor.x {
+            Anchor::Min => (self.rect.left(), self.rect.right()),
+            Anchor::Max => (self.rect.right(), self.rect.left()),
+        };
+        let cross_rect_max = match self.anchor.y {
+            Anchor::Min => self.rect.bottom(),
+            Anchor::Max => self.rect.top(),
+        };
 
-        if self.cursor.y + size.y > self.rect.bottom() {
-            if !self.linear.wrap {
+        let next_main_pos = self.cursor.x + main_sign * size.x;
+        if self.anchor.x.exceeds_bounds(next_main_pos, main_rect_max) {
+            if !self.state.wrap {
                 return None;
             }
-            self.cursor.x += self.linear.spacing.x + size.x.max(self.max.x);
-            self.cursor.y = self.rect.top()
+            self.cursor.x = main_rect_min;
+            self.cursor.y += (self.max.y + self.state.spacing.y) * cross_sign;
+            self.max = Vec2::ZERO;
         }
-        if self.cursor.x + (size.x * self.linear.wrap as i32) > self.rect.right() + 1 {
+
+        let next_cross_pos = self.cursor.y + (size.y * cross_sign);
+        if self.anchor.y.exceeds_bounds(next_cross_pos, cross_rect_max) {
             return None;
         }
-        let rect = Rect::from_min_size(self.cursor, size);
-        self.cursor.y += size.y + self.linear.spacing.y;
-        self.max = self.max.max(size);
+
+        let offset = pos2(
+            size.x * self.anchor.x.offset(),
+            size.y * self.anchor.y.offset(),
+        );
+        let rect = Rect::from_min_size(self.cursor - offset, size);
+
+        self.cursor.x += (size.x + self.state.spacing.x) * main_sign;
+        self.max.y = self.max.y.max(size.y);
+
         Some(rect)
     }
 }
 
-// TODO clipping
-// TODO what should clipping actually do?
-
+/// A layout that uses a linear, with optional wrapping algorithm
 pub struct LinearLayout {
-    direction: Direction,
+    axis: Axis,
     wrap: bool,
     spacing: Vec2,
+    anchor: Anchor2,
 }
 
+/// The default configuration for a [`LinearLayout`] is:
+/// * horizontal
+/// * no wrapping
+/// * starts at left-top
 impl Default for LinearLayout {
     fn default() -> Self {
         Self::DEFAULT
@@ -96,50 +142,100 @@ impl Default for LinearLayout {
 
 impl LinearLayout {
     const DEFAULT: Self = Self {
-        direction: Direction::Horizontal,
+        axis: Axis::Horizontal,
         wrap: false,
         spacing: Vec2::ZERO,
+        anchor: Anchor2::LEFT_TOP,
     };
 
-    pub const fn new(direction: Direction) -> Self {
+    /// Create a new [`LinearLayout`] builder using this [`Axis`]
+    pub const fn new(axis: Axis) -> Self {
         Self {
-            direction,
+            axis,
             ..Self::DEFAULT
         }
     }
 
-    pub const fn direction(mut self, direction: Direction) -> Self {
-        self.direction = direction;
+    /// Change the [`Axis`] of this builder
+    pub const fn axis(mut self, axis: Axis) -> Self {
+        self.axis = axis;
         self
     }
 
+    /// Set the anchor for this builder.
+    ///
+    /// An anchor is where the layout starts from
+    ///
+    /// e.g.:
+    /// * [`Anchor2::LEFT_TOP`]
+    /// * [`Anchor2::RIGHT_BOTTOM`]
+    pub const fn anchor(mut self, anchor: Anchor2) -> Self {
+        self.anchor = anchor;
+        self
+    }
+
+    /// Set the horizontal anchor for this builder
+    ///
+    /// A horizontal anchor where where on the ___x___ axis the layout begins
+    pub const fn horizontal_anchor(mut self, anchor: Anchor) -> Self {
+        self.anchor.x = anchor;
+        self
+    }
+
+    /// Set the vertical anchor for this builder
+    ///
+    /// A vertical anchor where where on the ___y___ axis the layout begins
+    pub const fn vertical_anchor(mut self, anchor: Anchor) -> Self {
+        self.anchor.y = anchor;
+        self
+    }
+
+    /// Create a default horizontal layout builder
     pub const fn horizontal() -> Self {
         Self::DEFAULT
     }
 
+    /// Create a default vertical layout builder
     pub const fn vertical() -> Self {
         Self {
-            direction: Direction::Vertical,
+            axis: Axis::Vertical,
             ..Self::DEFAULT
         }
     }
 
+    /// Should this layout wrap?
     pub const fn wrap(mut self, wrap: bool) -> Self {
         self.wrap = wrap;
         self
     }
 
+    /// The spacing for the layout.
+    ///
+    /// Spacing is the gap between 2 elements.
+    /// * `spacing.x` is the horizontal spacing
+    /// * `spacing.y` is the vertical spacing
     pub const fn spacing(mut self, spacing: Vec2) -> Self {
         self.spacing = spacing;
         self
     }
 
-    pub const fn layout(self, rect: Rect) -> LinearAllocator {
+    /// Construct the [`LinearAllocator`] from this type
+    ///
+    /// This takes in the target [`Rect`] that the allocator will fit everything into.
+    pub fn layout(self, rect: Rect) -> LinearAllocator {
+        let cursor = match (self.anchor.x, self.anchor.y) {
+            (Anchor::Min, Anchor::Min) => rect.left_top(),
+            (Anchor::Min, Anchor::Max) => rect.left_bottom(),
+            (Anchor::Max, Anchor::Min) => rect.right_top(),
+            (Anchor::Max, Anchor::Max) => rect.right_bottom(),
+        };
+
         LinearAllocator {
-            linear: self,
-            cursor: rect.left_top(),
+            cursor,
             rect,
             max: Vec2::ZERO,
+            anchor: self.anchor,
+            state: self,
         }
     }
 }
