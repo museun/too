@@ -1,10 +1,11 @@
 use too_crossterm::{Config, Term};
 
 use too_runner::{
+    color::Rgba,
     events::Event,
     math::{rect, vec2, Align2, Pos2, Rect, Vec2},
     shapes::{Fill, Text},
-    App, Backend, Command, Context, Rgba, Surface,
+    App, Backend, Command, Context, CroppedSurface,
 };
 
 fn main() -> std::io::Result<()> {
@@ -65,7 +66,7 @@ impl App for Hello {
         self.up = self.up ^ (self.value >= 1.0) ^ (self.value <= 0.0)
     }
 
-    fn render(&mut self, surface: &mut Surface) {
+    fn render(&mut self, surface: &mut CroppedSurface) {
         let rect = surface.rect();
         surface
             .crop(Rect::from_center_size(rect.center(), rect.size() / 3))

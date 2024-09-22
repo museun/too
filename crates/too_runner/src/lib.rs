@@ -9,21 +9,29 @@ use too_shapes::Text;
 mod fps;
 use fps::Fps;
 
-pub use too_renderer::{
-    Attribute, Color, Command, CroppedSurface, Gradient, Pixel, Rgba, Shape, Surface,
-};
+pub use too_renderer::{Backend, Command, CroppedSurface};
+
+pub mod color {
+    pub use too_renderer::{Gradient, Rgba};
+}
+
+pub mod pixel {
+    pub use too_renderer::{Attribute, Color, Pixel};
+}
+
+pub mod events {
+    pub use too_events::{Event, Key, Keybind, Modifiers, MouseButton, MouseState};
+}
 
 pub use too_events::EventReader;
-pub use too_renderer::Backend;
-
-#[doc(inline)]
-pub use too_events as events;
 
 #[doc(inline)]
 pub use too_math as math;
 
-#[doc(inline)]
-pub use too_shapes as shapes;
+pub mod shapes {
+    pub use too_renderer::Shape;
+    pub use too_shapes::*;
+}
 
 pub trait App {
     fn event(&mut self, event: Event, ctx: Context<'_, impl Backend>, size: Vec2) {
@@ -45,7 +53,7 @@ pub trait App {
         60.0
     }
 
-    fn render(&mut self, surface: &mut Surface);
+    fn render(&mut self, surface: &mut CroppedSurface);
 }
 
 pub struct Context<'a, B: Backend> {
@@ -67,11 +75,11 @@ impl<'a, B: Backend> Context<'a, B> {
     }
 }
 
-pub fn run<A: App + 'static>(
+pub fn run<A: App>(
     app: impl FnOnce(Vec2) -> A,
     mut term: impl Backend + EventReader,
 ) -> std::io::Result<()> {
-    let mut surface = Surface::new(term.size());
+    let mut surface = too_renderer::Surface::new(term.size());
     let mut app = app(surface.rect().size());
 
     let mut target_ups = app.max_ups();
@@ -132,8 +140,8 @@ pub fn run<A: App + 'static>(
             }
         }
 
-        if term.is_in_alt_screen() {
-            app.render(&mut surface);
+        if term.should_draw() {
+            app.render(&mut surface.crop(surface.rect()));
 
             if show_fps {
                 let frame_stats = fps.get();

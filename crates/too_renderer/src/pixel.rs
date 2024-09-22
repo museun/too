@@ -215,15 +215,6 @@ pub enum Color {
     Reset,
 }
 
-impl Color {
-    pub fn map_if_rgba(self, f: impl Fn(Rgba) -> Rgba) -> Self {
-        match self {
-            Self::Rgba(rgba) => Self::Rgba(f(rgba)),
-            _ => self,
-        }
-    }
-}
-
 impl From<&'static str> for Color {
     fn from(value: &'static str) -> Self {
         Self::Rgba(Rgba::from_static(value))

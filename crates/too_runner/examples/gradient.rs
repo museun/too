@@ -1,10 +1,12 @@
 use too_crossterm::{Config, Term};
 
 use too_runner::{
+    color::Gradient,
     events::{Event, Keybind},
     math::{lerp, pos2, Align2, Pos2, Vec2},
-    shapes::Text,
-    App, Backend, Context, Gradient, Pixel, Shape, Surface,
+    pixel::Pixel,
+    shapes::{Shape, Text},
+    App, Backend, Context, CroppedSurface,
 };
 
 fn main() -> std::io::Result<()> {
@@ -101,7 +103,7 @@ impl App for Demo {
         self.up = self.up ^ (self.theta >= 1.0) ^ (self.theta <= -1.0)
     }
 
-    fn render(&mut self, surface: &mut Surface) {
+    fn render(&mut self, surface: &mut CroppedSurface) {
         let (label, _) = &self.gradients[self.pos];
         surface
             .draw(&*self)

@@ -53,8 +53,7 @@ impl Command {
 pub trait Backend {
     type Out: std::io::Write;
     fn size(&self) -> Vec2;
-    // TODO is this needed?
-    fn is_in_alt_screen(&self) -> bool;
+    fn should_draw(&self) -> bool;
     fn command(&mut self, cmd: Command);
     fn writer(&mut self) -> Self::Out;
 }

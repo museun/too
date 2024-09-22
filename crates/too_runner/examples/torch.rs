@@ -2,10 +2,12 @@ use std::io::Read as _;
 
 use too_crossterm::{Config, Term};
 use too_runner::{
+    color::Rgba,
     events::{Event, Key},
     math::{lerp, pos2, Pos2, Rect, Vec2},
-    shapes::Fill,
-    App, Backend, Context, Pixel, Rgba, Shape, Surface,
+    pixel::Pixel,
+    shapes::{Fill, Shape},
+    App, Backend, Context, CroppedSurface,
 };
 
 fn main() -> std::io::Result<()> {
@@ -57,7 +59,7 @@ impl Demo {
         self.pos = (self.pos + lines).min(self.lines.len())
     }
 
-    fn draw_torch(&self, offset: usize, surface: &mut Surface) {
+    fn draw_torch(&self, offset: usize, surface: &mut CroppedSurface) {
         const BG: Rgba = Rgba::from_static("#F0E68C");
         const SHADOW: Rgba = Rgba::from_static("#333333");
 
@@ -84,7 +86,7 @@ impl Demo {
             });
     }
 
-    fn draw_focus(&self, offset: usize, surface: &mut Surface) {
+    fn draw_focus(&self, offset: usize, surface: &mut CroppedSurface) {
         const SHADOW: Rgba = Rgba::from_static("#AAAAAAAA");
         const BG: Rgba = Rgba::from_static("#111111");
 
@@ -151,7 +153,7 @@ impl App for Demo {
         }
     }
 
-    fn render(&mut self, surface: &mut Surface) {
+    fn render(&mut self, surface: &mut CroppedSurface) {
         let offset = self.lines.len().saturating_sub(self.pos);
         let offset = offset
             .checked_sub(surface.rect().height().saturating_sub_unsigned(1) as _)

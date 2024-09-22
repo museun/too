@@ -1,9 +1,11 @@
 use too_crossterm::{Config, Term};
 
 use too_runner::{
+    color::Rgba,
     events::{Event, Key},
     math::{Pos2, Vec2},
-    App, Backend, Context, Pixel, Rgba, Surface,
+    pixel::Pixel,
+    App, Backend, Context, CroppedSurface,
 };
 
 use rayon::iter::*;
@@ -627,7 +629,7 @@ impl Screen {
         // }
     }
 
-    fn render(&mut self, surface: &mut Surface, use_textures: bool, use_mask: bool) {
+    fn render(&mut self, surface: &mut CroppedSurface, use_textures: bool, use_mask: bool) {
         let mut pos = Pos2::ZERO;
         for y in 0..self.buffer.len() {
             for x in 0..self.buffer[y].len() {
@@ -657,7 +659,7 @@ impl Screen {
     }
 }
 
-fn draw_mask(item: Vec3, bg: Rgba, pos: Pos2, surface: &mut Surface) {
+fn draw_mask(item: Vec3, bg: Rgba, pos: Pos2, surface: &mut CroppedSurface) {
     const CHARS: [char; 15] = [
         ' ', '.', 'X', ':', '_', '~', '/', 'c', 'r', 'x', '*', '%', '#', '8', '@',
     ];
@@ -707,7 +709,7 @@ impl App for DemoApp {
         self.demo.integrate(dt);
     }
 
-    fn render(&mut self, surface: &mut too_renderer::Surface) {
+    fn render(&mut self, surface: &mut too_renderer::CroppedSurface) {
         self.demo.screen.update(&self.demo.camera, &self.demo.map);
         self.demo
             .screen

@@ -153,7 +153,7 @@ impl Backend for Term {
         self.size
     }
 
-    fn is_in_alt_screen(&self) -> bool {
+    fn should_draw(&self) -> bool {
         self.config.current_screen.is_alt_screen()
     }
 
