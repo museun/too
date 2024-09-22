@@ -3,7 +3,7 @@ use too_crossterm::{Config, Term};
 use too_runner::{
     math::{rect, vec2, Align2, Pos2, Rect, Vec2},
     shapes::{Fill, Text},
-    App, Command, Context, Event, Rgba,
+    App, Backend, Command, Context, Event, Rgba, Surface,
 };
 
 fn main() -> std::io::Result<()> {
@@ -31,7 +31,7 @@ impl Hello {
 }
 
 impl App for Hello {
-    fn event(&mut self, event: too_events::Event, mut ctx: Context<'_>, size: Vec2) {
+    fn event(&mut self, event: Event, mut ctx: Context<'_, impl Backend>, size: Vec2) {
         if event.is_keybind_pressed('q') {
             ctx.command(Command::request_quit());
         }
@@ -64,7 +64,7 @@ impl App for Hello {
         self.up = self.up ^ (self.value >= 1.0) ^ (self.value <= 0.0)
     }
 
-    fn render(&mut self, surface: &mut too_renderer::Surface) {
+    fn render(&mut self, surface: &mut Surface) {
         let rect = surface.rect();
         surface
             .crop(Rect::from_center_size(rect.center(), rect.size() / 3))

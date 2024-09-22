@@ -1,9 +1,9 @@
 use too_crossterm::{Config, Term};
 
 use too_runner::{
-    math::{lerp, pos2, Align2},
+    math::{lerp, pos2, Align2, Pos2, Vec2},
     shapes::Text,
-    App, Context, Gradient, Keybind, Pixel, Shape,
+    App, Backend, Context, Event, Gradient, Keybind, Pixel, Shape, Surface,
 };
 
 fn main() -> std::io::Result<()> {
@@ -54,7 +54,7 @@ impl Demo {
     }
 }
 impl App for Demo {
-    fn event(&mut self, event: too_events::Event, mut ctx: Context<'_>, _size: too_math::Vec2) {
+    fn event(&mut self, event: Event, mut ctx: Context<'_, impl Backend>, _size: Vec2) {
         const NEXT_GRADIENT: Keybind = Keybind::from_char('d');
         const PREV_GRADIENT: Keybind = Keybind::from_char('a');
 
@@ -94,13 +94,13 @@ impl App for Demo {
         }
     }
 
-    fn update(&mut self, dt: f32, _size: too_math::Vec2) {
+    fn update(&mut self, dt: f32, _size: Vec2) {
         self.theta += (self.up as u8 as f32 * 2.0 - 1.0) * self.duration.recip() * dt;
         self.theta = self.theta.clamp(-1.0, 1.0);
         self.up = self.up ^ (self.theta >= 1.0) ^ (self.theta <= -1.0)
     }
 
-    fn render(&mut self, surface: &mut too_renderer::Surface) {
+    fn render(&mut self, surface: &mut Surface) {
         let (label, _) = &self.gradients[self.pos];
         surface
             .draw(&*self)
@@ -126,7 +126,7 @@ impl App for Demo {
 }
 
 impl Shape for Demo {
-    fn draw(&self, size: too_math::Vec2, mut put: impl FnMut(too_math::Pos2, too_renderer::Pixel)) {
+    fn draw(&self, size: Vec2, mut put: impl FnMut(Pos2, Pixel)) {
         fn normalize(x: i32, y: i32, w: i32, h: i32, factor: f32) -> f32 {
             let x = x as f32 / (w as f32 - 1.0);
             let y = y as f32 / (h as f32 - 1.0);

@@ -1,5 +1,3 @@
-use std::fs::File;
-
 use too_math::Vec2;
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
@@ -53,10 +51,10 @@ impl Command {
 }
 
 pub trait Backend {
+    type Out: std::io::Write;
     fn size(&self) -> Vec2;
+    // TODO is this needed?
     fn is_in_alt_screen(&self) -> bool;
     fn command(&mut self, cmd: Command);
-
-    // TODO make this return an &mut impl Write
-    fn file(&mut self) -> File;
+    fn writer(&mut self) -> Self::Out;
 }

@@ -2,10 +2,10 @@ use too_crossterm::{Config, Term};
 
 use too_runner::{
     math::{Pos2, Vec2},
-    App, Context, Event, Key, Pixel, Rgba, Surface,
+    App, Backend, Context, Event, Key, Pixel, Rgba, Surface,
 };
 
-use rayon::iter::{IndexedParallelIterator, IntoParallelRefMutIterator, ParallelIterator};
+use rayon::iter::*;
 
 #[derive(Copy, Clone, Debug, PartialEq)]
 struct Vec3 {
@@ -698,7 +698,7 @@ impl DemoApp {
 }
 
 impl App for DemoApp {
-    fn event(&mut self, event: Event, _: Context<'_>, _size: Vec2) {
+    fn event(&mut self, event: Event, _: Context<'_, impl Backend>, _size: Vec2) {
         self.demo.event(event);
     }
 

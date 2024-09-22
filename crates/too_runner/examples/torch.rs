@@ -1,11 +1,10 @@
 use std::io::Read as _;
 
 use too_crossterm::{Config, Term};
-use too_math::Rect;
 use too_runner::{
-    math::{lerp, pos2, Pos2, Vec2},
+    math::{lerp, pos2, Pos2, Rect, Vec2},
     shapes::Fill,
-    App, Context, Event, Key, Pixel, Rgba, Shape, Surface,
+    App, Backend, Context, Event, Key, Pixel, Rgba, Shape, Surface,
 };
 
 fn main() -> std::io::Result<()> {
@@ -110,7 +109,7 @@ impl Demo {
 }
 
 impl App for Demo {
-    fn event(&mut self, event: Event, _: Context<'_>, size: Vec2) {
+    fn event(&mut self, event: Event, _: Context<'_, impl Backend>, size: Vec2) {
         if event.is_keybind_pressed(' ') {
             self.enabled = !self.enabled
         }

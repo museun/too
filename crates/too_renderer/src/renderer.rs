@@ -29,18 +29,18 @@ pub trait Renderer {
     }
 }
 
-pub struct TermRenderer {
-    out: BufWriter<std::fs::File>,
+pub struct TermRenderer<B: Backend> {
+    out: BufWriter<B::Out>,
 }
 
-impl TermRenderer {
-    pub fn new(term: &mut impl Backend) -> Self {
+impl<B: Backend> TermRenderer<B> {
+    pub fn new(term: &mut B) -> Self {
         let size = term.size();
         let estimate = size.x as usize * size.y as usize * 21;
 
         // TODO maybe cache this
         Self {
-            out: BufWriter::with_capacity(estimate, term.file()),
+            out: BufWriter::with_capacity(estimate, term.writer()),
         }
     }
 }
@@ -51,7 +51,7 @@ macro_rules! csi {
     };
 }
 
-impl Renderer for TermRenderer {
+impl<B: Backend> Renderer for TermRenderer<B> {
     #[inline(always)]
     fn begin(&mut self) -> std::io::Result<()> {
         self.out.write_all(csi!("?2026h"))

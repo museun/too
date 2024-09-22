@@ -23,7 +23,7 @@ pub use too_math as math;
 pub use too_shapes as shapes;
 
 pub trait App {
-    fn event(&mut self, event: Event, ctx: Context<'_>, size: Vec2) {
+    fn event(&mut self, event: Event, ctx: Context<'_, impl Backend>, size: Vec2) {
         _ = event;
         _ = ctx;
         _ = size;
@@ -45,12 +45,12 @@ pub trait App {
     fn render(&mut self, surface: &mut Surface);
 }
 
-pub struct Context<'a> {
+pub struct Context<'a, B: Backend> {
     show_fps: &'a mut bool,
-    backend: &'a mut dyn Backend,
+    backend: &'a mut B,
 }
 
-impl<'a> Context<'a> {
+impl<'a, B: Backend> Context<'a, B> {
     pub fn show_fps(&mut self, show_fps: bool) {
         *self.show_fps = show_fps
     }

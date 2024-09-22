@@ -147,6 +147,8 @@ impl Term {
 }
 
 impl Backend for Term {
+    type Out = std::fs::File;
+
     fn size(&self) -> Vec2 {
         self.size
     }
@@ -159,7 +161,7 @@ impl Backend for Term {
         self.commands.push_back(cmd);
     }
 
-    fn file(&mut self) -> std::fs::File {
+    fn writer(&mut self) -> Self::Out {
         #[cfg(windows)]
         use std::os::windows::io::AsHandle as _;
 
