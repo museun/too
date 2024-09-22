@@ -27,8 +27,10 @@ pub mod events {
 
 pub use too_events::EventReader;
 
-#[doc(inline)]
-pub use too_layout as layout;
+/// Layout helpers
+pub mod layout {
+    pub use too_layout::{Anchor, Anchor2, Axis, LinearAllocator, LinearLayout};
+}
 
 #[doc(inline)]
 pub use too_math as math;

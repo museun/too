@@ -1,6 +1,7 @@
 //! Layout helpers
-pub use too_math;
-use too_math::{vec2, Vec2};
+
+use too_math::vec2;
+pub use too_math::{Rect, Vec2};
 
 #[derive(Copy, Clone, Debug, Default, PartialEq, PartialOrd, Eq, Ord, Hash)]
 pub enum Axis {
