@@ -1,6 +1,7 @@
 #![cfg_attr(debug_assertions, allow(dead_code, unused_variables,))]
 use std::time::{Duration, Instant};
 
+use too_events::Event;
 use too_math::Vec2;
 use too_renderer::TermRenderer;
 use too_shapes::Text;
@@ -8,13 +9,15 @@ use too_shapes::Text;
 mod fps;
 use fps::Fps;
 
-pub use too_events::{Event, Key, Keybind, Modifiers, MouseButton};
 pub use too_renderer::{
     Attribute, Color, Command, CroppedSurface, Gradient, Pixel, Rgba, Shape, Surface,
 };
 
 pub use too_events::EventReader;
 pub use too_renderer::Backend;
+
+#[doc(inline)]
+pub use too_events as events;
 
 #[doc(inline)]
 pub use too_math as math;

@@ -2,9 +2,10 @@ use std::io::Read as _;
 
 use too_crossterm::{Config, Term};
 use too_runner::{
+    events::{Event, Key},
     math::{lerp, pos2, Pos2, Rect, Vec2},
     shapes::Fill,
-    App, Backend, Context, Event, Key, Pixel, Rgba, Shape, Surface,
+    App, Backend, Context, Pixel, Rgba, Shape, Surface,
 };
 
 fn main() -> std::io::Result<()> {

@@ -1,9 +1,10 @@
 use too_crossterm::{Config, Term};
 
 use too_runner::{
+    events::Event,
     math::{rect, vec2, Align2, Pos2, Rect, Vec2},
     shapes::{Fill, Text},
-    App, Backend, Command, Context, Event, Rgba, Surface,
+    App, Backend, Command, Context, Rgba, Surface,
 };
 
 fn main() -> std::io::Result<()> {

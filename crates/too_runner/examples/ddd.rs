@@ -1,8 +1,9 @@
 use too_crossterm::{Config, Term};
 
 use too_runner::{
+    events::{Event, Key},
     math::{Pos2, Vec2},
-    App, Backend, Context, Event, Key, Pixel, Rgba, Surface,
+    App, Backend, Context, Pixel, Rgba, Surface,
 };
 
 use rayon::iter::*;
