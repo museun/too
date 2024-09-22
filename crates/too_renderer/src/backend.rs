@@ -57,11 +57,6 @@ pub trait Backend {
     fn is_in_alt_screen(&self) -> bool;
     fn command(&mut self, cmd: Command);
 
+    // TODO make this return an &mut impl Write
     fn file(&mut self) -> File;
-
-    // #[cfg(not(windows))]
-    // fn fd(&mut self) -> &mut impl ::std::os::fd::AsFd;
-
-    // #[cfg(windows)]
-    // fn handle(&mut self) -> &mut impl ::std::os::windows::io::AsHandle;
 }

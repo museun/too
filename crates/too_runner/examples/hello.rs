@@ -1,4 +1,4 @@
-use too_crossterm::{setup, Config};
+use too_crossterm::{Config, Term};
 
 use too_runner::{
     math::{rect, vec2, Align2, Pos2, Rect, Vec2},
@@ -7,7 +7,7 @@ use too_runner::{
 };
 
 fn main() -> std::io::Result<()> {
-    let term = setup(Config::default().hook_panics(true).ctrl_z_switches(true))?;
+    let term = Term::setup(Config::default().hook_panics(true).ctrl_z_switches(true))?;
     too_runner::run(|_| Hello::new(), term)
 }
 

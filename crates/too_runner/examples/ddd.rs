@@ -1,4 +1,4 @@
-use too_crossterm::Config;
+use too_crossterm::{Config, Term};
 
 use too_runner::{
     math::{Pos2, Vec2},
@@ -669,7 +669,7 @@ fn draw_mask(item: Vec3, bg: Rgba, pos: Pos2, surface: &mut Surface) {
 }
 
 fn main() -> std::io::Result<()> {
-    let term = too_crossterm::setup(Config::default().hook_panics(true))?;
+    let term = Term::setup(Config::default().hook_panics(true))?;
     too_runner::run(DemoApp::new, term)
 }
 

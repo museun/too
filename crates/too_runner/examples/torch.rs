@@ -1,6 +1,6 @@
 use std::io::Read as _;
 
-use too_crossterm::Config;
+use too_crossterm::{Config, Term};
 use too_math::Rect;
 use too_runner::{
     math::{lerp, pos2, Pos2, Vec2},
@@ -18,7 +18,7 @@ fn main() -> std::io::Result<()> {
         }
     };
 
-    let term = too_crossterm::setup(Config::default())?;
+    let term = Term::setup(Config::default())?;
     too_runner::run(|_| Demo::new(input.lines()), term)
 }
 

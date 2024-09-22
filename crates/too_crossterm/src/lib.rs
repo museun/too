@@ -72,69 +72,6 @@ impl Default for Config {
     }
 }
 
-pub fn setup(config: Config) -> std::io::Result<Term> {
-    use crossterm::terminal::{self, *};
-
-    let mut out = std::io::stdout();
-    terminal::enable_raw_mode()?;
-
-    if config.use_alt_screen {
-        crossterm::execute!(&mut out, EnterAlternateScreen)?;
-    }
-
-    if config.enable_line_wrap {
-        crossterm::execute!(&mut out, EnableLineWrap)?;
-    } else {
-        crossterm::execute!(&mut out, DisableLineWrap)?;
-    }
-
-    if config.hide_cursor {
-        crossterm::execute!(&mut out, crossterm::cursor::Hide)?;
-    }
-
-    if config.mouse_capture {
-        crossterm::execute!(&mut out, crossterm::event::EnableMouseCapture)?;
-    }
-
-    let size = terminal::size().map(|(w, h)| vec2(w as _, h as _))?;
-
-    if config.hook_panics {
-        init_panic_hook();
-    }
-
-    let (tx, events) = flume::unbounded();
-    Ok(Term {
-        _handle: std::thread::spawn(move || read_event(tx)),
-        events,
-        config,
-        out: out.lock(),
-        size,
-        commands: VecDeque::new(),
-    })
-}
-
-pub fn reset() -> std::io::Result<()> {
-    use crossterm::terminal::{self, *};
-
-    let mut out = std::io::stdout();
-
-    // always do these
-    crossterm::execute!(&mut out, LeaveAlternateScreen)?;
-    crossterm::execute!(&mut out, EnableLineWrap)?;
-    crossterm::execute!(&mut out, crossterm::event::DisableMouseCapture)?;
-    crossterm::execute!(&mut out, crossterm::cursor::Show)?;
-
-    terminal::disable_raw_mode()
-}
-
-pub fn init_panic_hook() {
-    let old = std::panic::take_hook();
-    std::panic::set_hook(Box::new(move |info| {
-        _ = reset();
-        old(info)
-    }));
-}
-
 pub struct Term {
     _handle: JoinHandle<()>,
     events: flume::Receiver<Event>,
@@ -142,6 +79,71 @@ pub struct Term {
     out: std::io::StdoutLock<'static>,
     size: Vec2,
     commands: VecDeque<Command>,
+}
+
+impl Term {
+    pub fn setup(config: Config) -> std::io::Result<Self> {
+        use crossterm::terminal::{self, *};
+
+        let mut out = std::io::stdout();
+        terminal::enable_raw_mode()?;
+
+        if config.use_alt_screen {
+            crossterm::execute!(&mut out, EnterAlternateScreen)?;
+        }
+
+        if config.enable_line_wrap {
+            crossterm::execute!(&mut out, EnableLineWrap)?;
+        } else {
+            crossterm::execute!(&mut out, DisableLineWrap)?;
+        }
+
+        if config.hide_cursor {
+            crossterm::execute!(&mut out, crossterm::cursor::Hide)?;
+        }
+
+        if config.mouse_capture {
+            crossterm::execute!(&mut out, crossterm::event::EnableMouseCapture)?;
+        }
+
+        let size = terminal::size().map(|(w, h)| vec2(w as _, h as _))?;
+
+        if config.hook_panics {
+            Self::init_panic_hook();
+        }
+
+        let (tx, events) = flume::unbounded();
+        Ok(Self {
+            _handle: std::thread::spawn(move || read_event(tx)),
+            events,
+            config,
+            out: out.lock(),
+            size,
+            commands: VecDeque::new(),
+        })
+    }
+
+    pub fn reset() -> std::io::Result<()> {
+        use crossterm::terminal::{self, *};
+
+        let mut out = std::io::stdout();
+
+        // always do these
+        crossterm::execute!(&mut out, LeaveAlternateScreen)?;
+        crossterm::execute!(&mut out, EnableLineWrap)?;
+        crossterm::execute!(&mut out, crossterm::event::DisableMouseCapture)?;
+        crossterm::execute!(&mut out, crossterm::cursor::Show)?;
+
+        terminal::disable_raw_mode()
+    }
+
+    pub fn init_panic_hook() {
+        let old = std::panic::take_hook();
+        std::panic::set_hook(Box::new(move |info| {
+            _ = Self::reset();
+            old(info)
+        }));
+    }
 }
 
 impl Backend for Term {
@@ -251,7 +253,7 @@ impl EventReader for Term {
 
 impl Drop for Term {
     fn drop(&mut self) {
-        _ = reset();
+        _ = Self::reset();
     }
 }
 

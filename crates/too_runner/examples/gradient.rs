@@ -1,4 +1,4 @@
-use too_crossterm::Config;
+use too_crossterm::{Config, Term};
 
 use too_runner::{
     math::{lerp, pos2, Align2},
@@ -7,7 +7,7 @@ use too_runner::{
 };
 
 fn main() -> std::io::Result<()> {
-    let term = too_crossterm::setup(Config::default().hook_panics(true))?;
+    let term = Term::setup(Config::default().hook_panics(true))?;
     too_runner::run(|_| Demo::new(), term)
 }
 
