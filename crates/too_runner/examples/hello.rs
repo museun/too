@@ -17,10 +17,20 @@ fn main() -> std::io::Result<()> {
     Hello::new().run(term)
 }
 
+#[derive(Copy, Clone, Default)]
+enum Grabbed {
+    Held,
+    Hover,
+    Grabbed,
+    #[default]
+    None,
+}
+
 struct Hello {
     value: f32,
     up: bool,
     alpha: f32,
+    grabbed: Grabbed,
 
     pos: Pos2,
     rect: Rect,
@@ -32,6 +42,7 @@ impl Hello {
             value: 0.0,
             up: true,
             alpha: 0.5,
+            grabbed: Grabbed::None,
             pos: Pos2::ZERO,
             rect: Rect::from_min_size(Pos2::ZERO, vec2(20, 6)),
         }
@@ -48,10 +59,37 @@ impl App for Hello {
             ctx.toggle_fps();
         }
 
+        if let Some(pos) = event.mouse_pos() {
+            self.grabbed = if self.rect.contains(pos) {
+                Grabbed::Hover
+            } else {
+                Grabbed::None
+            }
+        }
+
+        if let Event::MouseHeld { pos, .. } = event {
+            if self.rect.contains(pos) {
+                self.grabbed = Grabbed::Held
+            }
+        }
+
+        if let Event::MouseDragStart { pos, .. } = event {
+            if self.rect.contains(pos) {
+                self.grabbed = Grabbed::Grabbed;
+            }
+        }
+
         if let Event::MouseDragHeld { pos, delta, .. } = event {
             if self.rect.contains(pos) {
+                self.grabbed = Grabbed::Grabbed;
                 self.rect = self.rect.translate(delta);
                 self.rect = rect(size).clamp_rect(self.rect);
+            }
+        }
+
+        if let Event::MouseDragRelease { pos, .. } = event {
+            if self.rect.contains(pos) {
+                self.grabbed = Grabbed::Hover
             }
         }
 
@@ -85,10 +123,17 @@ impl App for Hello {
             .crop(Rect::from_center_size(rect.center(), rect.size() / 3))
             .draw(Fill::new(Rgba::sine(self.value)));
 
+        let view_color = match self.grabbed {
+            Grabbed::Held => "#173",
+            Grabbed::Hover => "#127",
+            Grabbed::Grabbed => "#723",
+            Grabbed::None => "#123",
+        };
+
         surface
             .crop(self.rect)
             .draw(Fill::new(
-                Rgba::from_static("#123").to_transparent(self.alpha * 100.0),
+                Rgba::from_static(view_color).to_transparent(self.alpha * 100.0),
             ))
             .draw(
                 Text::new(format!("{},{}", self.pos.x, self.pos.y))
