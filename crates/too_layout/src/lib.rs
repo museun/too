@@ -3,6 +3,7 @@
 use too_math::vec2;
 pub use too_math::{Rect, Vec2};
 
+/// A direction such as _Horizontal_ or _Vertical_
 #[derive(Copy, Clone, Debug, Default, PartialEq, PartialOrd, Eq, Ord, Hash)]
 pub enum Axis {
     #[default]
@@ -33,9 +34,12 @@ impl Axis {
     }
 }
 
+/// A two dimensional anchor
 #[derive(Copy, Clone, Debug, PartialEq, PartialOrd, Eq, Ord, Hash)]
 pub struct Anchor2 {
+    /// Horizontal anchor
     pub x: Anchor,
+    /// Vertical anchor
     pub y: Anchor,
 }
 
@@ -67,6 +71,7 @@ impl Anchor2 {
     }
 }
 
+/// An anchor on an axis
 #[derive(Copy, Clone, Debug, PartialEq, PartialOrd, Eq, Ord, Hash)]
 pub enum Anchor {
     Min,

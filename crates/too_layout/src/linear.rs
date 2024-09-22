@@ -122,7 +122,7 @@ impl LinearAllocator {
     }
 }
 
-/// A layout that uses a linear, with optional wrapping algorithm
+/// A layout that uses a linear algorithm, with optional wrapping
 pub struct LinearLayout {
     axis: Axis,
     wrap: bool,
