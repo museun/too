@@ -1,4 +1,5 @@
-use too_math::{midpoint, pos2, Align, Align2, Pos2, Vec2};
+use too_layout::{Align, Align2};
+use too_math::{midpoint, pos2, Pos2, Vec2};
 use too_renderer::{Attribute, Color, Pixel, Shape};
 
 use crate::Label;

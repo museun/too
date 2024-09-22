@@ -3,7 +3,8 @@ use too_crossterm::{Config, Term};
 use too_runner::{
     color::Rgba,
     events::Event,
-    math::{rect, vec2, Align2, Pos2, Rect, Vec2},
+    layout::Align2,
+    math::{rect, vec2, Pos2, Rect, Vec2},
     shapes::{Fill, Text},
     App, AppRunner, Backend, Command, Context, SurfaceMut,
 };

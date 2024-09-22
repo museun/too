@@ -3,7 +3,8 @@ use too_crossterm::{Config, Term};
 use too_runner::{
     color::Gradient,
     events::{Event, Keybind},
-    math::{lerp, pos2, Align2, Pos2, Vec2},
+    layout::Align2,
+    math::{lerp, pos2, Pos2, Vec2},
     pixel::Pixel,
     shapes::{Shape, Text},
     App, AppRunner, Backend, Context, SurfaceMut,

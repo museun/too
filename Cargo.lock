@@ -319,6 +319,7 @@ dependencies = [
 name = "too_shapes"
 version = "0.1.0"
 dependencies = [
+ "too_layout",
  "too_math",
  "too_renderer",
  "unicode-segmentation",

@@ -6,4 +6,5 @@ edition = "2021"
 [dependencies]
 too_math.workspace = true
 too_renderer.workspace = true
+too_layout.workspace = true
 unicode-segmentation = "1.12.0"

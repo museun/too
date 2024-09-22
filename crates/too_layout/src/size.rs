@@ -1,4 +1,4 @@
-use crate::almost_eq;
+use too_math::almost_eq;
 
 pub const fn size(x: f32, y: f32) -> Size {
     Size::new(x, y)

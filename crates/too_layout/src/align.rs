@@ -1,3 +1,4 @@
+/// Alignment on an axis
 #[derive(Copy, Clone, Debug, Default, PartialEq, PartialOrd, Eq, Ord, Hash)]
 pub enum Align {
     #[default]
@@ -14,9 +15,12 @@ impl Align {
     pub const BOTTOM: Self = Self::Max;
 }
 
+/// Two dimensional alignment
 #[derive(Copy, Clone, Debug, Default, PartialEq, PartialOrd, Eq, Ord, Hash)]
 pub struct Align2 {
+    /// Horizontal alignment
     pub x: Align,
+    /// Vertical alignment
     pub y: Align,
 }
 

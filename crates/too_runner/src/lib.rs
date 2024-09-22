@@ -29,7 +29,9 @@ pub use too_events::EventReader;
 
 /// Layout helpers
 pub mod layout {
-    pub use too_layout::{Anchor, Anchor2, Axis, LinearAllocator, LinearLayout};
+    pub use too_layout::{
+        Align, Align2, Anchor, Anchor2, Axis, Constraints, LinearAllocator, LinearLayout, Size,
+    };
 }
 
 #[doc(inline)]

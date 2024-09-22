@@ -15,12 +15,3 @@ pub use pos2::{pos2, Pos2};
 mod num;
 pub use num::Num;
 pub use num::{almost_eq, inverse_lerp, lerp, midpoint};
-
-mod align;
-pub use align::{Align, Align2};
-
-mod size;
-pub use size::{size, Size};
-
-mod constraints;
-pub use constraints::Constraints;
