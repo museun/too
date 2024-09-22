@@ -1,4 +1,3 @@
-#![cfg_attr(debug_assertions, allow(dead_code, unused_variables,))]
 use std::time::{Duration, Instant};
 
 use too_events::Event;
