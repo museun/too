@@ -7,7 +7,7 @@ use too_runner::{
     math::{lerp, pos2, Pos2, Rect, Vec2},
     pixel::Pixel,
     shapes::{Fill, Shape},
-    App, Backend, Context, CroppedSurface,
+    App, Backend, Context, SurfaceMut,
 };
 
 fn main() -> std::io::Result<()> {
@@ -59,7 +59,7 @@ impl Demo {
         self.pos = (self.pos + lines).min(self.lines.len())
     }
 
-    fn draw_torch(&self, offset: usize, surface: &mut CroppedSurface) {
+    fn draw_torch(&self, offset: usize, surface: &mut SurfaceMut) {
         const BG: Rgba = Rgba::from_static("#F0E68C");
         const SHADOW: Rgba = Rgba::from_static("#333333");
 
@@ -86,7 +86,7 @@ impl Demo {
             });
     }
 
-    fn draw_focus(&self, offset: usize, surface: &mut CroppedSurface) {
+    fn draw_focus(&self, offset: usize, surface: &mut SurfaceMut) {
         const SHADOW: Rgba = Rgba::from_static("#AAAAAAAA");
         const BG: Rgba = Rgba::from_static("#111111");
 
@@ -153,7 +153,7 @@ impl App for Demo {
         }
     }
 
-    fn render(&mut self, surface: &mut CroppedSurface) {
+    fn render(&mut self, surface: &mut SurfaceMut) {
         let offset = self.lines.len().saturating_sub(self.pos);
         let offset = offset
             .checked_sub(surface.rect().height().saturating_sub_unsigned(1) as _)

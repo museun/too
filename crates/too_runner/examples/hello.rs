@@ -5,7 +5,7 @@ use too_runner::{
     events::Event,
     math::{rect, vec2, Align2, Pos2, Rect, Vec2},
     shapes::{Fill, Text},
-    App, Backend, Command, Context, CroppedSurface,
+    App, Backend, Command, Context, SurfaceMut,
 };
 
 fn main() -> std::io::Result<()> {
@@ -66,7 +66,7 @@ impl App for Hello {
         self.up = self.up ^ (self.value >= 1.0) ^ (self.value <= 0.0)
     }
 
-    fn render(&mut self, surface: &mut CroppedSurface) {
+    fn render(&mut self, surface: &mut SurfaceMut) {
         let rect = surface.rect();
         surface
             .crop(Rect::from_center_size(rect.center(), rect.size() / 3))

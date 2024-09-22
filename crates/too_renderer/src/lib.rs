@@ -5,7 +5,7 @@ mod renderer;
 pub use renderer::{DebugRenderer, Renderer, TermRenderer};
 
 mod surface;
-pub use surface::{CroppedSurface, Surface};
+pub use surface::{Surface, SurfaceMut};
 
 mod shape;
 pub use shape::Shape;
@@ -20,4 +20,4 @@ mod gradient;
 pub use gradient::Gradient;
 
 mod backend;
-pub use backend::{Command, CurrentScreen, Backend};
+pub use backend::{Backend, Command, CurrentScreen};

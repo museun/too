@@ -5,7 +5,7 @@ use too_runner::{
     events::{Event, Key},
     math::{Pos2, Vec2},
     pixel::Pixel,
-    App, Backend, Context, CroppedSurface,
+    App, Backend, Context, SurfaceMut,
 };
 
 use rayon::iter::*;
@@ -629,7 +629,7 @@ impl Screen {
         // }
     }
 
-    fn render(&mut self, surface: &mut CroppedSurface, use_textures: bool, use_mask: bool) {
+    fn render(&mut self, surface: &mut SurfaceMut, use_textures: bool, use_mask: bool) {
         let mut pos = Pos2::ZERO;
         for y in 0..self.buffer.len() {
             for x in 0..self.buffer[y].len() {
@@ -659,7 +659,7 @@ impl Screen {
     }
 }
 
-fn draw_mask(item: Vec3, bg: Rgba, pos: Pos2, surface: &mut CroppedSurface) {
+fn draw_mask(item: Vec3, bg: Rgba, pos: Pos2, surface: &mut SurfaceMut) {
     const CHARS: [char; 15] = [
         ' ', '.', 'X', ':', '_', '~', '/', 'c', 'r', 'x', '*', '%', '#', '8', '@',
     ];
@@ -709,7 +709,7 @@ impl App for DemoApp {
         self.demo.integrate(dt);
     }
 
-    fn render(&mut self, surface: &mut too_renderer::CroppedSurface) {
+    fn render(&mut self, surface: &mut too_renderer::SurfaceMut) {
         self.demo.screen.update(&self.demo.camera, &self.demo.map);
         self.demo
             .screen

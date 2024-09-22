@@ -6,7 +6,7 @@ use too_runner::{
     math::{lerp, pos2, Align2, Pos2, Vec2},
     pixel::Pixel,
     shapes::{Shape, Text},
-    App, Backend, Context, CroppedSurface,
+    App, Backend, Context, SurfaceMut,
 };
 
 fn main() -> std::io::Result<()> {
@@ -103,7 +103,7 @@ impl App for Demo {
         self.up = self.up ^ (self.theta >= 1.0) ^ (self.theta <= -1.0)
     }
 
-    fn render(&mut self, surface: &mut CroppedSurface) {
+    fn render(&mut self, surface: &mut SurfaceMut) {
         let (label, _) = &self.gradients[self.pos];
         surface
             .draw(&*self)

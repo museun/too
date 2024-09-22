@@ -71,8 +71,8 @@ impl Surface {
         self.current().rect()
     }
 
-    pub fn crop(&mut self, rect: Rect) -> CroppedSurface<'_> {
-        CroppedSurface {
+    pub fn crop(&mut self, rect: Rect) -> SurfaceMut<'_> {
+        SurfaceMut {
             surface: self,
             rect,
         }
@@ -224,17 +224,17 @@ impl std::ops::IndexMut<Pos2> for Surface {
     }
 }
 
-pub struct CroppedSurface<'a> {
+pub struct SurfaceMut<'a> {
     surface: &'a mut Surface,
     rect: Rect,
 }
 
-impl<'a> CroppedSurface<'a> {
+impl<'a> SurfaceMut<'a> {
     pub const fn rect(&self) -> Rect {
         self.rect
     }
 
-    pub fn crop<'b>(&'b mut self, rect: Rect) -> CroppedSurface<'b>
+    pub fn crop<'b>(&'b mut self, rect: Rect) -> SurfaceMut<'b>
     where
         'a: 'b,
     {
@@ -277,14 +277,14 @@ impl<'a> CroppedSurface<'a> {
     }
 }
 
-impl<'a> std::ops::Index<Pos2> for CroppedSurface<'a> {
+impl<'a> std::ops::Index<Pos2> for SurfaceMut<'a> {
     type Output = Pixel;
     fn index(&self, index: Pos2) -> &Self::Output {
         &self.surface[index]
     }
 }
 
-impl<'a> std::ops::IndexMut<Pos2> for CroppedSurface<'a> {
+impl<'a> std::ops::IndexMut<Pos2> for SurfaceMut<'a> {
     fn index_mut(&mut self, index: Pos2) -> &mut Self::Output {
         &mut self.surface[index]
     }

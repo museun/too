@@ -8,7 +8,7 @@ use too_shapes::Text;
 mod fps;
 use fps::Fps;
 
-pub use too_renderer::{Backend, Command, CroppedSurface};
+pub use too_renderer::{Backend, Command, SurfaceMut};
 
 pub mod color {
     pub use too_renderer::{Gradient, Rgba};
@@ -52,7 +52,7 @@ pub trait App {
         60.0
     }
 
-    fn render(&mut self, surface: &mut CroppedSurface);
+    fn render(&mut self, surface: &mut SurfaceMut);
 }
 
 pub struct Context<'a, B: Backend> {
