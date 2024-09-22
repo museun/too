@@ -1,9 +1,9 @@
 use too_crossterm::{Config, Term};
 
-use too_layout::{Anchor, Anchor2, Axis, LinearLayout};
 use too_runner::{
     color::Rgba,
     events::{Event, Key},
+    layout::{Anchor, Anchor2, Axis, LinearLayout},
     math::{vec2, Vec2},
     shapes::{Fill, Text},
     App, AppRunner, Backend, Context,
