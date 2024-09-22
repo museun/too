@@ -172,6 +172,7 @@ struct TorchText<'a> {
     blend: fn(&'a Demo, Vec2, Pos2) -> Rgba,
 }
 
+// BUG: if the rendered output height is less than surface height it doesn't fill the difference
 impl<'a> Shape for TorchText<'a> {
     fn draw(&self, size: Vec2, mut put: impl FnMut(Pos2, Pixel)) {
         let mut start = Pos2::ZERO;
