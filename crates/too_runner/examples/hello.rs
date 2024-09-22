@@ -10,13 +10,17 @@ use too_runner::{
 };
 
 fn main() -> std::io::Result<()> {
-    let term = Term::setup(Config::default().hook_panics(true).ctrl_z_switches(true))?;
+    let term_config = Config::default() //
+        .hook_panics(true)
+        .ctrl_z_switches(true);
+    let term = Term::setup(term_config)?;
     Hello::new().run(term)
 }
 
 struct Hello {
     value: f32,
     up: bool,
+    alpha: f32,
 
     pos: Pos2,
     rect: Rect,
@@ -27,6 +31,7 @@ impl Hello {
         Self {
             value: 0.0,
             up: true,
+            alpha: 0.5,
             pos: Pos2::ZERO,
             rect: Rect::from_min_size(Pos2::ZERO, vec2(20, 6)),
         }
@@ -47,6 +52,13 @@ impl App for Hello {
             if self.rect.contains(pos) {
                 self.rect = self.rect.translate(delta);
                 self.rect = rect(size).clamp_rect(self.rect);
+            }
+        }
+
+        if let Event::MouseScroll { pos, delta, .. } = event {
+            if self.rect.contains(pos) {
+                self.alpha += -delta.y as f32 * 0.1;
+                self.alpha = self.alpha.clamp(0.0, 1.0);
             }
         }
 
@@ -75,7 +87,9 @@ impl App for Hello {
 
         surface
             .crop(self.rect)
-            .draw(Fill::new(Rgba::from_u16(0x333A)))
+            .draw(Fill::new(
+                Rgba::from_static("#123").to_transparent(self.alpha * 100.0),
+            ))
             .draw(
                 Text::new(format!("{},{}", self.pos.x, self.pos.y))
                     .fg("#FFF")

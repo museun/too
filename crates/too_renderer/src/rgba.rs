@@ -117,6 +117,7 @@ impl Rgba {
         self
     }
 
+    /// This is between 0% and 100%
     #[must_use]
     pub fn to_transparent(mut self, alpha: f32) -> Self {
         let t = inverse_lerp(0.0, 100.0, alpha).unwrap_or(1.0);
