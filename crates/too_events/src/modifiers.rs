@@ -1,3 +1,6 @@
+/// Modifiers for an event
+///
+/// This consist of things like 'Shift' or 'Ctrl' was held down
 #[derive(Copy, Clone, Default, PartialEq, PartialOrd, Eq, Ord, Hash)]
 pub struct Modifiers(pub u8);
 

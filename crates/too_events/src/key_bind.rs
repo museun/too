@@ -1,5 +1,6 @@
 use crate::{Key, Modifiers};
 
+/// A keybind is a combination of a [`Key`] and some [`Modifiers`]
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
 pub struct Keybind {
     pub key: Key,

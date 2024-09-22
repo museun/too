@@ -1,4 +1,8 @@
+/// A trait to read [`Event`]s
 pub trait EventReader {
+    /// Tries to read an [`Event`]
+    ///
+    /// This'll return None if an event isn't ready
     fn try_read_event(&mut self) -> Option<Event>;
 }
 

@@ -224,16 +224,19 @@ impl std::ops::IndexMut<Pos2> for Surface {
     }
 }
 
+/// SurfaceMut is a mutable borrow of a rect, possibly clipped to a specific sub-rect
 pub struct SurfaceMut<'a> {
     surface: &'a mut Surface,
     rect: Rect,
 }
 
 impl<'a> SurfaceMut<'a> {
+    /// The [`Rect`] for this surface
     pub const fn rect(&self) -> Rect {
         self.rect
     }
 
+    /// Crop this [`SurfaceMut`] to a smaller [`Rect`]`
     pub fn crop<'b>(&'b mut self, rect: Rect) -> SurfaceMut<'b>
     where
         'a: 'b,
@@ -241,6 +244,44 @@ impl<'a> SurfaceMut<'a> {
         self.surface.crop(rect)
     }
 
+    /// Draw this [`Shape`] onto this [`SurfaceMut`]
+    ///
+    /// This is chainable.
+    ///
+    /// **Note** Future shapes drawn onto the same surface will be drawn ___ontop___ of prior shapes.
+    ///
+    /// # Example:
+    /// ```rust,no_run
+    ///
+    /// struct MyShape;
+    /// struct Overlay;
+    ///
+    /// impl Shape for MyShape {
+    ///     fn draw(&self, size: Vec2, mut put: impl FnMut(Pos2, Pixel)) {
+    ///         for y in 0..size.y {
+    ///             for x in 0..size.x {
+    ///                 put(pos2(x, y), Pixel::char(' ').bg("#F00"))
+    ///             }
+    ///         }
+    ///     }
+    /// }
+    ///
+    /// impl Shape for Overlay {
+    ///     fn draw(&self, size: Vec2, put: impl FnMut(Pos2, Pixel)) {
+    ///         for y in 0..size.y / 2{
+    ///             for x in 0..size.x / 2 {
+    ///                 put(pos2(x, y), Pixel::char(' ').bg("#0F0"))
+    ///             }
+    ///         }
+    ///     }
+    ///     }
+    /// }
+    ///
+    /// // this'll fill the surface with a red background
+    /// // then the top-left quarter will be overwritten with a green background
+    /// surface.draw(MyShape).draw(Overlay);
+    ///
+    /// ```
     pub fn draw(&mut self, shape: impl Shape) -> &mut Self {
         shape.draw(self.rect.size(), |pos, pixel| {
             let pos = self.translate(pos);
@@ -253,6 +294,15 @@ impl<'a> SurfaceMut<'a> {
         self
     }
 
+    /// Put a [`Pixel`] as a [`Pos2`]
+    ///
+    /// This is chainable.
+    ///
+    /// If this surface does not contain that position, it does not put it.
+    ///
+    /// The `pos` here is local to the top-left of this surface's [`Rect`]
+    ///
+    /// e.g. 0,0 is top-left (the origin) of this rect.
     #[track_caller]
     pub fn put(&mut self, pos: Pos2, pixel: Pixel) -> &mut Self {
         let pos = self.translate(pos);
@@ -264,11 +314,23 @@ impl<'a> SurfaceMut<'a> {
         self
     }
 
+    /// Tries to get the [`Pixel`] at this [`Pos2`]
+    ///
+    /// The `pos` here is local to the top-left of this surface's [`Rect`]
+    ///
+    /// e.g. 0,0 is top-left (the origin) of this rect.
     pub fn get(&self, pos: Pos2) -> Option<&Pixel> {
+        let pos = self.translate(pos);
         self.surface.get(pos)
     }
 
+    /// Tries to get the [`Pixel`], mutably at this [`Pos2`]
+    ///
+    /// The `pos` here is local to the top-left of this surface's [`Rect`]
+    ///
+    /// e.g. 0,0 is top-left (the origin) of this rect.
     pub fn get_mut(&mut self, pos: Pos2) -> Option<&mut Pixel> {
+        let pos = self.translate(pos);
         self.surface.get_mut(pos)
     }
 
@@ -280,12 +342,14 @@ impl<'a> SurfaceMut<'a> {
 impl<'a> std::ops::Index<Pos2> for SurfaceMut<'a> {
     type Output = Pixel;
     fn index(&self, index: Pos2) -> &Self::Output {
+        let index = self.translate(index);
         &self.surface[index]
     }
 }
 
 impl<'a> std::ops::IndexMut<Pos2> for SurfaceMut<'a> {
     fn index_mut(&mut self, index: Pos2) -> &mut Self::Output {
+        let index = self.translate(index);
         &mut self.surface[index]
     }
 }

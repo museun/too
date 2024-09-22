@@ -10,16 +10,19 @@ use fps::Fps;
 
 pub use too_renderer::{Backend, Command, SurfaceMut};
 
+/// Color types
 pub mod color {
     pub use too_renderer::{Gradient, Rgba};
 }
 
+/// Pixels are what a Surface is consists of
 pub mod pixel {
     pub use too_renderer::{Attribute, Color, Pixel};
 }
 
+/// Events sent to your application
 pub mod events {
-    pub use too_events::{Event, Key, Keybind, Modifiers, MouseButton, MouseState};
+    pub use too_events::{Event, Key, Keybind, Modifiers, MouseButton};
 }
 
 pub use too_events::EventReader;
@@ -27,6 +30,7 @@ pub use too_events::EventReader;
 #[doc(inline)]
 pub use too_math as math;
 
+/// Shapes are drawable primitives for a Surface
 pub mod shapes {
     pub use too_renderer::Shape;
     pub use too_shapes::*;
@@ -79,7 +83,7 @@ pub trait App {
     fn render(&mut self, surface: &mut SurfaceMut);
 }
 
-/// Context to the [`Backend`]` for use during [`App::event`]
+/// Context to the [`Backend`] for use during [`App::event`]
 ///
 /// This allows you to communicate with the backend when it sends an event
 pub struct Context<'a, B: Backend> {
@@ -100,7 +104,9 @@ impl<'a, B: Backend> Context<'a, B> {
 
     /// Send a [`Command`] to the backend
     ///
-    /// Commands are things like "Quit" or "Set title"
+    /// Commands are things like:
+    /// * Quit
+    /// * Set the title
     pub fn command(&mut self, cmd: Command) {
         self.backend.command(cmd);
     }
@@ -110,7 +116,7 @@ impl<'a, B: Backend> Context<'a, B> {
 ///
 /// It is implemented for all types that implement [`App`].
 ///
-/// Example:
+/// # Example:
 /// ```rust,no_run
 /// use too_runner::{AppRunner as _, SurfaceMut};
 ///
