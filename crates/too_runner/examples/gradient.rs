@@ -6,12 +6,12 @@ use too_runner::{
     math::{lerp, pos2, Align2, Pos2, Vec2},
     pixel::Pixel,
     shapes::{Shape, Text},
-    App, Backend, Context, SurfaceMut,
+    App, AppRunner, Backend, Context, SurfaceMut,
 };
 
 fn main() -> std::io::Result<()> {
     let term = Term::setup(Config::default().hook_panics(true))?;
-    too_runner::run(|_| Demo::new(), term)
+    Demo::new().run(term)
 }
 
 struct Demo {

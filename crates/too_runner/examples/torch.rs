@@ -7,7 +7,7 @@ use too_runner::{
     math::{lerp, pos2, Pos2, Rect, Vec2},
     pixel::Pixel,
     shapes::{Fill, Shape},
-    App, Backend, Context, SurfaceMut,
+    App, AppRunner, Backend, Context, SurfaceMut,
 };
 
 fn main() -> std::io::Result<()> {
@@ -21,7 +21,7 @@ fn main() -> std::io::Result<()> {
     };
 
     let term = Term::setup(Config::default())?;
-    too_runner::run(|_| Demo::new(input.lines()), term)
+    Demo::new(input.lines()).run(term)
 }
 
 enum Mode {

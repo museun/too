@@ -5,12 +5,12 @@ use too_runner::{
     events::Event,
     math::{rect, vec2, Align2, Pos2, Rect, Vec2},
     shapes::{Fill, Text},
-    App, Backend, Command, Context, SurfaceMut,
+    App, AppRunner, Backend, Command, Context, SurfaceMut,
 };
 
 fn main() -> std::io::Result<()> {
     let term = Term::setup(Config::default().hook_panics(true).ctrl_z_switches(true))?;
-    too_runner::run(|_| Hello::new(), term)
+    Hello::new().run(term)
 }
 
 struct Hello {

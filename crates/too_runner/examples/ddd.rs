@@ -5,7 +5,7 @@ use too_runner::{
     events::{Event, Key},
     math::{Pos2, Vec2},
     pixel::Pixel,
-    App, Backend, Context, SurfaceMut,
+    App, AppRunner, Backend, Context, SurfaceMut,
 };
 
 use rayon::iter::*;
@@ -263,14 +263,14 @@ struct Demo {
 }
 
 impl Demo {
-    fn new(map: Mesh, (x, z): (f32, f32), size: Vec2) -> Self {
+    fn new(map: Mesh, (x, z): (f32, f32)) -> Self {
         Self {
             camera: Camera {
                 pos: vec3(x, -20.0, z),
                 focus: 2.0,
                 rot: vec3(1.75, 0.0, 0.0),
             },
-            screen: Screen::new(size),
+            screen: Screen::new(Vec2::ZERO),
             map,
             velocity: Vec3::ZERO,
             use_mask: false,
@@ -672,8 +672,20 @@ fn draw_mask(item: Vec3, bg: Rgba, pos: Pos2, surface: &mut SurfaceMut) {
 }
 
 fn main() -> std::io::Result<()> {
+    let (map, start) = load_map(
+        r#"
+        XXXXXXXXXXXX
+        XS.........X
+        X..... XXXXX
+        X . .. ....X
+        X.X........X
+        X.X...X...EX
+        XXXXXXXXXXXX
+        "#,
+    );
+
     let term = Term::setup(Config::default().hook_panics(true))?;
-    too_runner::run(DemoApp::new, term)
+    DemoApp::new(map, start).run(term)
 }
 
 struct DemoApp {
@@ -681,26 +693,18 @@ struct DemoApp {
 }
 
 impl DemoApp {
-    fn new(size: Vec2) -> Self {
-        let (map, start) = load_map(
-            r#"
-            XXXXXXXXXXXX
-            XS.........X
-            X..... XXXXX
-            X . .. ....X
-            X.X........X
-            X.X...X...EX
-            XXXXXXXXXXXX
-            "#,
-        );
-
+    fn new(map: Mesh, start: (f32, f32)) -> Self {
         Self {
-            demo: Demo::new(map, start, size),
+            demo: Demo::new(map, start),
         }
     }
 }
 
 impl App for DemoApp {
+    fn initial_size(&mut self, size: Vec2) {
+        self.demo.screen = Screen::new(size)
+    }
+
     fn event(&mut self, event: Event, _: Context<'_, impl Backend>, _size: Vec2) {
         self.demo.event(event);
     }

@@ -32,54 +32,123 @@ pub mod shapes {
     pub use too_shapes::*;
 }
 
+/// Trait for defining an application to run
 pub trait App {
+    /// The initial surface size that you can use to compute some internal state
+    fn initial_size(&mut self, size: Vec2) {
+        _ = size
+    }
+
+    /// An [`Event`] was sent from the backend
+    ///
+    /// This provides a [`Context`] to the backend, and the current surface `size`
     fn event(&mut self, event: Event, ctx: Context<'_, impl Backend>, size: Vec2) {
         _ = event;
         _ = ctx;
         _ = size;
     }
 
+    /// Update allows you to interpolate state
+    ///
+    /// `dt` is the delta-time that can be used for interpolation
+    /// `size` is the current surface size
     fn update(&mut self, dt: f32, size: Vec2) {
         _ = dt;
         _ = size;
     }
 
+    /// Min UPS is the minimum UPS the runner should perform
+    ///
+    /// The default is 10 updates/s
     fn min_ups(&self) -> f32 {
         10.0
     }
 
+    /// Max UPS is the maximum UPS the runner should perform
+    ///
+    /// The default is 60 updates/s
     fn max_ups(&self) -> f32 {
         60.0
     }
 
+    /// Render your application
+    ///
+    /// This provides you with a [`SurfaceMut`] that allows you to draw onto
+    ///
+    /// The draw order are back-to-front. Later draw calls will be drawn over earlier calls
     fn render(&mut self, surface: &mut SurfaceMut);
 }
 
+/// Context to the [`Backend`]` for use during [`App::event`]
+///
+/// This allows you to communicate with the backend when it sends an event
 pub struct Context<'a, B: Backend> {
     show_fps: &'a mut bool,
     backend: &'a mut B,
 }
 
 impl<'a, B: Backend> Context<'a, B> {
+    /// Should we show the FPS overlay?
     pub fn show_fps(&mut self, show_fps: bool) {
         *self.show_fps = show_fps
     }
 
+    /// Toggle the FPS overlay
     pub fn toggle_fps(&mut self) {
         *self.show_fps = !*self.show_fps
     }
 
+    /// Send a [`Command`] to the backend
+    ///
+    /// Commands are things like "Quit" or "Set title"
     pub fn command(&mut self, cmd: Command) {
         self.backend.command(cmd);
     }
 }
 
-pub fn run<A: App>(
-    app: impl FnOnce(Vec2) -> A,
-    mut term: impl Backend + EventReader,
-) -> std::io::Result<()> {
+/// A trait to run your application
+///
+/// It is implemented for all types that implement [`App`].
+///
+/// Example:
+/// ```rust,no_run
+/// use too_runner::{AppRunner as _, SurfaceMut};
+///
+/// struct Demo {
+///     state: i32
+/// }
+///
+/// impl Demo {
+///     fn new(state: i32) -> Self {
+///         Self { state }
+///     }
+/// }
+///
+/// impl too_runner::App for Demo {
+///     fn render(&mut self, surface: &mut SurfaceMut) {}
+/// }
+///
+/// fn main() -> std::io::Result<()> {
+///     let backend = get_backend()?;
+///     Demo::new(1234).run(backend)
+/// }
+/// ```
+pub trait AppRunner: App + Sealed + Sized {
+    /// Run the [`App`] with the provided [`Backend`] and [`EventReader`]
+    fn run(self, term: impl Backend + EventReader) -> std::io::Result<()> {
+        run_app(self, term)
+    }
+}
+
+#[doc(hidden)]
+pub trait Sealed {}
+
+impl<T> Sealed for T {}
+impl<T: App + Sealed> AppRunner for T {}
+
+fn run_app(mut app: impl App, mut term: impl Backend + EventReader) -> std::io::Result<()> {
     let mut surface = too_renderer::Surface::new(term.size());
-    let mut app = app(surface.rect().size());
+    app.initial_size(surface.rect().size());
 
     let mut target_ups = app.max_ups();
     let mut base_target = Duration::from_secs_f32(1.0 / target_ups);

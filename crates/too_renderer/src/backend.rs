@@ -23,6 +23,7 @@ impl CurrentScreen {
     }
 }
 
+// TODO hide this behind an opaque struct
 #[derive(Debug)]
 #[non_exhaustive]
 pub enum Command {
