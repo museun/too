@@ -10,6 +10,7 @@ too_renderer.workspace = true
 too_shapes.workspace = true
 
 [dev-dependencies]
+fastrand = "2.1.1"
 rayon = "1.10.0"
 too_crossterm.workspace = true
 too_layout.workspace = true
