@@ -1,7 +1,12 @@
 use too_crossterm::{Config, Term};
-use too_math::{pos2, Rect};
-use too_renderer::{anonymous, Rgba};
-use too_runner::{pixel::Pixel, shapes::anonymous_ctx, App, AppRunner};
+
+use too_runner::{
+    color::Rgba,
+    math::{pos2, Rect, Vec2},
+    pixel::Pixel,
+    shapes::{anonymous, anonymous_ctx},
+    App, AppRunner, SurfaceMut,
+};
 
 fn main() -> std::io::Result<()> {
     let term = Term::setup(Config::default())?;
@@ -13,11 +18,11 @@ struct Demo {
 }
 
 impl App for Demo {
-    fn update(&mut self, dt: f32, _size: too_math::Vec2) {
+    fn update(&mut self, dt: f32, _size: Vec2) {
         self.t += 1.0 * dt * 1.0 / 2.0
     }
 
-    fn render(&mut self, surface: &mut too_runner::SurfaceMut) {
+    fn render(&mut self, surface: &mut SurfaceMut) {
         surface
             .draw(anonymous_ctx(&self, |size| {
                 move |this, pos| match () {
