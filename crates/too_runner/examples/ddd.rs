@@ -3,55 +3,21 @@ use too_crossterm::{Config, Term};
 use too_runner::{
     color::Rgba,
     events::{Event, Key},
-    math::{Pos2, Vec2},
+    math::{vec3, Pos2, Vec2, Vec3},
     pixel::Pixel,
     App, AppRunner, Backend, Context, SurfaceMut,
 };
 
 use rayon::iter::*;
 
-#[derive(Copy, Clone, Debug, PartialEq)]
-struct Vec3 {
-    x: f32,
-    y: f32,
-    z: f32,
+trait RotVec3 {
+    fn rotate(self, rot: Self) -> Self;
+    fn rotate_x(self, angle: f32) -> Self;
+    fn rotate_y(self, angle: f32) -> Self;
+    fn rotate_z(self, angle: f32) -> Self;
 }
 
-impl Vec3 {
-    const ZERO: Self = vec3(0.0, 0.0, 0.0);
-
-    const fn new(x: f32, y: f32, z: f32) -> Self {
-        vec3(x, y, z)
-    }
-
-    const fn splat(d: f32) -> Self {
-        Self::new(d, d, d)
-    }
-
-    #[inline]
-    fn cross(self, other: Self) -> Self {
-        vec3(
-            self.y * other.z - self.z * other.y,
-            self.z * other.x - self.x * other.z,
-            self.x * other.y - self.y * other.x,
-        )
-    }
-
-    #[inline]
-    fn dot(self, other: Self) -> f32 {
-        self.x * other.x + self.y * other.y + self.z * other.z
-    }
-
-    #[inline]
-    fn normalize(self) -> Self {
-        self / self.length()
-    }
-
-    #[inline]
-    fn length(self) -> f32 {
-        self.dot(self).sqrt()
-    }
-
+impl RotVec3 for Vec3 {
     #[inline]
     fn rotate(self, rot: Self) -> Self {
         self.rotate_z(rot.z).rotate_x(rot.y).rotate_y(rot.x)
@@ -85,81 +51,6 @@ impl Vec3 {
             y: self.x * sin + self.y * cos,
             z: self.z,
         }
-    }
-}
-
-const fn vec3(x: f32, y: f32, z: f32) -> Vec3 {
-    Vec3 { x, y, z }
-}
-
-impl std::ops::Add for Vec3 {
-    type Output = Self;
-    fn add(self, rhs: Self) -> Self::Output {
-        vec3(self.x + rhs.x, self.y + rhs.y, self.z + rhs.z)
-    }
-}
-impl std::ops::Sub for Vec3 {
-    type Output = Self;
-    fn sub(self, rhs: Self) -> Self::Output {
-        vec3(self.x - rhs.x, self.y - rhs.y, self.z - rhs.z)
-    }
-}
-impl std::ops::Mul for Vec3 {
-    type Output = Self;
-    fn mul(self, rhs: Self) -> Self::Output {
-        vec3(self.x * rhs.x, self.y * rhs.y, self.z * rhs.z)
-    }
-}
-impl std::ops::Div for Vec3 {
-    type Output = Self;
-    fn div(self, rhs: Self) -> Self::Output {
-        vec3(self.x / rhs.x, self.y / rhs.y, self.z / rhs.z)
-    }
-}
-
-impl std::ops::Add<f32> for Vec3 {
-    type Output = Self;
-    fn add(self, rhs: f32) -> Self::Output {
-        self + Vec3::splat(rhs)
-    }
-}
-impl std::ops::Sub<f32> for Vec3 {
-    type Output = Self;
-    fn sub(self, rhs: f32) -> Self::Output {
-        self - Vec3::splat(rhs)
-    }
-}
-impl std::ops::Mul<f32> for Vec3 {
-    type Output = Self;
-    fn mul(self, rhs: f32) -> Self::Output {
-        self * Vec3::splat(rhs)
-    }
-}
-impl std::ops::Div<f32> for Vec3 {
-    type Output = Self;
-    fn div(self, rhs: f32) -> Self::Output {
-        self / Vec3::splat(rhs)
-    }
-}
-
-impl std::ops::AddAssign for Vec3 {
-    fn add_assign(&mut self, rhs: Self) {
-        *self = *self + rhs
-    }
-}
-impl std::ops::SubAssign for Vec3 {
-    fn sub_assign(&mut self, rhs: Self) {
-        *self = *self - rhs
-    }
-}
-impl std::ops::MulAssign for Vec3 {
-    fn mul_assign(&mut self, rhs: Self) {
-        *self = *self * rhs
-    }
-}
-impl std::ops::DivAssign for Vec3 {
-    fn div_assign(&mut self, rhs: Self) {
-        *self = *self / rhs
     }
 }
 

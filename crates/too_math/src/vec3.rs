@@ -101,6 +101,20 @@ impl std::ops::Div for Vec3 {
     }
 }
 
+impl std::ops::Add<f32> for Vec3 {
+    type Output = Self;
+    fn add(self, rhs: f32) -> Self::Output {
+        self + Self::splat(rhs)
+    }
+}
+
+impl std::ops::Sub<f32> for Vec3 {
+    type Output = Self;
+    fn sub(self, rhs: f32) -> Self::Output {
+        self - Self::splat(rhs)
+    }
+}
+
 impl std::ops::Mul<f32> for Vec3 {
     type Output = Self;
     fn mul(self, rhs: f32) -> Self::Output {

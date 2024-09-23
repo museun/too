@@ -6,6 +6,9 @@ pub use rect::{rect, Rect};
 mod vec2;
 pub use vec2::{vec2, Vec2};
 
+mod rot2;
+pub use rot2::{rot2, Rot2};
+
 mod vec3;
 pub use vec3::{vec3, Vec3};
 
