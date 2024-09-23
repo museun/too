@@ -63,7 +63,11 @@ impl Surface {
 
     #[track_caller]
     pub fn draw(&mut self, shape: impl Shape) -> &mut Self {
-        shape.draw(self.rect().size(), |pos, pixel| self[pos].merge(pixel));
+        shape.draw(self.rect().size(), |pos, pixel| {
+            if self.rect().contains(pos) {
+                self[pos].merge(pixel)
+            }
+        });
         self
     }
 
