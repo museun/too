@@ -78,7 +78,7 @@ impl Surface {
     pub fn crop(&mut self, rect: Rect) -> SurfaceMut<'_> {
         SurfaceMut {
             // ensure the new cropped rect is never larger than our current rect
-            rect: self.rect().clamp_rect(rect).clip(rect.size()),
+            rect: self.rect().intersection(rect),
             surface: self,
         }
     }
