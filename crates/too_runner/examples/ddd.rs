@@ -1,20 +1,15 @@
-use std::usize;
-
 use too_crossterm::{Config, Term};
 
-use too_events::{Keybind, Modifiers};
-use too_layout::{Align, Anchor2, LinearAllocator, LinearLayout};
-use too_math::{vec2, Rect};
 use too_runner::{
     color::Rgba,
-    events::{Event, Key},
-    math::{vec3, Pos2, Vec2, Vec3},
+    events::{Event, Key, Keybind},
+    math::{vec2, vec3, Pos2, Rect, Vec2, Vec3},
     pixel::Pixel,
+    shapes::{Fill, Text},
     App, AppRunner, Backend, Context, SurfaceMut,
 };
 
 use rayon::iter::*;
-use too_shapes::{Fill, Text};
 
 trait RotVec3 {
     fn rotate(self, rot: Self) -> Self;
