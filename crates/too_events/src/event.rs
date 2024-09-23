@@ -139,10 +139,13 @@ impl Event {
         Self::is_keybind(key, modifiers, keybind)
     }
 
-    // BUG this doesn't work with '!' (e.g. shift-1)
     fn is_keybind(key: Key, modifiers: Modifiers, expected: impl Into<Keybind>) -> bool {
+        let expected: Keybind = expected.into();
+        if matches!(key, Key::Char(..)) {
+            return key == expected.key;
+        }
         let have = Keybind::new(key, modifiers);
-        have == expected.into()
+        have == expected
     }
 
     /// If this was a mouse event, where was it?

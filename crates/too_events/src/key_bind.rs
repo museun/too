@@ -1,3 +1,5 @@
+use std::fmt::Write;
+
 use crate::{Key, Modifiers};
 
 /// A keybind is a combination of a [`Key`] and some [`Modifiers`]
@@ -45,5 +47,46 @@ impl From<char> for Keybind {
 impl From<Key> for Keybind {
     fn from(value: Key) -> Self {
         Self::from_key(value)
+    }
+}
+
+impl std::fmt::Display for Keybind {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        const FIELDS: [&str; 3] = ["Shift", "Ctrl", "Alt"];
+
+        let mut seen = false;
+        for (flag, repr) in (0..).zip(FIELDS) {
+            if (self.modifiers.0 >> flag) & 1 == 1 {
+                if seen {
+                    f.write_str(" + ")?;
+                }
+                f.write_str(repr)?;
+                seen |= true
+            }
+        }
+
+        if seen {
+            f.write_str(" + ")?;
+        }
+
+        match self.key {
+            Key::Char(' ') => f.write_str("Space"),
+            Key::Char(c) => f.write_char(c),
+            Key::Function(n) => f.write_fmt(format_args!("F{n}")),
+            Key::Left => f.write_str("Left"),
+            Key::Right => f.write_str("Right"),
+            Key::Up => f.write_str("Up"),
+            Key::Down => f.write_str("Down"),
+            Key::PageUp => f.write_str("PageUp"),
+            Key::PageDown => f.write_str("PageDown"),
+            Key::Home => f.write_str("Home"),
+            Key::End => f.write_str("End"),
+            Key::Insert => f.write_str("Insert"),
+            Key::Enter => f.write_str("Enter"),
+            Key::Delete => f.write_str("Delete"),
+            Key::Backspace => f.write_str("Backspace"),
+            Key::Escape => f.write_str("Escape"),
+            Key::Tab => f.write_str("Tab"),
+        }
     }
 }

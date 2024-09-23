@@ -147,7 +147,8 @@ impl Term {
 }
 
 impl Backend for Term {
-    type Out = std::fs::File;
+    type Out<'a> = &'a mut std::io::StdoutLock<'static>;
+    // type Out<'a> = std::fs::File;
 
     fn size(&self) -> Vec2 {
         self.size
@@ -161,24 +162,25 @@ impl Backend for Term {
         self.commands.push_back(cmd);
     }
 
-    fn writer(&mut self) -> Self::Out {
-        #[cfg(windows)]
-        use std::os::windows::io::AsHandle as _;
+    fn writer(&mut self) -> Self::Out<'_> {
+        &mut self.out
+        // #[cfg(windows)]
+        // use std::os::windows::io::AsHandle as _;
 
-        #[cfg(not(windows))]
-        use std::os::fd::AsFd as _;
+        // #[cfg(not(windows))]
+        // use std::os::fd::AsFd as _;
 
-        #[cfg(windows)]
-        let owned = self
-            .out
-            .as_handle()
-            .try_clone_to_owned()
-            .expect("ownable handle");
+        // #[cfg(windows)]
+        // let owned = self
+        //     .out
+        //     .as_handle()
+        //     .try_clone_to_owned()
+        //     .expect("ownable handle");
 
-        #[cfg(not(windows))]
-        let owned = self.out.as_fd().try_clone_to_owned().expect("ownable fd");
+        // #[cfg(not(windows))]
+        // let owned = self.out.as_fd().try_clone_to_owned().expect("ownable fd");
 
-        std::fs::File::from(owned)
+        // std::fs::File::from(owned)
     }
 }
 

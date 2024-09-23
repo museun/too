@@ -27,9 +27,9 @@ impl App for Demo {
             .draw(anonymous_ctx(&self, |size| {
                 move |this, pos| match () {
                     _ if pos.x & 1 == 1 || pos.y & 1 == 1 => None,
-                    _ if pos.x < size.x / 2 => Some(Pixel::new(' ').bg(Rgba::sine(this.t))),
-                    _ if pos.y < size.y / 2 => Some(Pixel::new(' ').bg(Rgba::sine(this.t + 1.0))),
-                    _ => Some(Pixel::new(' ').bg(Rgba::sine(this.t + 2.0))),
+                    _ if pos.x < size.x / 2 => Some(Pixel::new('░').bg(Rgba::sine(this.t))),
+                    _ if pos.y < size.y / 2 => Some(Pixel::new('░').bg(Rgba::sine(this.t + 1.0))),
+                    _ => Some(Pixel::new('░').bg(Rgba::sine(this.t + 2.0))),
                 }
             }))
             .draw(anonymous(|size| {

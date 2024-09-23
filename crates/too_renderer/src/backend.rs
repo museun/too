@@ -62,7 +62,9 @@ impl Command {
 /// An abstraction over a writable backend
 pub trait Backend {
     /// The writer for this backend
-    type Out: std::io::Write;
+    type Out<'a>: std::io::Write
+    where
+        Self: 'a;
     /// The current size of the backends 'screen'
     fn size(&self) -> Vec2;
     /// Can we draw to this backend, currently?
@@ -70,5 +72,5 @@ pub trait Backend {
     /// Send a [`Command`] to this backend
     fn command(&mut self, cmd: Command);
     /// Get the writer for this backend
-    fn writer(&mut self) -> Self::Out;
+    fn writer(&mut self) -> Self::Out<'_>;
 }

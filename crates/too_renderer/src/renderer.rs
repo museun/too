@@ -29,12 +29,12 @@ pub trait Renderer {
     }
 }
 
-pub struct TermRenderer<B: Backend> {
-    out: BufWriter<B::Out>,
+pub struct TermRenderer<'a, B: Backend + 'a> {
+    out: BufWriter<B::Out<'a>>,
 }
 
-impl<B: Backend> TermRenderer<B> {
-    pub fn new(term: &mut B) -> Self {
+impl<'a, B: Backend> TermRenderer<'a, B> {
+    pub fn new(term: &'a mut B) -> Self {
         let size = term.size();
         let estimate = size.x as usize * size.y as usize * 21;
 
@@ -51,7 +51,7 @@ macro_rules! csi {
     };
 }
 
-impl<B: Backend> Renderer for TermRenderer<B> {
+impl<'a, B: Backend> Renderer for TermRenderer<'a, B> {
     #[inline(always)]
     fn begin(&mut self) -> std::io::Result<()> {
         self.out.write_all(csi!("?2026h"))
