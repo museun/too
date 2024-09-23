@@ -45,10 +45,12 @@ impl Shape for () {
 ///
 /// e.g.
 ///
+/// `fn(Vec2) -> fn(pos) -> maybe pixel`
+///
 /// ```rust,no_run
-/// // equivlant to [`Fill`] with 'red'
+/// // equivilant to [`Fill`] with 'red'
 /// surface.draw(anonymous(|_size| {
-///     |this, pos| Some(Pixel::new(' ').bg("#F00"))
+///     move |pos| Some(Pixel::new(' ').bg("#F00"))
 /// });
 /// ```
 pub fn anonymous<P>(draw: impl Fn(Vec2) -> P) -> impl Shape
@@ -87,14 +89,16 @@ where
 
 /// Draw a shape from an anonymous function, with 'context'
 ///
-/// This takes in a function that takes the canvas size and returns a function that returns a pixel for a position
+/// This takes in a function that takes the canvas size and returns a function that returns a pixel for a position with the context passed in.
 ///
 /// e.g.
 ///
+/// `fn(Vec2) -> fn(context, pos) -> maybe pixel`
+///
 /// ```rust,no_run
-/// // equivlant to [`Fill`] with `color` from 'self'
-/// surface.draw(anonymous(&self, |_size| {
-///     |this, pos| Some(Pixel::new(' ').bg(this.color))
+/// // equivilant to [`Fill`] with `color` from 'self'
+/// surface.draw(anonymous_ctx(&self, |_size| {
+///     move |this, pos| Some(Pixel::new(' ').bg(this.color))
 /// });
 /// ```
 pub fn anonymous_ctx<'a, T, P>(context: &'a T, draw: impl Fn(Vec2) -> P + 'a) -> impl Shape + 'a
