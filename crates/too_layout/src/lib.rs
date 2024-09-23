@@ -48,3 +48,5 @@ pub use size::{size, Size};
 
 mod constraints;
 pub use constraints::Constraints;
+
+// TODO helper to do row / column allocations (returning just the cross offset)
