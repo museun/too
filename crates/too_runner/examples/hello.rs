@@ -1,5 +1,6 @@
 use too_crossterm::{Config, Term};
 
+use too_events::{Keybind, Modifiers};
 use too_runner::{
     color::Rgba,
     events::Event,
@@ -10,9 +11,7 @@ use too_runner::{
 };
 
 fn main() -> std::io::Result<()> {
-    let term_config = Config::default() //
-        .hook_panics(true)
-        .ctrl_z_switches(true);
+    let term_config = Config::default().hook_panics(true).ctrl_z_switches(true);
     let term = Term::setup(term_config)?;
     Hello::new().run(term)
 }

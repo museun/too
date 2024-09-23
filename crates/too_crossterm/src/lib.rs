@@ -209,12 +209,12 @@ impl EventReader for Term {
                 }
                 Command::SwitchMainScreen => {
                     let _ = TermRenderer::new(self).switch_to_main_screen();
+                    self.config.current_screen = CurrentScreen::Main;
                     inplace.replace(Event::SwitchMainScreen);
                 }
                 Command::SwitchAltScreen => {
-                    let mut renderer = TermRenderer::new(self);
-
-                    let _ = renderer.switch_to_alt_screen();
+                    let _ = TermRenderer::new(self).switch_to_alt_screen();
+                    self.config.current_screen = CurrentScreen::Alt;
                     inplace.replace(Event::SwitchAltScreen);
                 }
                 Command::RequestQuit => return Some(Event::Quit),

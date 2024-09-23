@@ -141,11 +141,10 @@ impl Event {
 
     fn is_keybind(key: Key, modifiers: Modifiers, expected: impl Into<Keybind>) -> bool {
         let expected: Keybind = expected.into();
-        if matches!(key, Key::Char(..)) {
+        if matches!(expected.key, Key::Char(..)) && expected.modifiers.is_none() {
             return key == expected.key;
         }
-        let have = Keybind::new(key, modifiers);
-        have == expected
+        Keybind::new(key, modifiers) == expected
     }
 
     /// If this was a mouse event, where was it?

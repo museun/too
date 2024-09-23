@@ -132,11 +132,13 @@ impl<'a, B: Backend> Renderer for TermRenderer<'a, B> {
     }
 
     fn switch_to_alt_screen(&mut self) -> std::io::Result<()> {
-        self.out.write_all(csi!("?1049h"))
+        self.out.write_all(csi!("?1049h"))?;
+        self.out.flush()
     }
 
     fn switch_to_main_screen(&mut self) -> std::io::Result<()> {
-        self.out.write_all(csi!("?1049l"))
+        self.out.write_all(csi!("?1049l"))?;
+        self.out.flush()
     }
 }
 
