@@ -39,7 +39,7 @@ pub use too_math as math;
 
 /// Shapes are drawable primitives for a Surface
 pub mod shapes {
-    pub use too_renderer::Shape;
+    pub use too_renderer::{anonymous, Shape};
     pub use too_shapes::*;
 }
 

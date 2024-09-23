@@ -1,6 +1,5 @@
 use too_crossterm::{Config, Term};
-use too_renderer::{anonymous, Pixel};
-use too_runner::{App, AppRunner};
+use too_runner::{pixel::Pixel, shapes::anonymous, App, AppRunner};
 
 fn main() -> std::io::Result<()> {
     let term = Term::setup(Config::default())?;
