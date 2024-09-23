@@ -77,13 +77,12 @@ impl Demo {
             BG.blend_linear(SHADOW, blend)
         }
 
-        surface
-            .draw(Fill::new(if self.enabled { Self::FG } else { BG }))
-            .draw(TorchText {
-                demo: self,
-                offset,
-                blend,
-            });
+        let bg = if self.enabled { Self::FG } else { BG };
+        surface.draw(Fill::new(bg)).draw(TorchText {
+            demo: self,
+            offset,
+            blend,
+        });
     }
 
     fn draw_focus(&self, offset: usize, surface: &mut SurfaceMut) {
@@ -172,7 +171,6 @@ struct TorchText<'a> {
     blend: fn(&'a Demo, Vec2, Pos2) -> Rgba,
 }
 
-// BUG: if the rendered output height is less than surface height it doesn't fill the difference
 impl<'a> Shape for TorchText<'a> {
     fn draw(&self, size: Vec2, mut put: impl FnMut(Pos2, Pixel)) {
         let mut start = Pos2::ZERO;
@@ -202,15 +200,13 @@ impl<'a> Shape for TorchText<'a> {
             start.y += 1;
         }
 
-        if start.y >= size.y {
-            return;
-        }
-
-        for y in start.y..size.y {
-            for x in 0..size.x {
-                let pos = pos2(x, y);
-                let bg = (self.blend)(self.demo, size, start);
-                put(pos, Pixel::new(' ').fg(Demo::FG).bg(bg));
+        if start.y < size.y {
+            for y in start.y..size.y {
+                for x in 0..size.x {
+                    let pos = pos2(x, y);
+                    let bg = (self.blend)(self.demo, size, pos);
+                    put(pos, Pixel::new(' ').bg(bg))
+                }
             }
         }
     }
