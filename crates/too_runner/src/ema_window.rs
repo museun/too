@@ -11,6 +11,12 @@ pub struct EmaWindow<const N: usize> {
     min_max: Buffer<N>,
 }
 
+impl<const N: usize> Default for EmaWindow<N> {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl<const N: usize> EmaWindow<N> {
     pub const fn new() -> Self {
         Self {

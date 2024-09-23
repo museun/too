@@ -87,7 +87,7 @@ pub trait App {
     /// This provides you with a [`SurfaceMut`] that allows you to draw onto
     ///
     /// The draw order are back-to-front. Later draw calls will be drawn over earlier calls
-    fn render(&mut self, surface: &mut SurfaceMut);
+    fn render(&mut self, surface: SurfaceMut);
 }
 
 /// Context to the [`Backend`] for use during [`App::event`]
@@ -151,12 +151,12 @@ pub trait AppRunner: App + Sealed + Sized {
     /// Run the [`App`] with the provided [`Backend`] and [`EventReader`]
     fn run(self, term: impl Backend + EventReader) -> std::io::Result<()> {
         Runner::new()
-            .min_ups(App::min_ups)
-            .max_ups(App::max_ups)
-            .init(App::initial_size)
-            .event(App::event)
-            .update(App::update)
-            .render(App::render)
+            .min_ups(Self::min_ups)
+            .max_ups(Self::max_ups)
+            .init(Self::initial_size)
+            .event(Self::event)
+            .update(Self::update)
+            .render(Self::render)
             .run(self, term)
     }
 }
@@ -175,7 +175,7 @@ pub struct Runner<T, B: Backend> {
     init: fn(&mut T, Vec2),
     event: fn(&mut T, Event, Context<'_, B>, Vec2),
     update: fn(&mut T, f32, Vec2),
-    render: fn(&mut T, &mut SurfaceMut<'_>),
+    render: for<'c> fn(&mut T, SurfaceMut<'c>),
 }
 
 impl<T, B: Backend + EventReader> Default for Runner<T, B> {
@@ -228,7 +228,8 @@ impl<T, B: Backend + EventReader> Runner<T, B> {
         self
     }
 
-    pub const fn render(mut self, render: fn(&mut T, &mut SurfaceMut<'_>)) -> Self {
+    // this needs a HRTB
+    pub const fn render(mut self, render: for<'c> fn(&mut T, SurfaceMut<'c>)) -> Self {
         self.render = render;
         self
     }
@@ -298,7 +299,7 @@ impl<T, B: Backend + EventReader> Runner<T, B> {
             (self.frame_ready)(&mut state);
 
             if term.should_draw() {
-                (self.render)(&mut state, &mut surface.crop(surface.rect()));
+                (self.render)(&mut state, surface.crop(surface.rect()));
 
                 if show_fps {
                     let frame_stats = fps.get();

@@ -164,6 +164,7 @@ struct CursorState {
 }
 
 impl CursorState {
+    // TODO this is moving when there's a space
     fn maybe_move(&mut self, pos: Pos2) -> bool {
         let should_move = match self.last {
             Some(last) if last.y != pos.y || last.x != pos.x - 1 => true,
@@ -241,7 +242,10 @@ impl<'a> SurfaceMut<'a> {
     }
 
     /// Crop this [`SurfaceMut`] to a smaller [`Rect`]`
-    pub fn crop(&mut self, rect: Rect) -> SurfaceMut<'_> {
+    pub fn crop<'b>(&'b mut self, rect: Rect) -> SurfaceMut<'b>
+    where
+        'a: 'b,
+    {
         SurfaceMut {
             rect: self.rect().intersection(rect),
             surface: self.surface,

@@ -104,7 +104,7 @@ impl App for Demo {
         self.up = self.up ^ (self.theta >= 1.0) ^ (self.theta <= -1.0)
     }
 
-    fn render(&mut self, surface: &mut SurfaceMut) {
+    fn render(&mut self, mut surface: SurfaceMut) {
         let (label, _) = &self.gradients[self.pos];
         surface
             .draw(&*self)

@@ -152,15 +152,15 @@ impl App for Demo {
         }
     }
 
-    fn render(&mut self, surface: &mut SurfaceMut) {
+    fn render(&mut self, mut surface: SurfaceMut) {
         let offset = self.lines.len().saturating_sub(self.pos);
         let offset = offset
             .checked_sub(surface.rect().height().saturating_sub_unsigned(1) as _)
             .unwrap_or(offset);
 
         match self.mode {
-            Mode::Torch => self.draw_torch(offset, surface),
-            Mode::Focus => self.draw_focus(offset, surface),
+            Mode::Torch => self.draw_torch(offset, &mut surface),
+            Mode::Focus => self.draw_focus(offset, &mut surface),
         }
     }
 }

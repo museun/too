@@ -35,3 +35,12 @@ pub enum Key {
     /// Tab
     Tab,
 }
+
+impl Key {
+    pub const fn is_char(&self, ch: char) -> bool {
+        if let &Self::Char(c) = self {
+            return c == ch;
+        }
+        false
+    }
+}

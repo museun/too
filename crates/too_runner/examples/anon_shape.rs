@@ -22,7 +22,7 @@ impl App for Demo {
         self.t += 1.0 * dt * 1.0 / 2.0
     }
 
-    fn render(&mut self, surface: &mut SurfaceMut) {
+    fn render(&mut self, mut surface: SurfaceMut<'_>) {
         surface
             .draw(anonymous_ctx(&self, |size| {
                 move |this, pos| match () {

@@ -158,3 +158,9 @@ where
         _marker: std::marker::PhantomData,
     }
 }
+
+impl Shape for Pixel {
+    fn draw(&self, _size: Vec2, mut put: impl FnMut(Pos2, Pixel)) {
+        put(pos2(0, 0), *self)
+    }
+}

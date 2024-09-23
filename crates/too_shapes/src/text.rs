@@ -116,7 +116,7 @@ impl<T: Label> Text<T> {
             Align::Max => size.y.saturating_sub(item_size.y),
         };
 
-        let mut start = pos2(x, y) + origin;
+        let mut start = pos2(x, y);
         // TODO better utf-8 handling
         for ch in self.label.chars() {
             if start.x >= size.x || start.y >= size.y {
@@ -134,7 +134,7 @@ impl<T: Label> Text<T> {
             }
 
             let pixel = Pixel::new(ch).fg(self.fg).bg(self.bg).attr(self.attr);
-            put(start, pixel);
+            put(start + origin, pixel);
             start.x += 1;
         }
     }

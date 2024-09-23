@@ -115,7 +115,7 @@ impl App for Hello {
         self.up = self.up ^ (self.value >= 1.0) ^ (self.value <= 0.0)
     }
 
-    fn render(&mut self, surface: &mut SurfaceMut) {
+    fn render(&mut self, mut surface: SurfaceMut) {
         let rect = surface.rect();
         surface
             .crop(Rect::from_center_size(rect.center(), rect.size() / 3))

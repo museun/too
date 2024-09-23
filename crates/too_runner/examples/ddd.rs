@@ -307,16 +307,14 @@ impl Demo {
             .draw(Fill::new("#222D"));
 
         let mut surface = surface.crop(rect);
-        let mut y = 0;
 
-        for (label, bind) in column {
+        for (y, (label, bind)) in column.iter().enumerate() {
             let shape = Text::new(format!(
                 "{label}{s: <pad$}| {bind}",
                 s = ' ',
                 pad = max_left + 1 - label.len()
             ));
-            surface.crop(rect.translate(vec2(0, y))).draw(shape);
-            y += 1;
+            surface.crop(rect.translate(vec2(0, y as _))).draw(shape);
         }
     }
 }
@@ -656,11 +654,11 @@ impl App for Demo {
         self.integrate(dt);
     }
 
-    fn render(&mut self, surface: &mut too_renderer::SurfaceMut) {
-        self.render_scene(surface);
+    fn render(&mut self, mut surface: too_renderer::SurfaceMut<'_>) {
+        self.render_scene(&mut surface);
 
         if self.show_help {
-            self.show_keybinds(surface);
+            self.show_keybinds(&mut surface);
         }
     }
 }
@@ -680,7 +678,7 @@ fn main() -> std::io::Result<()> {
 
     let keybinds = Keybinds {
         reset: 'r'.into(),
-        toggle_help: '?'.into(),
+        toggle_help: '1'.into(),
         toggle_fps: 't'.into(),
         jump: ' '.into(),
         move_forward: 'w'.into(),

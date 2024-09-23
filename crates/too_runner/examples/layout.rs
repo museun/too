@@ -105,7 +105,7 @@ impl App for Demo {
         }
     }
 
-    fn render(&mut self, surface: &mut too_runner::SurfaceMut) {
+    fn render(&mut self, mut surface: too_runner::SurfaceMut) {
         let mut layout = LinearLayout::new(self.axis)
             .wrap(self.wrap)
             .spacing(self.spacing)

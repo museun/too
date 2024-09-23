@@ -140,13 +140,21 @@ impl Event {
     }
 
     fn is_keybind(key: Key, modifiers: Modifiers, expected: impl Into<Keybind>) -> bool {
+        const fn to_lowercase(key: Key) -> Key {
+            match key {
+                Key::Char(ch) => Key::Char(ch.to_ascii_lowercase()),
+                this => this,
+            }
+        }
+
         let expected: Keybind = expected.into();
         if matches!(expected.key, Key::Char(..))
-            && expected.modifiers.is_none()
-            && modifiers.is_none()
+            && (expected.modifiers.is_none() || expected.modifiers.is_shift_only())
+            && (modifiers.is_none() || modifiers.is_shift_only())
         {
-            return key == expected.key;
+            return to_lowercase(key) == to_lowercase(expected.key);
         }
+
         Keybind::new(key, modifiers) == expected
     }
 

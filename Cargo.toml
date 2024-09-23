@@ -7,7 +7,8 @@ members = [
     "crates/too_math",
     "crates/too_renderer",
     "crates/too_runner",
-    "crates/too_shapes"
+    "crates/too_shapes",
+    "crates/too_view"
 ]
 
 [workspace.dependencies]
@@ -17,3 +18,4 @@ too_layout = { path = "crates/too_layout", version = "0.1.0" }
 too_math = { path = "crates/too_math", version = "0.1.0" }
 too_renderer = { path = "crates/too_renderer", version = "0.1.0" }
 too_shapes = { path = "crates/too_shapes", version = "0.1.0" }
+too_runner = { path = "crates/too_runner", version = "0.1.0" }

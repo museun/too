@@ -302,3 +302,16 @@ fn digits(mut d: usize) -> impl Iterator<Item = char> {
 const fn int_to_char(c: u8) -> char {
     (c + b'0') as char
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn what() {
+        let a: i32 = -10;
+
+        eprintln!("{:?}", a.size());
+        eprintln!("{:?}", a.chars().collect::<Vec<_>>());
+    }
+}
