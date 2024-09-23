@@ -72,13 +72,12 @@ impl Surface {
     }
 
     pub fn rect(&self) -> Rect {
-        self.current().rect()
+        self.current().rect() //this is wrong
     }
 
     pub fn crop(&mut self, rect: Rect) -> SurfaceMut<'_> {
         SurfaceMut {
-            // ensure the new cropped rect is never larger than our current rect
-            rect: self.rect().intersection(rect),
+            rect,
             surface: self,
         }
     }
@@ -242,11 +241,11 @@ impl<'a> SurfaceMut<'a> {
     }
 
     /// Crop this [`SurfaceMut`] to a smaller [`Rect`]`
-    pub fn crop<'b>(&'b mut self, rect: Rect) -> SurfaceMut<'b>
-    where
-        'a: 'b,
-    {
-        self.surface.crop(rect)
+    pub fn crop(&mut self, rect: Rect) -> SurfaceMut<'_> {
+        SurfaceMut {
+            rect: self.rect().intersection(rect),
+            surface: self.surface,
+        }
     }
 
     /// Draw this [`Shape`] onto this [`SurfaceMut`]
