@@ -1,5 +1,5 @@
 use too_layout::{Align, Align2};
-use too_math::{midpoint, pos2, Pos2, Vec2};
+use too_math::{midpoint, pos2, rect, Pos2, Rect, Vec2};
 use too_renderer::{Attribute, Color, Pixel, Shape};
 
 use crate::Label;
@@ -98,10 +98,12 @@ impl<T: Label> Text<T> {
             label: self.label.into_static(),
         }
     }
-}
 
-impl<T: Label> Shape for Text<T> {
-    fn draw(&self, size: Vec2, mut put: impl FnMut(Pos2, Pixel)) {
+    // TODO crop and wrap
+    pub fn render(&self, rect: Rect, mut put: impl FnMut(Pos2, Pixel)) {
+        let origin = rect.left_top();
+        let size = rect.size();
+
         let item_size = self.label.size();
         let x = match self.align.x {
             Align::Min => 0,
@@ -114,8 +116,8 @@ impl<T: Label> Shape for Text<T> {
             Align::Max => size.y.saturating_sub(item_size.y),
         };
 
-        // TODO crop and wrap
-        let mut start = pos2(x, y);
+        let mut start = pos2(x, y) + origin;
+        // TODO better utf-8 handling
         for ch in self.label.chars() {
             if start.x >= size.x || start.y >= size.y {
                 break;
@@ -135,6 +137,12 @@ impl<T: Label> Shape for Text<T> {
             put(start, pixel);
             start.x += 1;
         }
+    }
+}
+
+impl<T: Label> Shape for Text<T> {
+    fn draw(&self, size: Vec2, put: impl FnMut(Pos2, Pixel)) {
+        self.render(rect(size), put);
     }
 }
 
