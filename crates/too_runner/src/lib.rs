@@ -235,7 +235,7 @@ fn run_app(mut app: impl App, mut term: impl Backend + EventReader) -> std::io::
             surface.render(&mut TermRenderer::new(&mut term))?;
         }
 
-        let total = frame_start.elapsed() + event_dur;
+        let total = frame_start.elapsed() - event_dur;
         if let Some(sleep) = base_target
             .checked_sub(total)
             .filter(|&d| d > Duration::ZERO)
