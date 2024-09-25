@@ -30,6 +30,9 @@ impl LinearAllocator {
     ///
     /// # Example
     /// ```rust,no_run
+    /// # use too_math::vec2;
+    /// # use too_layout::LinearLayout;
+    /// # let some_rect = todo!();
     /// let mut sizes = [vec2(5,10), vec2(3,1), vec2(4,4)];
     /// let mut layout = LinearLayout::horizontal().layout(some_rect);
     /// for size in sizes {

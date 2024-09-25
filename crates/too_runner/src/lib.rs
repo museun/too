@@ -141,6 +141,8 @@ impl<'a, B: Backend> Context<'a, B> {
 ///     fn render(&mut self, surface: &mut SurfaceMut) {}
 /// }
 ///
+/// # use too_crossterm::Term;
+/// # fn get_backend() -> std::io::Result<Term> { todo!() }
 /// fn main() -> std::io::Result<()> {
 ///     let backend = get_backend()?;
 ///     Demo::new(1234).run(backend)
