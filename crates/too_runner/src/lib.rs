@@ -124,7 +124,7 @@ impl<'a, B: Backend> Context<'a, B> {
 /// It is implemented for all types that implement [`App`].
 ///
 /// # Example:
-/// ```rust,no_run
+/// ```rust
 /// use too_runner::{AppRunner as _, SurfaceMut};
 ///
 /// struct Demo {
@@ -141,8 +141,7 @@ impl<'a, B: Backend> Context<'a, B> {
 ///     fn render(&mut self, surface: &mut SurfaceMut) {}
 /// }
 ///
-/// # use too_crossterm::Term;
-/// # fn get_backend() -> std::io::Result<Term> { todo!() }
+/// # fn get_backend() -> std::io::Result<too_runner::dummy::Dummy> { Ok(too_runner::dummy::Dummy) }
 /// fn main() -> std::io::Result<()> {
 ///     let backend = get_backend()?;
 ///     Demo::new(1234).run(backend)
@@ -251,3 +250,8 @@ fn run_app(mut app: impl App, mut term: impl Backend + EventReader) -> std::io::
         base_target = Duration::from_secs_f32(1.0 / target_ups)
     }
 }
+
+// Hide this from the docs
+// #[cfg(doctests)] doesn't work as expected here
+#[doc(hidden)]
+pub mod dummy;

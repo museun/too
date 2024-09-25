@@ -29,15 +29,22 @@ impl LinearAllocator {
     /// that can be used for futher layouts or drawing
     ///
     /// # Example
-    /// ```rust,no_run
-    /// # use too_math::vec2;
+    /// ```rust
+    /// # use too_math::{vec2, Rect, pos2};
     /// # use too_layout::LinearLayout;
-    /// # let some_rect = todo!();
-    /// let mut sizes = [vec2(5,10), vec2(3,1), vec2(4,4)];
-    /// let mut layout = LinearLayout::horizontal().layout(some_rect);
-    /// for size in sizes {
-    ///     if let Some(rect) = layout.allocate(size) {
-    ///         // our rect will have the size, with a computed position
+    /// let input = Rect::from_min_size(pos2(5, 10), vec2(20, 20));
+    /// let sizes = [vec2(5, 10), vec2(3, 1), vec2(4, 4)];
+    /// let expected = [
+    ///     Rect::from_min_max(pos2(5, 10), pos2(10, 20)),
+    ///     Rect::from_min_max(pos2(10, 10), pos2(13, 11)),
+    ///     Rect::from_min_max(pos2(13, 10), pos2(17, 14)),
+    /// ];
+    ///
+    /// let mut layout = LinearLayout::horizontal().layout(input);
+    ///
+    /// for (i, size) in sizes.iter().enumerate() {
+    ///     if let Some(rect) = layout.allocate(*size) {
+    ///         assert_eq!(rect, expected[i])
     ///     }
     /// }
     /// ```

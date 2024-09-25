@@ -14,9 +14,11 @@ pub trait Shape {
     ///
     /// # Example:
     /// This will fill the entire rect with a specific color
-    /// ```rust,no_run
+    /// ```rust
     /// # use too_renderer::{Pixel, Rgba, Shape};
     /// # use too_math::{pos2, vec2, Pos2, Vec2};
+    /// # let mut surface = too_renderer::Surface::new(too_math::vec2(80, 25));
+    /// # let mut surface = surface.crop(too_math::rect(too_math::vec2(80, 25)));
     /// struct FillBg { bg: Rgba }
     /// impl Shape for FillBg {
     ///     fn draw(&self, size: Vec2, mut put: impl FnMut(Pos2, Pixel)) {
@@ -27,6 +29,9 @@ pub trait Shape {
     ///         }
     ///     }
     /// }
+    ///
+    /// surface.draw(FillBg { bg: too_renderer::Rgba::from_static("#FFF") });
+    ///
     /// ```
     fn draw(&self, size: Vec2, put: impl FnMut(Pos2, Pixel));
 }
@@ -49,10 +54,11 @@ impl Shape for () {
 ///
 /// `fn(Vec2) -> fn(pos) -> maybe pixel`
 ///
-/// ```rust,no_run
+/// ```rust
 /// # use too_renderer::{anonymous, Pixel, SurfaceMut};
 /// // equivilant to [`Fill`] with 'red'
-/// # let surface: &mut SurfaceMut = todo!();
+/// # let mut surface = too_renderer::Surface::new(too_math::vec2(80, 25));
+/// # let mut surface = surface.crop(too_math::rect(too_math::vec2(80, 25)));
 /// surface.draw(anonymous(|_size| {
 ///     move |pos| Some(Pixel::new(' ').bg("#F00"))
 /// }));
@@ -99,16 +105,23 @@ where
 ///
 /// `fn(Vec2) -> fn(context, pos) -> maybe pixel`
 ///
-/// ```rust,no_run
-/// # use too_renderer::{anonymous_ctx, Color, Pixel, Shape, SurfaceMut};
-/// # struct T{ color: Color };
-/// # impl T {
-/// # fn f(&self, surface: &mut SurfaceMut) {
+/// ```rust
+/// # use too_renderer::{anonymous_ctx, Rgba, Color, Pixel, Shape, SurfaceMut};
+/// # let mut surface = too_renderer::Surface::new(too_math::vec2(80, 25));
+/// # let mut surface = surface.crop(too_math::rect(too_math::vec2(80, 25)));
 /// // equivilant to [`Fill`] with `color` from 'self'
-/// surface.draw(anonymous_ctx(&self, |_size| {
+///
+/// struct State {
+///     color: Rgba,
+/// }
+///
+/// let state = State {
+///     color: Rgba::from_static("#F00")
+/// };
+///
+/// surface.draw(anonymous_ctx(&state, |_size| {
 ///     move |this, pos| Some(Pixel::new(' ').bg(this.color))
 /// }));
-/// # }}
 /// ```
 pub fn anonymous_ctx<'a, T, P>(context: &'a T, draw: impl Fn(Vec2) -> P + 'a) -> impl Shape + 'a
 where

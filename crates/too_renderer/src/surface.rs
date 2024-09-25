@@ -255,7 +255,7 @@ impl<'a> SurfaceMut<'a> {
     /// **Note** Future shapes drawn onto the same surface will be drawn ___ontop___ of prior shapes.
     ///
     /// # Example:
-    /// ```rust,no_run
+    /// ```rust
     /// # use too_renderer::{Pixel, Shape, SurfaceMut};
     /// # use too_math::{pos2, Pos2, Vec2};
     /// struct MyShape;
@@ -283,7 +283,8 @@ impl<'a> SurfaceMut<'a> {
     ///
     /// // this'll fill the surface with a red background
     /// // then the top-left quarter will be overwritten with a green background
-    /// # let surface: &mut SurfaceMut = todo!();
+    /// # let mut surface = too_renderer::Surface::new(too_math::vec2(80, 25));
+    /// # let mut surface = surface.crop(too_math::rect(too_math::vec2(80, 25)));
     /// surface.draw(MyShape).draw(Overlay);
     ///
     /// ```
