@@ -1,6 +1,5 @@
 use too_crossterm::{Config, Term};
 
-use too_events::{Keybind, Modifiers};
 use too_runner::{
     color::Rgba,
     events::Event,
