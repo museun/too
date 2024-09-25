@@ -256,7 +256,8 @@ impl<'a> SurfaceMut<'a> {
     ///
     /// # Example:
     /// ```rust,no_run
-    ///
+    /// # use too_renderer::{Pixel, Shape, SurfaceMut};
+    /// # use too_math::{pos2, Pos2, Vec2};
     /// struct MyShape;
     /// struct Overlay;
     ///
@@ -264,25 +265,25 @@ impl<'a> SurfaceMut<'a> {
     ///     fn draw(&self, size: Vec2, mut put: impl FnMut(Pos2, Pixel)) {
     ///         for y in 0..size.y {
     ///             for x in 0..size.x {
-    ///                 put(pos2(x, y), Pixel::char(' ').bg("#F00"))
+    ///                 put(pos2(x, y), Pixel::new(' ').bg("#F00"))
     ///             }
     ///         }
     ///     }
     /// }
     ///
     /// impl Shape for Overlay {
-    ///     fn draw(&self, size: Vec2, put: impl FnMut(Pos2, Pixel)) {
+    ///     fn draw(&self, size: Vec2, mut put: impl FnMut(Pos2, Pixel)) {
     ///         for y in 0..size.y / 2{
     ///             for x in 0..size.x / 2 {
-    ///                 put(pos2(x, y), Pixel::char(' ').bg("#0F0"))
+    ///                 put(pos2(x, y), Pixel::new(' ').bg("#0F0"))
     ///             }
     ///         }
-    ///     }
     ///     }
     /// }
     ///
     /// // this'll fill the surface with a red background
     /// // then the top-left quarter will be overwritten with a green background
+    /// # let surface: &mut SurfaceMut = todo!();
     /// surface.draw(MyShape).draw(Overlay);
     ///
     /// ```
