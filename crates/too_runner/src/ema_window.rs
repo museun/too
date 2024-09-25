@@ -1,17 +1,17 @@
 #[derive(Copy, Clone, Debug, PartialEq, PartialOrd)]
-pub struct FrameStats {
+pub struct WindowStats {
     pub min: f32,
     pub max: f32,
     pub avg: f32,
 }
 
-pub struct Fps<const N: usize> {
+pub struct EmaWindow<const N: usize> {
     alpha: f32,
     ema: f32,
     min_max: Buffer<N>,
 }
 
-impl<const N: usize> Fps<N> {
+impl<const N: usize> EmaWindow<N> {
     pub const fn new() -> Self {
         Self {
             alpha: const { 1.0 / N as f32 },
@@ -25,9 +25,9 @@ impl<const N: usize> Fps<N> {
         self.min_max.push(val);
     }
 
-    pub fn get(&self) -> FrameStats {
+    pub fn get(&self) -> WindowStats {
         let (min, max) = self.min_max.min_max();
-        FrameStats {
+        WindowStats {
             min: max.recip(),
             max: min.recip(),
             avg: self.ema.recip(),
@@ -47,8 +47,8 @@ impl<const N: usize> Buffer<N> {
     const MASK: u16 = N as u16 - 1;
 
     const fn new() -> Self {
-        assert!(N > 0, "Buffer size cannot be empty");
-        assert!(N.is_power_of_two(), "Buffer size must be a power of two");
+        const { assert!(N > 0, "Buffer size cannot be empty") };
+        const { assert!(N.is_power_of_two(), "Buffer size must be a power of two") };
 
         Self {
             buffer: [0.0; N],
@@ -67,7 +67,7 @@ impl<const N: usize> Buffer<N> {
         let old = std::mem::replace(&mut self.buffer[self.index as usize], val);
 
         self.index = (self.index + 1) & Self::MASK;
-        if self.len < N as _ {
+        if self.len < N as u16 {
             self.len += 1;
         }
 
