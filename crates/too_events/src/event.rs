@@ -141,7 +141,10 @@ impl Event {
 
     fn is_keybind(key: Key, modifiers: Modifiers, expected: impl Into<Keybind>) -> bool {
         let expected: Keybind = expected.into();
-        if matches!(expected.key, Key::Char(..)) && expected.modifiers.is_none() {
+        if matches!(expected.key, Key::Char(..))
+            && expected.modifiers.is_none()
+            && modifiers.is_none()
+        {
             return key == expected.key;
         }
         Keybind::new(key, modifiers) == expected
