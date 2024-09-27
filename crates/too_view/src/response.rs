@@ -29,6 +29,15 @@ impl<T, R> Response<T, R> {
         }
     }
 
+    pub fn map<E, U>(self, map: impl FnOnce(T, R) -> (E, U)) -> Response<E, U> {
+        let (resp, inner) = map(self.resp, self.inner);
+        Response {
+            resp,
+            view_id: self.view_id,
+            inner,
+        }
+    }
+
     pub fn resp(&self) -> &T {
         &self.resp
     }
