@@ -1,3 +1,4 @@
+/// Stats for an [`EmaWindow`]
 #[derive(Copy, Clone, Debug, PartialEq, PartialOrd)]
 pub struct WindowStats {
     pub min: f32,
@@ -5,6 +6,9 @@ pub struct WindowStats {
     pub avg: f32,
 }
 
+/// A rolling window that utlizies [Exponential smoothing](https://en.wikipedia.org/wiki/Exponential_smoothing)
+///
+/// ***NOTE*** the buffer size `N` must be a power of 2
 pub struct EmaWindow<const N: usize> {
     alpha: f32,
     ema: f32,
@@ -18,6 +22,11 @@ impl<const N: usize> Default for EmaWindow<N> {
 }
 
 impl<const N: usize> EmaWindow<N> {
+    /// Create a new [`EmaWindow`]
+    ///
+    /// This uses an alpha value of 1.0 for 'total' smoothness
+    ///
+    /// ***NOTE*** the buffer size `N` must be a power of 2
     pub const fn new() -> Self {
         Self {
             alpha: const { 1.0 / N as f32 },
@@ -26,11 +35,13 @@ impl<const N: usize> EmaWindow<N> {
         }
     }
 
+    /// Push a value into the window
     pub fn push(&mut self, val: f32) {
         self.ema = self.ema + self.alpha * (val - self.ema);
         self.min_max.push(val);
     }
 
+    /// Get the current stats of the window
     pub fn get(&self) -> WindowStats {
         let (min, max) = self.min_max.min_max();
         WindowStats {

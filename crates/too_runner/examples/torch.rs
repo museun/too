@@ -7,7 +7,7 @@ use too_runner::{
     math::{lerp, pos2, Pos2, Rect, Vec2},
     pixel::Pixel,
     shapes::{Fill, Shape},
-    App, AppRunner, Backend, Context, SurfaceMut,
+    App, AppRunner, Context, SurfaceMut,
 };
 
 fn main() -> std::io::Result<()> {
@@ -111,17 +111,17 @@ impl Demo {
 }
 
 impl App for Demo {
-    fn event(&mut self, event: Event, _: Context<'_, impl Backend>, size: Vec2) {
+    fn event(&mut self, event: Event, ctx: Context<'_>) {
         if event.is_keybind_pressed(' ') {
             self.enabled = !self.enabled
         }
 
         if event.is_keybind_pressed(Key::PageDown) {
-            self.scroll_down(size.y as usize * 2);
+            self.scroll_down(ctx.size().y as usize * 2);
         }
 
         if event.is_keybind_pressed(Key::PageUp) {
-            self.scroll_up(size.y as usize * 2);
+            self.scroll_up(ctx.size().y as usize * 2);
         }
 
         if event.is_keybind_pressed(Key::Down) {
@@ -152,7 +152,7 @@ impl App for Demo {
         }
     }
 
-    fn render(&mut self, mut surface: SurfaceMut) {
+    fn render(&mut self, mut surface: SurfaceMut, _ctx: Context<'_>) {
         let offset = self.lines.len().saturating_sub(self.pos);
         let offset = offset
             .checked_sub(surface.rect().height().saturating_sub_unsigned(1) as _)
