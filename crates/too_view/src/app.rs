@@ -8,7 +8,7 @@ pub trait App: Sized + 'static {
     fn view(ctx: &mut Context<'_, Self>);
 }
 
-pub trait AppRunner: App {
+pub trait AppRunner: App + Sealed + Sized {
     fn run(self, backend: impl Backend + EventReader) -> std::io::Result<()> {
         struct Wrapper<T: 'static> {
             ui: Ui<T>,
@@ -39,4 +39,8 @@ pub trait AppRunner: App {
     }
 }
 
-impl<T: App> AppRunner for T {}
+impl<T: App + Sealed> AppRunner for T {}
+
+#[doc(hidden)]
+pub trait Sealed {}
+impl<T> Sealed for T {}
