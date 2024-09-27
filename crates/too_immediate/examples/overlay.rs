@@ -1,5 +1,5 @@
+use too_backend::Event;
 use too_crossterm::{Config, Term};
-use too_events::Event;
 use too_immediate::{App, AppRunner as _};
 use too_layout::{Anchor2, Axis};
 use too_math::Rect;

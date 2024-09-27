@@ -1,5 +1,5 @@
+use too_backend::{Event, Keybind};
 use too_crossterm::{Config, Term};
-use too_events::{Event, Keybind};
 use too_immediate::{App, AppRunner as _};
 use too_layout::Align2;
 use too_math::{lerp, pos2, Pos2, Vec2};

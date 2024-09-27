@@ -1,5 +1,5 @@
+use too_backend::{Event, Key, Keybind};
 use too_crossterm::{Config, Term};
-use too_events::{Event, Key, Keybind};
 use too_immediate::{App, AppRunner as _};
 use too_math::{vec2, vec3, Pos2, Rect, Vec2, Vec3};
 use too_renderer::{Pixel, Rgba, SurfaceMut};

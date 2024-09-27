@@ -2,7 +2,8 @@ use crate::{
     pixel::{Attribute, Color},
     Buffer, Pixel, Renderer, Shape,
 };
-use too_events::Event;
+
+use too_backend::Event;
 use too_math::{Pos2, Rect, Vec2};
 
 pub struct Surface {

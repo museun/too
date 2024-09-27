@@ -1,5 +1,5 @@
+use too_backend::{Event, Key};
 use too_crossterm::{Config, Term};
-use too_events::{Event, Key};
 use too_immediate::{App, AppRunner as _};
 use too_layout::{Anchor, Anchor2, Axis, LinearLayout};
 use too_math::{vec2, Vec2};

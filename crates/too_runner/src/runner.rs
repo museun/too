@@ -3,9 +3,9 @@ use std::{
     time::{Duration, Instant},
 };
 
-use too_events::{Event, EventReader};
+use too_backend::{Backend, Event, EventReader};
 use too_overlay::Overlay;
-use too_renderer::{Backend, SurfaceMut, TermRenderer};
+use too_renderer::{SurfaceMut, TermRenderer};
 
 use crate::Context;
 

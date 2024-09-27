@@ -1,10 +1,12 @@
 use std::{collections::VecDeque, thread::JoinHandle};
 
-use too_events::{
-    Event, EventReader, Key, Keybind, Modifiers, MouseButton, MouseState, TemporalEvent,
+use too_backend::{
+    Backend, Command, CurrentScreen, Event, EventReader, Key, Keybind, Modifiers, MouseButton,
+    MouseState, TemporalEvent,
 };
+
 use too_math::{pos2, vec2, Vec2};
-use too_renderer::{Backend, Command, CurrentScreen, Renderer, TermRenderer};
+use too_renderer::{Renderer, TermRenderer};
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
 pub struct Config {
@@ -291,9 +293,9 @@ fn translate(ev: crossterm::event::Event, mouse_state: &mut MouseState) -> Optio
             let modifiers = translate_modifiers(ev.modifiers);
 
             match ev.kind {
-                KeyEventKind::Press => too_events::Event::KeyPressed { key, modifiers },
-                KeyEventKind::Repeat => too_events::Event::KeyRepeat { key, modifiers },
-                KeyEventKind::Release => too_events::Event::KeyReleased { key, modifiers },
+                KeyEventKind::Press => Event::KeyPressed { key, modifiers },
+                KeyEventKind::Repeat => Event::KeyRepeat { key, modifiers },
+                KeyEventKind::Release => Event::KeyReleased { key, modifiers },
             }
         }
         E::Mouse(ev) => {

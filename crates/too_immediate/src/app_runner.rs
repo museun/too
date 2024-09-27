@@ -1,7 +1,6 @@
 use crate::App;
-use too_events::EventReader;
+use too_backend::{Backend, EventReader};
 use too_overlay::Overlay;
-use too_renderer::Backend;
 use too_runner::Runner;
 
 /// A trait to run your application

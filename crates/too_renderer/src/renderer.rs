@@ -1,5 +1,8 @@
-use crate::{pixel::Attribute, Backend, Rgba};
 use std::io::{BufWriter, Write as _};
+
+use crate::{pixel::Attribute, Rgba};
+
+use too_backend::Backend;
 use too_math::Pos2;
 
 pub trait Renderer {

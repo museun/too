@@ -1,4 +1,4 @@
-use too_events::Event;
+use too_backend::Event;
 use too_renderer::SurfaceMut;
 use too_runner::Context;
 

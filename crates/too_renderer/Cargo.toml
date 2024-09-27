@@ -10,4 +10,4 @@ repository.workspace = true
 
 [dependencies]
 too_math.workspace = true
-too_events.workspace = true
+too_backend.workspace = true

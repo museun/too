@@ -1,28 +1,3 @@
-use too_math::Vec2;
-
-#[derive(Copy, Clone, Debug, PartialEq, Eq)]
-pub enum CurrentScreen {
-    Main,
-    Alt,
-}
-
-impl CurrentScreen {
-    pub const fn is_main_screen(&self) -> bool {
-        matches!(self, Self::Main)
-    }
-
-    pub const fn is_alt_screen(&self) -> bool {
-        matches!(self, Self::Alt)
-    }
-
-    pub fn toggle(self) -> Self {
-        match self {
-            Self::Main => Self::Alt,
-            Self::Alt => Self::Main,
-        }
-    }
-}
-
 #[derive(Clone, Debug, PartialEq, PartialOrd, Eq, Ord, Hash)]
 #[non_exhaustive]
 /// Commands are requests sent to the backend
@@ -57,20 +32,4 @@ impl Command {
     pub const fn request_quit() -> Self {
         Self::RequestQuit
     }
-}
-
-/// An abstraction over a writable backend
-pub trait Backend {
-    /// The writer for this backend
-    type Out<'a>: std::io::Write
-    where
-        Self: 'a;
-    /// The current size of the backends 'screen'
-    fn size(&self) -> Vec2;
-    /// Can we draw to this backend, currently?
-    fn should_draw(&self) -> bool;
-    /// Send a [`Command`] to this backend
-    fn command(&mut self, cmd: Command);
-    /// Get the writer for this backend
-    fn writer(&mut self) -> Self::Out<'_>;
 }

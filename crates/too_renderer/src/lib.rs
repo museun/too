@@ -18,6 +18,3 @@ pub use rgba::Rgba;
 
 mod gradient;
 pub use gradient::Gradient;
-
-mod backend;
-pub use backend::{Backend, Command, CurrentScreen};
