@@ -3,7 +3,7 @@ use std::collections::VecDeque;
 use too_math::Vec2;
 use too_renderer::Command;
 
-use crate::Overlay;
+use crate::overlay::Overlay;
 
 /// Provides the ability to send [`Command`] to the backend and access to the [`Overlay`]
 pub struct Context<'a> {

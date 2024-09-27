@@ -1,9 +1,14 @@
-use std::{collections::VecDeque, default};
+//! Overlays are (optionally) drawn ontop of the surface
+//!
+//! These can be accessed and configured from the [`Context`](crate::Context)
+use std::collections::VecDeque;
 
-use too_layout::{Anchor2, Axis};
-use too_renderer::Rgba;
+use too_layout::{Anchor2, Axis, LinearLayout};
+use too_math::vec2;
+use too_renderer::{Rgba, SurfaceMut};
+use too_shapes::Text;
 
-use crate::{ema_window::WindowStats, EmaWindow};
+use crate::{ema_window::WindowStats, App, EmaWindow};
 
 #[derive(Default)] // don't mem swap me
 #[non_exhaustive]
@@ -17,7 +22,7 @@ pub struct Overlay {
     pub debug: DebugOverlay,
 }
 
-// Allows you to show messages ontop of everything
+/// Allows you to show messages ontop of everything
 pub struct DebugOverlay {
     /// Should we show this overlay?
     pub show: bool,
@@ -52,6 +57,7 @@ impl Default for DebugOverlay {
 }
 
 impl DebugOverlay {
+    /// Push a new message into the overlay
     pub fn push(&mut self, msg: impl ToString) {
         while self.queue.len() > self.limit {
             self.queue.pop_back();
@@ -104,5 +110,63 @@ impl Default for FpsOverlay {
             fg: Rgba::from_static("#F00"),
             bg: Rgba::from_static("#000"),
         }
+    }
+}
+
+/// Draws the default fps overlay
+///
+/// This does not check whether its shown -- thats up to you
+pub fn draw_default_fps_overlay(overlay: &mut Overlay, surface: &mut SurfaceMut<'_>) {
+    let frame_stats = overlay.fps.get_current_stats();
+
+    let mut alloc = LinearLayout::new(overlay.fps.axis)
+        .anchor(overlay.fps.anchor)
+        .wrap(true)
+        .spacing(vec2(1, 0))
+        .layout(surface.rect());
+
+    let (fg, bg) = (overlay.fps.fg, overlay.fps.bg);
+    for part in [
+        format!("min: {:.2}", frame_stats.min),
+        format!("max: {:.2}", frame_stats.max),
+        format!("avg: {:.2}", frame_stats.avg),
+    ] {
+        let part = Text::new(part).fg(fg).bg(bg);
+        if let Some(rect) = alloc.allocate(part.size()) {
+            surface.crop(rect).draw(part);
+        }
+    }
+}
+
+/// Draws the default debug overlay
+///
+/// This does not check whether its shown -- thats up to you
+pub fn draw_default_debug_overlay(overlay: &mut Overlay, surface: &mut SurfaceMut<'_>) {
+    let mut alloc = LinearLayout::new(overlay.debug.axis)
+        .anchor(overlay.debug.anchor)
+        .wrap(true)
+        .spacing(vec2(1, 0))
+        .layout(surface.rect());
+
+    let (fg, bg) = (overlay.debug.fg, overlay.debug.bg);
+
+    for msg in overlay.debug.queue.drain(..).rev() {
+        let part = Text::new(msg).fg(fg).bg(bg);
+        if let Some(rect) = alloc.allocate(part.size()) {
+            surface.crop(rect).draw(part);
+        }
+    }
+}
+
+/// A default overlay draw function.
+///
+/// If you use a custom [`Runner`](crate::Runner) you can use this for [`Runner::post_render`](crate::Runner::post_render)
+pub fn draw_default_overlay(_: &mut impl App, overlay: &mut Overlay, mut surface: SurfaceMut<'_>) {
+    if overlay.fps.show {
+        draw_default_fps_overlay(overlay, &mut surface);
+    }
+
+    if overlay.debug.show {
+        draw_default_debug_overlay(overlay, &mut surface);
     }
 }

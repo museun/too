@@ -48,8 +48,7 @@ pub use app_runner::AppRunner;
 mod runner;
 pub use runner::Runner;
 
-mod overlay;
-pub use overlay::{DebugOverlay, FpsOverlay, Overlay};
+pub mod overlay;
 
 // Hide this from the docs
 // #[cfg(doctests)] doesn't work as expected here
