@@ -3,10 +3,19 @@ use std::fmt::Write;
 use crate::{Key, Modifiers};
 
 /// A keybind is a combination of a [`Key`] and some [`Modifiers`]
-#[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash)]
 pub struct Keybind {
     pub key: Key,
     pub modifiers: Modifiers,
+}
+
+impl std::fmt::Debug for Keybind {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("Keybind")
+            .field("key", &self.key)
+            .field("modifiers", &self.modifiers)
+            .finish()
+    }
 }
 
 impl Keybind {

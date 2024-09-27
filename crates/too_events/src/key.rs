@@ -43,4 +43,28 @@ impl Key {
         }
         false
     }
+
+    pub fn to_ascii_uppercase(&self) -> Option<Self> {
+        let Self::Char(ch) = self else { return None };
+        ch.is_ascii()
+            .then(|| ch.to_ascii_uppercase())
+            .map(Self::Char)
+    }
+
+    pub fn to_ascii_lowercase(&self) -> Option<Self> {
+        let Self::Char(ch) = self else { return None };
+        ch.is_ascii()
+            .then(|| ch.to_ascii_lowercase())
+            .map(Self::Char)
+    }
+
+    pub const fn is_ascii_uppercase(&self) -> bool {
+        let Self::Char(ch) = self else { return false };
+        ch.is_ascii_uppercase()
+    }
+
+    pub const fn is_ascii_lowercase(&self) -> bool {
+        let Self::Char(ch) = self else { return false };
+        ch.is_ascii_lowercase()
+    }
 }
