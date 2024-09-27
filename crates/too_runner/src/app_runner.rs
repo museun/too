@@ -1,10 +1,7 @@
 use too_events::EventReader;
-use too_layout::LinearLayout;
-use too_math::vec2;
-use too_renderer::{Backend, SurfaceMut};
-use too_shapes::Text;
+use too_renderer::Backend;
 
-use crate::{overlay::Overlay, App, Runner};
+use crate::{App, Runner};
 
 /// A trait to run your application
 ///
