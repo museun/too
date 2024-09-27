@@ -236,7 +236,6 @@ impl<T: 'static> Ui<T> {
         self.stack.last().copied().unwrap_or(self.root())
     }
 
-    // TODO figure out a better way for this
     pub fn ctx<'a>(&'a mut self, state: &'a mut T) -> view::Context<'a, T> {
         view::Context { ui: self, state }
     }

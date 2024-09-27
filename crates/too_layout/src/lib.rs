@@ -42,11 +42,3 @@ pub use linear::{LinearAllocator, LinearLayout};
 
 mod align;
 pub use align::{Align, Align2};
-
-mod size;
-pub use size::{size, Size};
-
-mod constraints;
-pub use constraints::Constraints;
-
-// TODO helper to do row / column allocations (returning just the cross offset)

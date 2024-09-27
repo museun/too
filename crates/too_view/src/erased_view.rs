@@ -34,7 +34,6 @@ pub trait ErasedView: std::any::Any {
     fn as_any_mut(&mut self) -> &mut dyn std::any::Any;
 }
 
-// NOTE this is needed for the ErasedView impl to hold onto 'T' without using it
 pub struct ViewMarker<T: 'static, V: View<T>> {
     pub view: V,
     _marker: PhantomData<T>,
@@ -78,7 +77,6 @@ impl<T: 'static, V: View<T> + 'static> ErasedView for ViewMarker<T, V> {
     }
 
     fn as_any_mut(&mut self) -> &mut dyn std::any::Any {
-        // TODO maybe we want to keep it inside of the ViewMarker
         &mut self.view as _
     }
 }
