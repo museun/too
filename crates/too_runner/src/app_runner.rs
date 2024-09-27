@@ -9,7 +9,7 @@ use crate::{App, Runner};
 ///
 /// # Example:
 /// ```rust
-/// use too_runner::{AppRunner as _, SurfaceMut};
+/// use too_runner::{AppRunner as _, SurfaceMut, Context};
 ///
 /// struct Demo {
 ///     state: i32
@@ -22,7 +22,7 @@ use crate::{App, Runner};
 /// }
 ///
 /// impl too_runner::App for Demo {
-///     fn render(&mut self, surface: &mut SurfaceMut) {}
+///     fn render(&mut self, surface: SurfaceMut, ctx: Context) {}
 /// }
 ///
 /// # fn get_backend() -> std::io::Result<too_runner::dummy::Dummy> { Ok(too_runner::dummy::Dummy) }
@@ -33,7 +33,7 @@ use crate::{App, Runner};
 /// ```
 pub trait AppRunner: App + Sealed + Sized {
     /// Run the [`App`] with the provided [`Backend`] and [`EventReader`]
-    fn run(self, term: impl Backend + EventReader) -> std::io::Result<()> {
+    fn run(self, backend: impl Backend + EventReader) -> std::io::Result<()> {
         Runner::new()
             .min_ups(Self::min_ups)
             .max_ups(Self::max_ups)
@@ -42,7 +42,7 @@ pub trait AppRunner: App + Sealed + Sized {
             .update(Self::update)
             .render(Self::render)
             .post_render(crate::overlay::draw_default_overlay)
-            .run(self, term)
+            .run(self, backend)
     }
 }
 
