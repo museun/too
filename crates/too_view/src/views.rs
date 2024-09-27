@@ -641,18 +641,6 @@ pub fn button<T: 'static>(
     Button::show(params, ctx)
 }
 
-// row
-// column
-// float
-// flex
-// constrained
-// unconstrained
-// text input
-// border
-// radio
-// checkbox
-// todo value
-
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub struct CheckboxResponse {
     pub selected: bool,
@@ -958,6 +946,8 @@ impl<T: 'static> View<T> for MouseArea {
                     delta: ev.delta,
                 })
             }
+
+            // TODO hscroll
             Event::MouseScroll(ev) if self.filter.is_scroll() => self.scrolled = Some(ev.delta.y),
             _ => {}
         };
@@ -968,15 +958,48 @@ impl<T: 'static> View<T> for MouseArea {
 
 pub fn mouse_area<T: 'static, R>(
     filter: MouseEvent,
-    ctx: &mut Context<'_, T>,
-    show: impl FnOnce(&mut Context<'_, T>) -> R,
+    ctx: &mut Context<T>,
+    show: impl FnOnce(&mut Context<T>) -> R,
 ) -> Response<MouseAreaResponse, R> {
     MouseArea::show_children(filter, ctx, show)
 }
 
 pub fn on_click<T: 'static, R>(
-    ctx: &mut Context<'_, T>,
-    show: impl FnOnce(&mut Context<'_, T>) -> R,
-) -> Response<MouseAreaResponse, R> {
-    mouse_area(MouseEvent::empty().click(), ctx, show)
+    ctx: &mut Context<T>,
+    show: impl FnOnce(&mut Context<T>) -> R,
+) -> Response<bool, R> {
+    let filter = const { MouseEvent::empty().click() };
+    let resp = mouse_area(filter, ctx, show);
+    resp.map(|resp, inner| (resp.clicked, inner))
 }
+
+pub fn on_drag<T: 'static, R>(
+    ctx: &mut Context<T>,
+    show: impl FnOnce(&mut Context<T>) -> R,
+) -> Response<Option<Dragged>, R> {
+    let filter = const { MouseEvent::empty().drag() };
+    let resp = mouse_area(filter, ctx, show);
+    resp.map(|resp, inner| (resp.dragged, inner))
+}
+
+// TODO h-scroll
+pub fn on_scroll<T: 'static, R>(
+    ctx: &mut Context<T>,
+    show: impl FnOnce(&mut Context<T>) -> R,
+) -> Response<Option<f32>, R> {
+    let filter = const { MouseEvent::empty().scroll() };
+    let resp = mouse_area(filter, ctx, show);
+    resp.map(|resp, inner| (resp.scrolled, inner))
+}
+
+// row
+// column
+// float
+// flex
+// constrained
+// unconstrained
+// text input
+// border
+// radio
+// checkbox (wip)
+// todo value
