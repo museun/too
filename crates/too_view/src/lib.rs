@@ -151,6 +151,7 @@ impl<'a, 'c: 't, 't, T: 'static> DrawCtx<'a, 'c, 't, T> {
             return;
         };
 
+        // this is annoying but I think I solved it
         let Some(mut node) = node.take() else {
             unreachable!("node: {:?} was missing", id)
         };
@@ -291,7 +292,10 @@ impl<T: 'static> Ui<T> {
         }
     }
 
-    fn tick(&mut self, dt: f32) {}
+    fn tick(&mut self, dt: f32) {
+        // TODO this needs to find the things that want animation
+        // and do it
+    }
 
     fn event(&mut self, state: &mut T, event: too_events::Event) {
         if let too_events::Event::Resize(size) = event {
