@@ -49,27 +49,61 @@ pub trait AppRunner: App + Sealed + Sized {
     }
 }
 
-fn draw_default_overlay(_: &mut impl App, overlay: &mut Overlay, mut surface: SurfaceMut<'_>) {
-    if overlay.fps.show {
-        let frame_stats = overlay.fps.get_current_stats();
+/// Draws the default fps overlay
+///
+/// This does not check whether its shown -- thats up to you
+pub fn draw_default_fps_overlay(overlay: &mut Overlay, surface: &mut SurfaceMut<'_>) {
+    let frame_stats = overlay.fps.get_current_stats();
 
-        let mut alloc = LinearLayout::new(overlay.fps.axis)
-            .anchor(overlay.fps.anchor)
-            .wrap(true)
-            .spacing(vec2(1, 0))
-            .layout(surface.rect());
+    let mut alloc = LinearLayout::new(overlay.fps.axis)
+        .anchor(overlay.fps.anchor)
+        .wrap(true)
+        .spacing(vec2(1, 0))
+        .layout(surface.rect());
 
-        let (fg, bg) = (overlay.fps.fg, overlay.fps.bg);
-        for part in [
-            format!("min: {:.2}", frame_stats.min),
-            format!("max: {:.2}", frame_stats.max),
-            format!("avg: {:.2}", frame_stats.avg),
-        ] {
-            let part = Text::new(part).fg(fg).bg(bg);
-            if let Some(rect) = alloc.allocate(part.size()) {
-                surface.crop(rect).draw(part);
-            }
+    let (fg, bg) = (overlay.fps.fg, overlay.fps.bg);
+    for part in [
+        format!("min: {:.2}", frame_stats.min),
+        format!("max: {:.2}", frame_stats.max),
+        format!("avg: {:.2}", frame_stats.avg),
+    ] {
+        let part = Text::new(part).fg(fg).bg(bg);
+        if let Some(rect) = alloc.allocate(part.size()) {
+            surface.crop(rect).draw(part);
         }
+    }
+}
+
+/// Draws the default debug overlay
+///
+/// This does not check whether its shown -- thats up to you
+pub fn draw_default_debug_overlay(overlay: &mut Overlay, surface: &mut SurfaceMut<'_>) {
+    let mut alloc = LinearLayout::new(overlay.debug.axis)
+        .anchor(overlay.debug.anchor)
+        .wrap(true)
+        .spacing(vec2(1, 0))
+        .layout(surface.rect());
+
+    let (fg, bg) = (overlay.debug.fg, overlay.debug.bg);
+
+    for msg in overlay.debug.queue.drain(..).rev() {
+        let part = Text::new(msg).fg(fg).bg(bg);
+        if let Some(rect) = alloc.allocate(part.size()) {
+            surface.crop(rect).draw(part);
+        }
+    }
+}
+
+/// A default overlay draw function.
+///
+/// If you use a custom [`Runner`] you can use this for [`Runner::post_render`]
+pub fn draw_default_overlay(_: &mut impl App, overlay: &mut Overlay, mut surface: SurfaceMut<'_>) {
+    if overlay.fps.show {
+        draw_default_fps_overlay(overlay, &mut surface);
+    }
+
+    if overlay.debug.show {
+        draw_default_debug_overlay(overlay, &mut surface);
     }
 }
 

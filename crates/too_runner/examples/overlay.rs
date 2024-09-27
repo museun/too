@@ -26,6 +26,10 @@ impl App for Demo {
     fn update(&mut self, dt: f32, mut ctx: Context<'_>) {
         self.fg += 1.0 * dt / 5.0_f32;
         ctx.overlay().fps.fg = Rgba::sine(self.fg);
+
+        ctx.overlay()
+            .debug
+            .push(format!("fg phase: {:.2?}", self.fg));
     }
 
     fn event(&mut self, event: Event, mut ctx: Context<'_>) {
@@ -34,9 +38,17 @@ impl App for Demo {
             ctx.overlay().fps.axis = self.axis;
             ctx.toggle_fps();
         }
+
+        if event.is_keybind_pressed('d') {
+            ctx.overlay().debug.toggle();
+        }
     }
 
-    fn render(&mut self, mut surface: SurfaceMut, _ctx: Context<'_>) {
+    fn render(&mut self, mut surface: SurfaceMut, mut ctx: Context<'_>) {
+        ctx.overlay()
+            .debug
+            .push(format!("surface size: {:?}", surface.rect().size()));
+
         surface
             .crop(Rect::from_center_size(
                 surface.rect().center(),

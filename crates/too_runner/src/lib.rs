@@ -49,7 +49,7 @@ mod runner;
 pub use runner::Runner;
 
 mod overlay;
-pub use overlay::{FpsOverlay, Overlay};
+pub use overlay::{DebugOverlay, FpsOverlay, Overlay};
 
 // Hide this from the docs
 // #[cfg(doctests)] doesn't work as expected here
