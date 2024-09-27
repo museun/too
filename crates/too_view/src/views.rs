@@ -1,12 +1,14 @@
 use std::ops::RangeInclusive;
 
 use too_events::{Key, Keybind, Modifiers};
+use too_math::vec2;
 use too_renderer::{Pixel, Rgba};
 use too_runner::{layout::Align2, shapes::Text};
 use too_shapes::Fill;
 
 use crate::{
-    geom::{self, Point, Size, Space},
+    geom::{self, Point, Size, Space, Vector},
+    input::MouseDrag,
     response::UserResponse,
     view::Context,
     DrawCtx, Event, EventCtx, Handled, Interest, LayoutCtx, NoArgs, NoResponse, Response, View,
@@ -446,4 +448,537 @@ pub fn margin<T: 'static, R>(
     show: impl FnOnce(&mut Context<'_, T>) -> R,
 ) -> UserResponse<R> {
     Margin::show_children(margin.into(), ctx, show)
+}
+
+pub struct ProgressBarParams<'a> {
+    pub value: &'a mut f32,
+    pub range: RangeInclusive<f32>,
+}
+
+impl<'a> ProgressBarParams<'a> {
+    pub fn new(value: &'a mut f32) -> Self {
+        Self {
+            value,
+            range: 0.0..=1.0,
+        }
+    }
+
+    pub const fn range(mut self, range: RangeInclusive<f32>) -> Self {
+        self.range = range;
+        self
+    }
+}
+
+struct Progress<T: 'static> {
+    params: fn(&mut T) -> ProgressBarParams<'_>,
+}
+
+impl<T: 'static> Progress<T> {
+    fn normalize(value: f32, range: &RangeInclusive<f32>) -> f32 {
+        let value = value.clamp(*range.start(), *range.end());
+        (value - range.start()) / (range.end() - range.start())
+    }
+
+    fn denormalize(value: f32, range: &RangeInclusive<f32>) -> f32 {
+        let value = value.clamp(0.0, 1.0);
+        value * (range.end() - range.start()) + range.start()
+    }
+}
+
+impl<T: 'static> View<T> for Progress<T> {
+    type Args<'a> = fn(&mut T) -> ProgressBarParams<'_>;
+    type Response = NoResponse;
+
+    fn create(args: Self::Args<'_>) -> Self {
+        Self { params: args }
+    }
+
+    fn update(&mut self, state: &mut T, args: Self::Args<'_>) -> Self::Response {
+        self.params = args
+    }
+
+    fn layout(&mut self, ctx: LayoutCtx<T>, space: Space) -> Size {
+        // TODO axis
+        space.fit(Size::new(20.0, 1.0))
+    }
+
+    fn draw(&mut self, ctx: DrawCtx<T>) {
+        let params = (self.params)(ctx.state);
+
+        let (min, max) = (ctx.rect.left(), ctx.rect.right());
+        let x = Self::normalize(*params.value, &params.range);
+        let x = min + (x * (max - min));
+
+        ctx.surface.draw(Fill::new("#555"));
+
+        // surface::crop does not work -- we need to normalize our rect to 0,0
+        for x in 0..(x - ctx.rect.left()).round() as i32 {
+            ctx.surface
+                .put(too_math::pos2(x, 0), Pixel::new(' ').bg("#FFF"));
+        }
+    }
+}
+
+pub fn progress_bar<T: 'static>(
+    ctx: &mut Context<'_, T>,
+    params: fn(&mut T) -> ProgressBarParams<'_>,
+) -> Response<()> {
+    Progress::show(params, ctx)
+}
+
+#[derive(Copy, Clone, Debug, PartialEq)]
+pub struct ButtonResponse {
+    pub clicked: bool,
+}
+
+pub struct ButtonParams<'a> {
+    pub label: &'a str,
+    pub enabled: bool,
+}
+
+impl<'a> ButtonParams<'a> {
+    pub const fn new(label: &'a str) -> Self {
+        Self {
+            label,
+            enabled: true,
+        }
+    }
+
+    pub const fn enabled(mut self, enabled: bool) -> Self {
+        self.enabled = enabled;
+        self
+    }
+}
+
+#[derive(Copy, Clone, Default)]
+enum ButtonState {
+    Hovered,
+    Held,
+    Clicked,
+    #[default]
+    None,
+}
+
+struct Button<T: 'static> {
+    params: fn(&T) -> ButtonParams<'_>,
+    state: ButtonState,
+}
+
+impl<T: 'static> View<T> for Button<T> {
+    type Args<'a> = fn(&T) -> ButtonParams<'_>;
+    type Response = ButtonResponse;
+
+    fn create(args: Self::Args<'_>) -> Self {
+        Self {
+            params: args,
+            state: ButtonState::None,
+        }
+    }
+
+    fn update(&mut self, state: &mut T, args: Self::Args<'_>) -> Self::Response {
+        let clicked = match self.state {
+            ButtonState::Clicked => {
+                self.state = ButtonState::Hovered;
+                true
+            }
+            _ => false,
+        };
+
+        self.params = args;
+        ButtonResponse { clicked }
+    }
+
+    fn event(&mut self, ctx: EventCtx<T>, event: &Event) -> Handled {
+        if !(self.params)(&ctx.state).enabled {
+            return Handled::Bubble;
+        }
+
+        // TODO answer 'which button'
+        self.state = match event {
+            Event::MouseEnter(..) => ButtonState::Hovered,
+            Event::MouseLeave(..) => ButtonState::None,
+            Event::MouseClick(..) => ButtonState::Clicked,
+            Event::MouseHeld(..) => ButtonState::Held,
+            _ => return Handled::Bubble,
+        };
+
+        Handled::Sink
+    }
+
+    fn interest(&self) -> Interest {
+        Interest::MOUSE
+    }
+
+    fn layout(&mut self, ctx: LayoutCtx<T>, space: Space) -> Size {
+        let params = (self.params)(&ctx.state);
+        let size = Text::new(params.label).size();
+        space.fit(Size::from(size) + Vector::new(2.0, 0.0))
+    }
+
+    fn draw(&mut self, ctx: DrawCtx<T>) {
+        let params = (self.params)(&ctx.state);
+
+        let fg = if params.enabled { "#FFF" } else { "#AAA" };
+        let bg = match self.state {
+            ButtonState::Hovered if params.enabled => "#F00",
+            ButtonState::Held if params.enabled => "#F0F",
+            ButtonState::Clicked if params.enabled => "#00F",
+            ButtonState::None if params.enabled => "#333",
+            _ => "#333",
+        };
+
+        let offset = ctx.surface.rect().translate(vec2(1, 0));
+        ctx.surface
+            .draw(Fill::new(bg))
+            .crop(offset) // this is such a hack
+            .draw(Text::new(params.label).fg(fg));
+    }
+}
+
+pub fn button<T: 'static>(
+    ctx: &mut Context<'_, T>,
+    params: fn(&T) -> ButtonParams<'_>,
+) -> Response<ButtonResponse> {
+    Button::show(params, ctx)
+}
+
+// row
+// column
+// float
+// flex
+// constrained
+// unconstrained
+// text input
+// border
+// radio
+// checkbox
+// todo value
+
+#[derive(Copy, Clone, Debug, PartialEq)]
+pub struct CheckboxResponse {
+    pub selected: bool,
+}
+
+pub struct CheckboxParams<'a> {
+    pub label: &'a str,
+    pub value: &'a mut bool,
+}
+
+impl<'a> CheckboxParams<'a> {
+    pub fn new(label: &'a str, value: &'a mut bool) -> Self {
+        Self { label, value }
+    }
+}
+
+struct Checkbox<T: 'static> {
+    params: fn(&mut T) -> CheckboxParams<'_>,
+    state: ButtonState,
+}
+
+impl<T: 'static> View<T> for Checkbox<T> {
+    type Args<'a> = fn(&mut T) -> CheckboxParams<'_>;
+    type Response = CheckboxResponse;
+
+    fn create(args: Self::Args<'_>) -> Self {
+        Self {
+            params: args,
+            state: ButtonState::None,
+        }
+    }
+
+    fn update(&mut self, state: &mut T, args: Self::Args<'_>) -> Self::Response {
+        self.params = args;
+
+        let clicked = match self.state {
+            ButtonState::Clicked => {
+                self.state = ButtonState::Hovered;
+                true
+            }
+            _ => false,
+        };
+
+        CheckboxResponse {
+            selected: *(self.params)(state).value,
+        }
+    }
+
+    fn interest(&self) -> Interest {
+        Interest::MOUSE
+    }
+
+    fn event(&mut self, ctx: EventCtx<T>, event: &Event) -> Handled {
+        self.state = match event {
+            Event::MouseEnter(..) => ButtonState::Hovered,
+            Event::MouseLeave(..) => ButtonState::None,
+            Event::MouseClick(..) => ButtonState::Clicked,
+            Event::MouseHeld(..) => ButtonState::Held,
+            _ => return Handled::Bubble,
+        };
+
+        Handled::Sink
+    }
+
+    fn layout(&mut self, mut ctx: LayoutCtx<T>, space: Space) -> Size {
+        let params = (self.params)(&mut ctx.state);
+        let size = Text::new(params.label).size();
+        space.fit(Size::from(size) + Vector::new(3.0, 0.0))
+    }
+
+    fn draw(&mut self, mut ctx: DrawCtx<T>) {
+        let params = (self.params)(&mut ctx.state);
+
+        let bg = match self.state {
+            ButtonState::Hovered => "#F00",
+            ButtonState::Held => "#F0F",
+            ButtonState::Clicked => "#00F",
+            ButtonState::None => "#333",
+            _ => "#333",
+        };
+
+        // ☒
+        // ☐
+
+        let offset = ctx.surface.rect().translate(vec2(3, 0));
+        ctx.surface
+            .draw(Fill::new(bg))
+            .crop(offset) // this is such a hack
+            .draw(Text::new(params.label).fg("#FFF"));
+    }
+}
+
+pub fn checkbox<T: 'static>(
+    ctx: &mut Context<'_, T>,
+    params: fn(&mut T) -> CheckboxParams<'_>,
+) -> Response<CheckboxResponse> {
+    Checkbox::show(params, ctx)
+}
+
+#[derive(Copy, Clone, Default, Debug, PartialEq)]
+pub struct MouseEvent(u8);
+impl MouseEvent {
+    pub const EMPTY: Self = Self(0);
+    pub const ALL: Self = Self(
+        Self::ENTER.0
+            | Self::LEAVE.0
+            | Self::MOVE.0
+            | Self::DRAG.0
+            | Self::CLICK.0
+            | Self::HELD.0
+            | Self::SCROLL.0,
+    );
+
+    pub const ENTER: Self = Self(1 << 0);
+    pub const LEAVE: Self = Self(1 << 1);
+    pub const MOVE: Self = Self(1 << 2);
+    pub const DRAG: Self = Self(1 << 3);
+    pub const CLICK: Self = Self(1 << 4);
+    pub const HELD: Self = Self(1 << 5);
+    pub const SCROLL: Self = Self(1 << 6);
+}
+
+impl MouseEvent {
+    pub const fn empty() -> Self {
+        Self::EMPTY
+    }
+
+    pub const fn enter(self) -> Self {
+        Self(self.0 | Self::ENTER.0)
+    }
+    pub const fn leave(self) -> Self {
+        Self(self.0 | Self::LEAVE.0)
+    }
+    pub const fn moved(self) -> Self {
+        Self(self.0 | Self::MOVE.0)
+    }
+    pub const fn drag(self) -> Self {
+        Self(self.0 | Self::DRAG.0)
+    }
+    pub const fn click(self) -> Self {
+        Self(self.0 | Self::CLICK.0)
+    }
+    pub const fn held(self) -> Self {
+        Self(self.0 | Self::HELD.0)
+    }
+    pub const fn scroll(self) -> Self {
+        Self(self.0 | Self::SCROLL.0)
+    }
+}
+
+impl MouseEvent {
+    pub const fn is_enter(&self) -> bool {
+        (self.0 & Self::ENTER.0) != 0
+    }
+    pub const fn is_leave(&self) -> bool {
+        (self.0 & Self::LEAVE.0) != 0
+    }
+    pub const fn is_move(&self) -> bool {
+        (self.0 & Self::MOVE.0) != 0
+    }
+    pub const fn is_drag(&self) -> bool {
+        (self.0 & Self::DRAG.0) != 0
+    }
+    pub const fn is_click(&self) -> bool {
+        (self.0 & Self::CLICK.0) != 0
+    }
+    pub const fn is_held(&self) -> bool {
+        (self.0 & Self::HELD.0) != 0
+    }
+    pub const fn is_scroll(&self) -> bool {
+        (self.0 & Self::SCROLL.0) != 0
+    }
+}
+impl std::ops::BitOr for MouseEvent {
+    type Output = Self;
+    fn bitor(self, rhs: Self) -> Self::Output {
+        Self(self.0 | rhs.0)
+    }
+}
+impl std::ops::BitAnd for MouseEvent {
+    type Output = Self;
+    fn bitand(self, rhs: Self) -> Self::Output {
+        Self(self.0 & rhs.0)
+    }
+}
+impl std::ops::BitXor for MouseEvent {
+    type Output = Self;
+    fn bitxor(self, rhs: Self) -> Self::Output {
+        Self(self.0 ^ rhs.0)
+    }
+}
+
+impl std::ops::BitOrAssign for MouseEvent {
+    fn bitor_assign(&mut self, rhs: Self) {
+        *self = *self | rhs
+    }
+}
+impl std::ops::BitAndAssign for MouseEvent {
+    fn bitand_assign(&mut self, rhs: Self) {
+        *self = *self & rhs
+    }
+}
+impl std::ops::BitXorAssign for MouseEvent {
+    fn bitxor_assign(&mut self, rhs: Self) {
+        *self = *self ^ rhs
+    }
+}
+
+impl std::ops::Not for MouseEvent {
+    type Output = Self;
+    fn not(self) -> Self::Output {
+        Self(!self.0)
+    }
+}
+
+#[derive(Copy, Clone, Debug, PartialEq)]
+pub struct Dragged {
+    pub origin: Point,
+    pub current: Point,
+    pub delta: Vector,
+}
+
+#[derive(Copy, Clone, Debug, PartialEq)]
+pub struct MouseAreaResponse {
+    pub clicked: bool,
+    pub hovered: bool,
+    pub held: bool,
+    pub scrolled: Option<f32>,
+    pub dragged: Option<Dragged>,
+}
+
+#[derive(Default)]
+enum MouseState {
+    #[default]
+    None,
+    Hovering,
+    Held,
+}
+
+#[derive(Default)]
+struct MouseArea {
+    filter: MouseEvent,
+    state: MouseState,
+    clicked: bool,
+    scrolled: Option<f32>,
+    dragged: Option<Dragged>,
+}
+
+impl MouseArea {
+    fn reset(&mut self) {
+        std::mem::take(&mut self.state);
+        std::mem::take(&mut self.clicked);
+        std::mem::take(&mut self.scrolled);
+        std::mem::take(&mut self.dragged);
+    }
+}
+
+impl<T: 'static> View<T> for MouseArea {
+    type Args<'a> = MouseEvent;
+    type Response = MouseAreaResponse;
+
+    fn create(args: Self::Args<'_>) -> Self {
+        Self {
+            filter: args,
+            ..Self::default()
+        }
+    }
+
+    fn update(&mut self, state: &mut T, args: Self::Args<'_>) -> Self::Response {
+        self.filter = args;
+        let resp = MouseAreaResponse {
+            clicked: std::mem::take(&mut self.clicked),
+            hovered: matches!(self.state, MouseState::Hovering),
+            held: matches!(self.state, MouseState::Held),
+            scrolled: self.scrolled,
+            dragged: self.dragged,
+        };
+        self.reset();
+        resp
+    }
+
+    fn interest(&self) -> Interest {
+        Interest::MOUSE
+    }
+
+    fn event(&mut self, ctx: EventCtx<T>, event: &Event) -> Handled {
+        self.reset();
+
+        // TODO support different buttons
+        match event {
+            Event::MouseEnter(ev) if self.filter.is_enter() => self.state = MouseState::Hovering,
+            Event::MouseLeave(ev) if self.filter.is_leave() => {}
+            Event::MouseClick(ev) if self.filter.is_click() && ev.button.is_primary() => {
+                self.clicked = true;
+                self.state = MouseState::Hovering
+            }
+            Event::MouseHeld(ev) if self.filter.is_held() && ev.button.is_primary() => {
+                self.state = MouseState::Held
+            }
+            Event::MouseDrag(ev) if self.filter.is_drag() && ev.button.is_primary() => {
+                self.dragged = Some(Dragged {
+                    origin: ev.origin,
+                    current: ev.pos,
+                    delta: ev.delta,
+                })
+            }
+            Event::MouseScroll(ev) if self.filter.is_scroll() => self.scrolled = Some(ev.delta.y),
+            _ => {}
+        };
+
+        Handled::Bubble
+    }
+}
+
+pub fn mouse_area<T: 'static, R>(
+    filter: MouseEvent,
+    ctx: &mut Context<'_, T>,
+    show: impl FnOnce(&mut Context<'_, T>) -> R,
+) -> Response<MouseAreaResponse, R> {
+    MouseArea::show_children(filter, ctx, show)
+}
+
+pub fn on_click<T: 'static, R>(
+    ctx: &mut Context<'_, T>,
+    show: impl FnOnce(&mut Context<'_, T>) -> R,
+) -> Response<MouseAreaResponse, R> {
+    mouse_area(MouseEvent::empty().click(), ctx, show)
 }
