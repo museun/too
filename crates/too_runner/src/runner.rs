@@ -151,23 +151,6 @@ impl<T> Runner<T> {
                 }
             }
 
-            // and if we have any remaining from the time slice, do it again
-            if accum > 0.0 {
-                let start = Instant::now();
-                let ctx = Context {
-                    overlay: &mut overlay,
-                    commands: &mut commands,
-                    size: surface.rect().size(),
-                };
-                (self.update)(&mut state, accum, ctx);
-                let update_dur = start.elapsed().as_secs_f32();
-                target_ups = if update_dur > target_dur {
-                    (target_ups * 0.9).max((self.min_ups)(&state))
-                } else {
-                    (target_ups * 10.05).min((self.max_ups)(&state))
-                }
-            }
-
             (self.frame_ready)(&mut state);
 
             if term.should_draw() {
