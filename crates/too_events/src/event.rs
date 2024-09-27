@@ -140,26 +140,43 @@ impl Event {
     }
 
     fn is_keybind(key: Key, modifiers: Modifiers, expected: impl Into<Keybind>) -> bool {
-        const fn to_lowercase(key: Key) -> Key {
-            match key {
-                Key::Char(ch) => Key::Char(ch.to_ascii_lowercase()),
-                this => this,
+        let mut expected: Keybind = expected.into();
+
+        if let Key::Char(ch) = expected.key {
+            if ch.is_alphanumeric() {
+                let mut keybind = Keybind::new(key, modifiers);
+
+                if keybind.key.is_ascii_lowercase() && keybind.modifiers.is_shift() {
+                    if let Some(key) = keybind.key.to_ascii_uppercase() {
+                        keybind.key = key;
+                    }
+                }
+
+                if expected.key.is_ascii_lowercase() && expected.modifiers.is_shift() {
+                    if let Some(key) = expected.key.to_ascii_uppercase() {
+                        expected.key = key;
+                    }
+                }
+
+                keybind.modifiers = modifiers.remove(Modifiers::SHIFT);
+                expected.modifiers = expected.modifiers.remove(Modifiers::SHIFT);
+
+                return keybind == expected;
             }
         }
 
-        let expected: Keybind = expected.into();
         if matches!(expected.key, Key::Char(..))
             && (expected.modifiers.is_none() || expected.modifiers.is_shift_only())
             && (modifiers.is_none() || modifiers.is_shift_only())
         {
-            return to_lowercase(key) == to_lowercase(expected.key);
+            return key == expected.key;
         }
 
         Keybind::new(key, modifiers) == expected
     }
 
     /// If this was a mouse event, where was it?
-    pub fn mouse_pos(&self) -> Option<Pos2> {
+    pub const fn mouse_pos(&self) -> Option<Pos2> {
         match self {
             Self::MouseMove { pos, .. }
             | Self::MouseClick { pos, .. }
@@ -169,6 +186,88 @@ impl Event {
             | Self::MouseDragRelease { pos, .. }
             | Self::MouseScroll { pos, .. } => Some(*pos),
             _ => None,
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    #[test]
+    fn is_keybind() {
+        // should not be the same
+        for (expected, (key, modifiers)) in [
+            (
+                Keybind::from_char('a'), //
+                (Key::Char('A'), Modifiers::NONE),
+            ),
+            (
+                Keybind::from_char('a'), //
+                (Key::Char('A'), Modifiers::SHIFT),
+            ),
+        ] {
+            assert!(
+                !Event::is_keybind(key, modifiers, expected),
+                "{expected:?} vs {key:?} {modifiers:?}"
+            )
+        }
+
+        // should be the same
+        for (i, (expected, (key, modifiers))) in [
+            (
+                Keybind::from_char('a'), //
+                (Key::Char('a'), Modifiers::NONE),
+            ),
+            (
+                Keybind::from_char('!'), //
+                (Key::Char('!'), Modifiers::NONE),
+            ),
+            // A from the backend should be A + NONE
+            (
+                Keybind::from_char('A'), //
+                (Key::Char('A'), Modifiers::NONE),
+            ),
+            // A from the backend should be a + SHIFT
+            (
+                Keybind::from_char('A'), //
+                (Key::Char('a'), Modifiers::SHIFT),
+            ),
+            // A from the backend should be A + SHIFT
+            (
+                Keybind::from_char('A'), //
+                (Key::Char('A'), Modifiers::SHIFT),
+            ),
+            // A + SHIFT from the backend should be a + SHIFT
+            (
+                Keybind::from_char('A').shift(),
+                (Key::Char('a'), Modifiers::SHIFT),
+            ),
+            // A + SHIFT from the backend should be A + SHIFT
+            (
+                Keybind::from_char('A').shift(),
+                (Key::Char('A'), Modifiers::SHIFT),
+            ),
+            // a + SHIFT from the backend should be A + SHIFT
+            (
+                Keybind::from_char('a').shift(),
+                (Key::Char('A'), Modifiers::SHIFT),
+            ),
+            (
+                Keybind::from_char('c').ctrl(),
+                (Key::Char('c'), Modifiers::CTRL),
+            ),
+            (
+                Keybind::from_char('µ').ctrl().alt(),
+                (Key::Char('µ'), Modifiers::CTRL | Modifiers::ALT),
+            ),
+        ]
+        .into_iter()
+        .enumerate()
+        {
+            assert!(
+                Event::is_keybind(key, modifiers, expected),
+                "#{i}: {expected:?} vs {key:?} {modifiers:?}"
+            )
         }
     }
 }

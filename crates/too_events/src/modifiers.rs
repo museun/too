@@ -39,6 +39,10 @@ impl Modifiers {
     pub const fn is_alt_only(&self) -> bool {
         self.0 == Self::ALT.0
     }
+
+    pub const fn remove(&self, other: Self) -> Self {
+        Self(self.0 & !other.0)
+    }
 }
 
 impl std::ops::BitAnd for Modifiers {
