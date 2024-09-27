@@ -29,8 +29,7 @@ impl LinearAllocator {
     ///
     /// # Example
     /// ```rust
-    /// # use too_math::{vec2, Rect, pos2};
-    /// # use too_layout::LinearLayout;
+    /// # use too_math::{vec2, Rect, pos2, layout::LinearLayout};
     /// let input = Rect::from_min_size(pos2(5, 10), vec2(20, 20));
     /// let sizes = [vec2(5, 10), vec2(3, 1), vec2(4, 4)];
     /// let expected = [

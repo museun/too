@@ -9,7 +9,9 @@ use too_runner::Runner;
 ///
 /// # Example:
 /// ```rust
-/// use too_runner::{AppRunner as _, SurfaceMut, Context};
+/// use too_immediate::{AppRunner as _};
+/// use too_runner::Context;
+/// use too_renderer::SurfaceMut;
 ///
 /// struct Demo {
 ///     state: i32
@@ -21,11 +23,11 @@ use too_runner::Runner;
 ///     }
 /// }
 ///
-/// impl too_runner::App for Demo {
+/// impl too_immediate::App for Demo {
 ///     fn render(&mut self, surface: SurfaceMut, ctx: Context) {}
 /// }
 ///
-/// # fn get_backend() -> std::io::Result<too_runner::dummy::Dummy> { Ok(too_runner::dummy::Dummy) }
+/// # fn get_backend() -> std::io::Result<too_backend::DummyBackend> { Ok(too_backend::DummyBackend) }
 /// fn main() -> std::io::Result<()> {
 ///     let backend = get_backend()?;
 ///     Demo::new(1234).run(backend)

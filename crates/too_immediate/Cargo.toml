@@ -11,7 +11,6 @@ readme.workspace = true
 
 [dependencies]
 too_backend.workspace = true
-too_math.workspace = true
 too_renderer.workspace = true
 too_runner.workspace = true
 too_overlay.workspace = true
@@ -19,4 +18,5 @@ too_overlay.workspace = true
 [dev-dependencies]
 fastrand = "2.1.1"
 rayon = "1.10.0"
+too_math.workspace = true
 too_crossterm.workspace = true
