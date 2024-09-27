@@ -1,0 +1,47 @@
+use color::Rgba;
+use events::Event;
+use layout::{Anchor2, Axis};
+use shapes::Fill;
+use too_crossterm::*;
+use too_math::Rect;
+use too_runner::*;
+
+fn main() -> std::io::Result<()> {
+    let term = Term::setup(Config::default())?;
+    Demo {
+        axis: Axis::Horizontal,
+        anchor: Anchor2::RIGHT_BOTTOM,
+        fg: 0.0,
+    }
+    .run(term)
+}
+
+struct Demo {
+    axis: Axis,
+    anchor: Anchor2,
+    fg: f32,
+}
+
+impl App for Demo {
+    fn update(&mut self, dt: f32, mut ctx: Context<'_>) {
+        self.fg += 1.0 * dt / 5.0_f32;
+        ctx.overlay().fps.fg = Rgba::sine(self.fg);
+    }
+
+    fn event(&mut self, event: Event, mut ctx: Context<'_>) {
+        if event.is_keybind_pressed('t') {
+            ctx.overlay().fps.anchor = self.anchor;
+            ctx.overlay().fps.axis = self.axis;
+            ctx.toggle_fps();
+        }
+    }
+
+    fn render(&mut self, mut surface: SurfaceMut, _ctx: Context<'_>) {
+        surface
+            .crop(Rect::from_center_size(
+                surface.rect().center(),
+                surface.rect().size() / 3,
+            ))
+            .draw(Fill::new("#555"));
+    }
+}

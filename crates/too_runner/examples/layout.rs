@@ -6,7 +6,7 @@ use too_runner::{
     layout::{Anchor, Anchor2, Axis, LinearLayout},
     math::{vec2, Vec2},
     shapes::{Fill, Text},
-    App, AppRunner, Backend, Context,
+    App, AppRunner, Context, SurfaceMut,
 };
 
 fn main() -> std::io::Result<()> {
@@ -41,7 +41,7 @@ struct Demo {
 }
 
 impl App for Demo {
-    fn event(&mut self, event: Event, _ctx: Context<'_, impl Backend>, _size: Vec2) {
+    fn event(&mut self, event: Event, _ctx: Context<'_>) {
         if event.is_keybind_pressed(Key::Enter) {
             self.elements
                 .push(vec2(fastrand::i32(3..=10), fastrand::i32(3..=10)));
@@ -105,7 +105,7 @@ impl App for Demo {
         }
     }
 
-    fn render(&mut self, mut surface: too_runner::SurfaceMut) {
+    fn render(&mut self, mut surface: SurfaceMut, _ctx: Context<'_>) {
         let mut layout = LinearLayout::new(self.axis)
             .wrap(self.wrap)
             .spacing(self.spacing)

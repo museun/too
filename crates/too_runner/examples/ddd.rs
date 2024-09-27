@@ -1,12 +1,13 @@
 use too_crossterm::{Config, Term};
 
+use too_renderer::SurfaceMut;
 use too_runner::{
     color::Rgba,
     events::{Event, Key, Keybind},
     math::{vec2, vec3, Pos2, Rect, Vec2, Vec3},
     pixel::Pixel,
     shapes::{Fill, Text},
-    App, AppRunner, Backend, Context, SurfaceMut,
+    App, AppRunner, Context,
 };
 
 use rayon::iter::*;
@@ -174,7 +175,7 @@ impl Demo {
         }
     }
 
-    fn event(&mut self, ev: Event, mut ctx: Context<'_, impl Backend>) {
+    fn event(&mut self, ev: Event, mut ctx: Context<'_>) {
         const SPEED: f32 = 2.0;
 
         const FORWARD: Vec3 = vec3(0.0, 0.0, SPEED);
@@ -642,19 +643,19 @@ impl Screen {
 }
 
 impl App for Demo {
-    fn initial_size(&mut self, size: Vec2) {
-        self.screen = Screen::new(size)
+    fn initial_size(&mut self, ctx: Context<'_>) {
+        self.screen = Screen::new(ctx.size())
     }
 
-    fn event(&mut self, event: Event, ctx: Context<'_, impl Backend>, _size: Vec2) {
+    fn event(&mut self, event: Event, ctx: Context<'_>) {
         self.event(event, ctx);
     }
 
-    fn update(&mut self, dt: f32, _size: Vec2) {
+    fn update(&mut self, dt: f32, _ctx: Context<'_>) {
         self.integrate(dt);
     }
 
-    fn render(&mut self, mut surface: too_renderer::SurfaceMut<'_>) {
+    fn render(&mut self, mut surface: SurfaceMut<'_>, _ctx: Context<'_>) {
         self.render_scene(&mut surface);
 
         if self.show_help {

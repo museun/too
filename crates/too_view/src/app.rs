@@ -22,18 +22,17 @@ pub trait AppRunner: App {
             view: Self::view,
         };
 
-        <Runner<Wrapper<Self>, _>>::new()
+        <Runner<Wrapper<Self>>>::new()
             .frame_ready(|wrapper| {
                 wrapper.ui.scope(&mut wrapper.app, wrapper.view);
             })
-            .update(|wrapper, dt, _size| {
+            .update(|wrapper, dt, _ctx| {
                 wrapper.ui.tick(dt);
             })
-            .event(|wrapper, ev, _ctx, _size| {
-                // TODO what to do with `ctx`;
+            .event(|wrapper, ev, _ctx| {
                 wrapper.ui.event(&mut wrapper.app, ev);
             })
-            .render(|wrapper, surface| {
+            .render(|wrapper, surface, _ctx| {
                 wrapper.ui.render(&mut wrapper.app, surface);
             })
             .run(wrapper, backend)

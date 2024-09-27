@@ -4,9 +4,9 @@ use too_runner::{
     color::Rgba,
     events::Event,
     layout::Align2,
-    math::{rect, vec2, Pos2, Rect, Vec2},
+    math::{rect, vec2, Pos2, Rect},
     shapes::{Fill, Text},
-    App, AppRunner, Backend, Command, Context, SurfaceMut,
+    App, AppRunner, Command, Context, SurfaceMut,
 };
 
 fn main() -> std::io::Result<()> {
@@ -48,7 +48,7 @@ impl Hello {
 }
 
 impl App for Hello {
-    fn event(&mut self, event: Event, mut ctx: Context<'_, impl Backend>, size: Vec2) {
+    fn event(&mut self, event: Event, mut ctx: Context<'_>) {
         if event.is_keybind_pressed('q') {
             ctx.command(Command::request_quit());
         }
@@ -81,7 +81,7 @@ impl App for Hello {
             if self.rect.contains(pos) {
                 self.grabbed = Grabbed::Grabbed;
                 self.rect = self.rect.translate(delta);
-                self.rect = rect(size).clamp_rect(self.rect);
+                self.rect = rect(ctx.size()).clamp_rect(self.rect);
             }
         }
 
@@ -108,14 +108,14 @@ impl App for Hello {
         }
     }
 
-    fn update(&mut self, dt: f32, _size: Vec2) {
+    fn update(&mut self, dt: f32, _ctx: Context<'_>) {
         let duration = 5.0f32;
         self.value += (self.up as u8 as f32 * 2.0 - 1.0) * duration.recip() * dt;
         self.value = self.value.clamp(0.0, 1.0);
         self.up = self.up ^ (self.value >= 1.0) ^ (self.value <= 0.0)
     }
 
-    fn render(&mut self, mut surface: SurfaceMut) {
+    fn render(&mut self, mut surface: SurfaceMut, _ctx: Context<'_>) {
         let rect = surface.rect();
         surface
             .crop(Rect::from_center_size(rect.center(), rect.size() / 3))

@@ -7,7 +7,7 @@ use too_runner::{
     math::{lerp, pos2, Pos2, Vec2},
     pixel::Pixel,
     shapes::{Shape, Text},
-    App, AppRunner, Backend, Context, SurfaceMut,
+    App, AppRunner, Context, SurfaceMut,
 };
 
 fn main() -> std::io::Result<()> {
@@ -58,7 +58,7 @@ impl Demo {
     }
 }
 impl App for Demo {
-    fn event(&mut self, event: Event, mut ctx: Context<'_, impl Backend>, _size: Vec2) {
+    fn event(&mut self, event: Event, mut ctx: Context<'_>) {
         const NEXT_GRADIENT: Keybind = Keybind::from_char('d');
         const PREV_GRADIENT: Keybind = Keybind::from_char('a');
 
@@ -98,13 +98,13 @@ impl App for Demo {
         }
     }
 
-    fn update(&mut self, dt: f32, _size: Vec2) {
+    fn update(&mut self, dt: f32, _ctx: Context<'_>) {
         self.theta += (self.up as u8 as f32 * 2.0 - 1.0) * self.duration.recip() * dt;
         self.theta = self.theta.clamp(-1.0, 1.0);
         self.up = self.up ^ (self.theta >= 1.0) ^ (self.theta <= -1.0)
     }
 
-    fn render(&mut self, mut surface: SurfaceMut) {
+    fn render(&mut self, mut surface: SurfaceMut, _ctx: Context<'_>) {
         let (label, _) = &self.gradients[self.pos];
         surface
             .draw(&*self)
