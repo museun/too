@@ -1,7 +1,8 @@
+use crate::App;
 use too_events::EventReader;
+use too_overlay::Overlay;
 use too_renderer::Backend;
-
-use crate::{App, Runner};
+use too_runner::Runner;
 
 /// A trait to run your application
 ///
@@ -41,7 +42,7 @@ pub trait AppRunner: App + Sealed + Sized {
             .event(Self::event)
             .update(Self::update)
             .render(Self::render)
-            .post_render(crate::overlay::draw_default_overlay)
+            .post_render(|ctx, overlay, surface| Overlay::default_draw(ctx, overlay, surface))
             .run(self, backend)
     }
 }

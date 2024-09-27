@@ -1,14 +1,11 @@
 use too_crossterm::{Config, Term};
-
-use too_runner::{
-    color::Gradient,
-    events::{Event, Keybind},
-    layout::Align2,
-    math::{lerp, pos2, Pos2, Vec2},
-    pixel::Pixel,
-    shapes::{Shape, Text},
-    App, AppRunner, Context, SurfaceMut,
-};
+use too_events::{Event, Keybind};
+use too_immediate::{App, AppRunner as _};
+use too_layout::Align2;
+use too_math::{lerp, pos2, Pos2, Vec2};
+use too_renderer::{Gradient, Pixel, Shape, SurfaceMut};
+use too_runner::Context;
+use too_shapes::Text;
 
 fn main() -> std::io::Result<()> {
     let term = Term::setup(Config::default().hook_panics(true))?;

@@ -1,14 +1,12 @@
 use std::io::Read as _;
 
 use too_crossterm::{Config, Term};
-use too_runner::{
-    color::Rgba,
-    events::{Event, Key},
-    math::{lerp, pos2, Pos2, Rect, Vec2},
-    pixel::Pixel,
-    shapes::{Fill, Shape},
-    App, AppRunner, Context, SurfaceMut,
-};
+use too_events::{Event, Key};
+use too_immediate::{App, AppRunner as _};
+use too_math::{lerp, pos2, Pos2, Rect, Vec2};
+use too_renderer::{Pixel, Rgba, Shape, SurfaceMut};
+use too_runner::Context;
+use too_shapes::Fill;
 
 fn main() -> std::io::Result<()> {
     let input = match std::env::args().nth(1).as_deref() {

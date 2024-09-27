@@ -1,15 +1,16 @@
 [package]
-name = "too_runner"
+name = "too_overlay"
 edition = "2021"
-license.workspace = true
 version.workspace = true
-authors.workspace = true
 description.workspace = true
+license.workspace = true
+authors.workspace = true
 documentation.workspace = true
 repository.workspace = true
+readme.workspace = true
 
 [dependencies]
-too_events.workspace = true
 too_math.workspace = true
 too_renderer.workspace = true
-too_overlay.workspace = true
+too_shapes.workspace = true
+too_layout.workspace = true

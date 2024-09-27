@@ -1,7 +1,6 @@
 use too_events::Event;
 use too_renderer::SurfaceMut;
-
-use crate::Context;
+use too_runner::Context;
 
 /// Trait for defining an application to run
 pub trait App {

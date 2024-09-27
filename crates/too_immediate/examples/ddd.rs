@@ -1,16 +1,12 @@
 use too_crossterm::{Config, Term};
-
-use too_renderer::SurfaceMut;
-use too_runner::{
-    color::Rgba,
-    events::{Event, Key, Keybind},
-    math::{vec2, vec3, Pos2, Rect, Vec2, Vec3},
-    pixel::Pixel,
-    shapes::{Fill, Text},
-    App, AppRunner, Context,
-};
+use too_events::{Event, Key, Keybind};
+use too_immediate::{App, AppRunner as _};
+use too_math::{vec2, vec3, Pos2, Rect, Vec2, Vec3};
+use too_renderer::{Pixel, Rgba, SurfaceMut};
 
 use rayon::iter::*;
+use too_runner::Context;
+use too_shapes::{Fill, Text};
 
 trait RotVec3 {
     fn rotate(self, rot: Self) -> Self;

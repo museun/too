@@ -1,10 +1,11 @@
-use color::Rgba;
-use events::Event;
-use layout::{Anchor2, Axis};
-use shapes::Fill;
-use too_crossterm::*;
+use too_crossterm::{Config, Term};
+use too_events::Event;
+use too_immediate::{App, AppRunner as _};
+use too_layout::{Anchor2, Axis};
 use too_math::Rect;
-use too_runner::*;
+use too_renderer::{Rgba, SurfaceMut};
+use too_runner::Context;
+use too_shapes::Fill;
 
 fn main() -> std::io::Result<()> {
     let term = Term::setup(Config::default())?;

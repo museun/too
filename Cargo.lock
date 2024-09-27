@@ -265,12 +265,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "thunderdome"
-version = "0.6.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "92e170f93360bf9ae6fe3c31116bbf27adb1d054cedd6bc3d7857e34f2d98d0b"
-
-[[package]]
 name = "too_crossterm"
 version = "0.1.0"
 dependencies = [
@@ -289,6 +283,22 @@ dependencies = [
 ]
 
 [[package]]
+name = "too_immediate"
+version = "0.1.0"
+dependencies = [
+ "fastrand",
+ "rayon",
+ "too_crossterm",
+ "too_events",
+ "too_layout",
+ "too_math",
+ "too_overlay",
+ "too_renderer",
+ "too_runner",
+ "too_shapes",
+]
+
+[[package]]
 name = "too_layout"
 version = "0.1.0"
 dependencies = [
@@ -298,6 +308,16 @@ dependencies = [
 [[package]]
 name = "too_math"
 version = "0.1.0"
+
+[[package]]
+name = "too_overlay"
+version = "0.1.0"
+dependencies = [
+ "too_layout",
+ "too_math",
+ "too_renderer",
+ "too_shapes",
+]
 
 [[package]]
 name = "too_renderer"
@@ -311,14 +331,10 @@ dependencies = [
 name = "too_runner"
 version = "0.1.0"
 dependencies = [
- "fastrand",
- "rayon",
- "too_crossterm",
  "too_events",
- "too_layout",
  "too_math",
+ "too_overlay",
  "too_renderer",
- "too_shapes",
 ]
 
 [[package]]
@@ -329,19 +345,6 @@ dependencies = [
  "too_math",
  "too_renderer",
  "unicode-segmentation",
-]
-
-[[package]]
-name = "too_view"
-version = "0.1.0"
-dependencies = [
- "thunderdome",
- "too_crossterm",
- "too_events",
- "too_math",
- "too_renderer",
- "too_runner",
- "too_shapes",
 ]
 
 [[package]]

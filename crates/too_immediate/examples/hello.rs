@@ -1,13 +1,11 @@
 use too_crossterm::{Config, Term};
-
-use too_runner::{
-    color::Rgba,
-    events::Event,
-    layout::Align2,
-    math::{rect, vec2, Pos2, Rect},
-    shapes::{Fill, Text},
-    App, AppRunner, Command, Context, SurfaceMut,
-};
+use too_events::Event;
+use too_immediate::{App, AppRunner as _};
+use too_layout::Align2;
+use too_math::{rect, vec2, Pos2, Rect};
+use too_renderer::{Command, Rgba, SurfaceMut};
+use too_runner::Context;
+use too_shapes::{Fill, Text};
 
 fn main() -> std::io::Result<()> {
     let term_config = Config::default().hook_panics(true).ctrl_z_switches(true);

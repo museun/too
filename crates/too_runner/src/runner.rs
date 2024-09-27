@@ -4,9 +4,10 @@ use std::{
 };
 
 use too_events::{Event, EventReader};
+use too_overlay::Overlay;
 use too_renderer::{Backend, SurfaceMut, TermRenderer};
 
-use crate::{overlay::Overlay, Context};
+use crate::Context;
 
 /// Configurable type to 'hook' into different steps of the run loop
 pub struct Runner<T> {
@@ -174,7 +175,6 @@ impl<T> Runner<T> {
 
             overlay
                 .fps
-                .window
                 .push(frame_start.duration_since(prev).as_secs_f32());
 
             prev = frame_start;

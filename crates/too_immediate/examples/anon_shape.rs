@@ -1,12 +1,8 @@
 use too_crossterm::{Config, Term};
-
-use too_runner::{
-    color::Rgba,
-    math::{pos2, Rect},
-    pixel::Pixel,
-    shapes::{anonymous, anonymous_ctx},
-    App, AppRunner, Context, SurfaceMut,
-};
+use too_immediate::{App, AppRunner as _};
+use too_math::{pos2, Rect};
+use too_renderer::{anonymous, anonymous_ctx, Pixel, Rgba, SurfaceMut};
+use too_runner::Context;
 
 fn main() -> std::io::Result<()> {
     let term = Term::setup(Config::default())?;
