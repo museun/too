@@ -11,6 +11,15 @@ members = [
     "crates/too_view"
 ]
 
+[workspace.package]
+version = "0.1.0"
+description = "too - a tui framework"
+license = "MIT OR Apache-2.0"
+authors = [ "museun <museun@users.noreply.github.com>" ]
+documentation = "https://docs.rs/too"
+repository = "https://github.com/museun/too"
+readme = "README.md"
+
 [workspace.dependencies]
 too_crossterm = { path = "crates/too_crossterm", version = "0.1.0" }
 too_events = { path = "crates/too_events", version = "0.1.0" }

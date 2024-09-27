@@ -1,7 +1,12 @@
 [package]
 name = "too_events"
-version = "0.1.0"
 edition = "2021"
+license.workspace = true
+version.workspace = true
+authors.workspace = true
+description.workspace = true
+documentation.workspace = true
+repository.workspace = true
 
 [dependencies]
 too_math.workspace = true
