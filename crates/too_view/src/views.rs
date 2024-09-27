@@ -8,7 +8,6 @@ use too_shapes::Fill;
 
 use crate::{
     geom::{self, Point, Size, Space, Vector},
-    input::MouseDrag,
     response::UserResponse,
     view::Context,
     DrawCtx, Event, EventCtx, Handled, Interest, LayoutCtx, NoArgs, NoResponse, Response, View,
@@ -589,7 +588,7 @@ impl<T: 'static> View<T> for Button<T> {
     }
 
     fn event(&mut self, ctx: EventCtx<T>, event: &Event) -> Handled {
-        if !(self.params)(&ctx.state).enabled {
+        if !(self.params)(ctx.state).enabled {
             return Handled::Bubble;
         }
 
@@ -610,13 +609,13 @@ impl<T: 'static> View<T> for Button<T> {
     }
 
     fn layout(&mut self, ctx: LayoutCtx<T>, space: Space) -> Size {
-        let params = (self.params)(&ctx.state);
+        let params = (self.params)(ctx.state);
         let size = Text::new(params.label).size();
         space.fit(Size::from(size) + Vector::new(2.0, 0.0))
     }
 
     fn draw(&mut self, ctx: DrawCtx<T>) {
-        let params = (self.params)(&ctx.state);
+        let params = (self.params)(ctx.state);
 
         let fg = if params.enabled { "#FFF" } else { "#AAA" };
         let bg = match self.state {
@@ -718,21 +717,20 @@ impl<T: 'static> View<T> for Checkbox<T> {
         Handled::Sink
     }
 
-    fn layout(&mut self, mut ctx: LayoutCtx<T>, space: Space) -> Size {
-        let params = (self.params)(&mut ctx.state);
+    fn layout(&mut self, ctx: LayoutCtx<T>, space: Space) -> Size {
+        let params = (self.params)(ctx.state);
         let size = Text::new(params.label).size();
         space.fit(Size::from(size) + Vector::new(3.0, 0.0))
     }
 
-    fn draw(&mut self, mut ctx: DrawCtx<T>) {
-        let params = (self.params)(&mut ctx.state);
+    fn draw(&mut self, ctx: DrawCtx<T>) {
+        let params = (self.params)(ctx.state);
 
         let bg = match self.state {
             ButtonState::Hovered => "#F00",
             ButtonState::Held => "#F0F",
             ButtonState::Clicked => "#00F",
             ButtonState::None => "#333",
-            _ => "#333",
         };
 
         // ☒
