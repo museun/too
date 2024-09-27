@@ -679,7 +679,7 @@ fn main() -> std::io::Result<()> {
 
     let keybinds = Keybinds {
         reset: 'r'.into(),
-        toggle_help: '1'.into(),
+        toggle_help: '?'.into(),
         toggle_fps: 't'.into(),
         jump: ' '.into(),
         move_forward: 'w'.into(),
