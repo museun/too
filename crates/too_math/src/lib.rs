@@ -18,3 +18,5 @@ pub use pos2::{pos2, Pos2};
 mod num;
 pub use num::Num;
 pub use num::{almost_eq, inverse_lerp, lerp, midpoint};
+
+pub mod layout;

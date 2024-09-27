@@ -2,11 +2,13 @@ use too_backend::{Event, Key, Keybind};
 use too_crossterm::{Config, Term};
 use too_immediate::{App, AppRunner as _};
 use too_math::{vec2, vec3, Pos2, Rect, Vec2, Vec3};
-use too_renderer::{Pixel, Rgba, SurfaceMut};
+use too_renderer::{
+    shapes::{Fill, Text},
+    Pixel, Rgba, SurfaceMut,
+};
+use too_runner::Context;
 
 use rayon::iter::*;
-use too_runner::Context;
-use too_shapes::{Fill, Text};
 
 trait RotVec3 {
     fn rotate(self, rot: Self) -> Self;

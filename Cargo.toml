@@ -1,17 +1,15 @@
 [workspace]
-resolver = "2"
 members = [
+    "crates/too_backend",
     "crates/too_crossterm",
-    "crates/too_events",
     "crates/too_immediate",
-    "crates/too_layout",
     "crates/too_math",
     "crates/too_overlay",
     "crates/too_renderer",
-    "crates/too_runner",
-    "crates/too_shapes"
+    "crates/too_runner"
     # "crates/too_view"
 ]
+resolver = "2"
 
 [workspace.package]
 version = "0.1.0"
@@ -23,12 +21,10 @@ repository = "https://github.com/museun/too"
 readme = "README.md"
 
 [workspace.dependencies]
+too_backend = { path = "crates/too_backend", version = "0.1.0" }
 too_crossterm = { path = "crates/too_crossterm", version = "0.1.0" }
-too_events = { path = "crates/too_events", version = "0.1.0" }
 too_immediate = { path = "crates/too_immediate", version = "0.1.0" }
-too_layout = { path = "crates/too_layout", version = "0.1.0" }
 too_math = { path = "crates/too_math", version = "0.1.0" }
 too_overlay = { path = "crates/too_overlay", version = "0.1.0" }
 too_renderer = { path = "crates/too_renderer", version = "0.1.0" }
 too_runner = { path = "crates/too_runner", version = "0.1.0" }
-too_shapes = { path = "crates/too_shapes", version = "0.1.0" }

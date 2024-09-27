@@ -18,3 +18,5 @@ pub use rgba::Rgba;
 
 mod gradient;
 pub use gradient::Gradient;
+
+pub mod shapes;

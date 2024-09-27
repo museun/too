@@ -1,5 +1,5 @@
+use crate::{Color, Pixel, Shape};
 use too_math::{pos2, Pos2, Vec2};
-use too_renderer::{Color, Pixel, Shape};
 
 // TODO rename this (something like `quad`)
 /// Fill the region with a specific [`Color`]

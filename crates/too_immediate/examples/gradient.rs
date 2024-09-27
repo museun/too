@@ -1,11 +1,9 @@
 use too_backend::{Event, Keybind};
 use too_crossterm::{Config, Term};
 use too_immediate::{App, AppRunner as _};
-use too_layout::Align2;
-use too_math::{lerp, pos2, Pos2, Vec2};
-use too_renderer::{Gradient, Pixel, Shape, SurfaceMut};
+use too_math::{layout::Align2, lerp, pos2, Pos2, Vec2};
+use too_renderer::{shapes::Text, Gradient, Pixel, Shape, SurfaceMut};
 use too_runner::Context;
-use too_shapes::Text;
 
 fn main() -> std::io::Result<()> {
     let term = Term::setup(Config::default().hook_panics(true))?;

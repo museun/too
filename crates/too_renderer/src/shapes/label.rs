@@ -85,7 +85,7 @@ impl Label for char {
 // }
 
 fn flat_map_graphemes(s: &str) -> impl Iterator<Item = char> + '_ {
-    unicode_segmentation::UnicodeSegmentation::graphemes(s, false).flat_map(<str>::chars)
+    <str>::chars(s)
 }
 
 impl<'a> Label for &'a str {

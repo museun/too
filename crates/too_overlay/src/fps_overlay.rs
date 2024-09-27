@@ -1,7 +1,8 @@
-use too_layout::{Anchor2, Axis, LinearLayout};
-use too_math::vec2;
-use too_renderer::{Rgba, SurfaceMut};
-use too_shapes::Text;
+use too_math::{
+    layout::{Anchor2, Axis, LinearLayout},
+    vec2,
+};
+use too_renderer::{shapes::Text, Rgba, SurfaceMut};
 
 use crate::{EmaWindow, Overlay, WindowStats};
 

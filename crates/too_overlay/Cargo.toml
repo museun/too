@@ -12,5 +12,3 @@ readme.workspace = true
 [dependencies]
 too_math.workspace = true
 too_renderer.workspace = true
-too_shapes.workspace = true
-too_layout.workspace = true

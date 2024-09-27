@@ -1,11 +1,15 @@
 use too_backend::{Event, Key};
 use too_crossterm::{Config, Term};
 use too_immediate::{App, AppRunner as _};
-use too_layout::{Anchor, Anchor2, Axis, LinearLayout};
-use too_math::{vec2, Vec2};
-use too_renderer::{Rgba, SurfaceMut};
+use too_math::{
+    layout::{Anchor, Anchor2, Axis, LinearLayout},
+    vec2, Vec2,
+};
+use too_renderer::{
+    shapes::{Fill, Text},
+    Rgba, SurfaceMut,
+};
 use too_runner::Context;
-use too_shapes::{Fill, Text};
 
 fn main() -> std::io::Result<()> {
     let term = Term::setup(Config::default())?;

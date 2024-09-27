@@ -1,5 +1,5 @@
+use crate::{Color, Pixel, Shape};
 use too_math::{pos2, rect, Pos2, Vec2};
-use too_renderer::{Color, Pixel, Shape};
 
 #[derive(Copy, Clone, Debug)]
 pub struct Border {

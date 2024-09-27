@@ -4,9 +4,8 @@ use too_backend::{Event, Key};
 use too_crossterm::{Config, Term};
 use too_immediate::{App, AppRunner as _};
 use too_math::{lerp, pos2, Pos2, Rect, Vec2};
-use too_renderer::{Pixel, Rgba, Shape, SurfaceMut};
+use too_renderer::{shapes::Fill, Pixel, Rgba, Shape, SurfaceMut};
 use too_runner::Context;
-use too_shapes::Fill;
 
 fn main() -> std::io::Result<()> {
     let input = match std::env::args().nth(1).as_deref() {

@@ -1,6 +1,5 @@
-use too_math::{pos2, Pos2, Rect, Vec2};
-
-use crate::{Anchor, Anchor2, Axis};
+use super::{Anchor, Anchor2, Axis};
+use crate::{pos2, Pos2, Rect, Vec2};
 
 /// A linear allocator
 ///

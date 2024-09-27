@@ -1,4 +1,4 @@
-use crate::Axis;
+use super::Axis;
 
 /// A two dimensional anchor
 #[derive(Copy, Clone, Debug, PartialEq, PartialOrd, Eq, Ord, Hash)]

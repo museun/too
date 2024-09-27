@@ -1,7 +1,5 @@
-use std::char;
-
+use crate::{Pixel, Rgba, Shape};
 use too_math::{pos2, Pos2, Vec2};
-use too_renderer::{Pixel, Rgba, Shape};
 
 pub enum Line {
     Vertical(Pixel),

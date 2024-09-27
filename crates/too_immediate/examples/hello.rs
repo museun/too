@@ -1,11 +1,12 @@
 use too_backend::{Command, Event};
 use too_crossterm::{Config, Term};
 use too_immediate::{App, AppRunner as _};
-use too_layout::Align2;
-use too_math::{rect, vec2, Pos2, Rect};
-use too_renderer::{Rgba, SurfaceMut};
+use too_math::{layout::Align2, rect, vec2, Pos2, Rect};
+use too_renderer::{
+    shapes::{Fill, Text},
+    Rgba, SurfaceMut,
+};
 use too_runner::Context;
-use too_shapes::{Fill, Text};
 
 fn main() -> std::io::Result<()> {
     let term_config = Config::default().hook_panics(true).ctrl_z_switches(true);

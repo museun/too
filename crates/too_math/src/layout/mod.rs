@@ -1,7 +1,5 @@
 //! Layout helpers
-
-use too_math::vec2;
-pub use too_math::{Rect, Vec2};
+use crate::{vec2, Vec2};
 
 /// A direction such as _Horizontal_ or _Vertical_
 #[derive(Copy, Clone, Debug, Default, PartialEq, PartialOrd, Eq, Ord, Hash)]

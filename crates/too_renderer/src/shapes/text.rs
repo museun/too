@@ -1,8 +1,11 @@
-use too_layout::{Align, Align2};
-use too_math::{midpoint, pos2, rect, Pos2, Rect, Vec2};
-use too_renderer::{Attribute, Color, Pixel, Shape};
+use crate::{Attribute, Color, Pixel, Shape};
 
-use crate::Label;
+use too_math::{
+    layout::{Align, Align2},
+    midpoint, pos2, rect, Pos2, Rect, Vec2,
+};
+
+use super::Label;
 
 pub struct Text<T: Label> {
     fg: Color,
