@@ -950,14 +950,14 @@ impl std::ops::Neg for Size {
 }
 
 // TODO this is totally from the wrong crate
-impl std::ops::Mul<too_runner::layout::Align2> for Size {
+impl std::ops::Mul<too_math::layout::Align2> for Size {
     type Output = Self;
-    fn mul(self, rhs: too_runner::layout::Align2) -> Self::Output {
-        fn factor(align: too_runner::layout::Align) -> f32 {
+    fn mul(self, rhs: too_math::layout::Align2) -> Self::Output {
+        fn factor(align: too_math::layout::Align) -> f32 {
             match align {
-                too_runner::layout::Align::Min => 0.0,
-                too_runner::layout::Align::Center => 0.5,
-                too_runner::layout::Align::Max => 1.0,
+                too_math::layout::Align::Min => 0.0,
+                too_math::layout::Align::Center => 0.5,
+                too_math::layout::Align::Max => 1.0,
             }
         }
         Self::new(self.width * factor(rhs.x), self.height * factor(rhs.y))

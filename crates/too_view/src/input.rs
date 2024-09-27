@@ -1,6 +1,6 @@
 use std::collections::{HashMap, HashSet};
 
-use too_events::{Key, Modifiers, MouseButton};
+use too_backend::{Key, Modifiers, MouseButton};
 
 use crate::{
     geom::{Point, Rectf, Vector},
@@ -402,12 +402,12 @@ pub struct Input {
     pub(crate) mouse: Mouse,
     pub(crate) keyboard: Keyboard,
     modifiers: Modifiers,
-    last_event: Option<too_events::Event>,
+    last_event: Option<too_backend::Event>,
     intersections: Intersections,
 }
 
-const fn modifiers_for_event(event: &too_events::Event) -> Option<Modifiers> {
-    use too_events::Event as E;
+const fn modifiers_for_event(event: &too_backend::Event) -> Option<Modifiers> {
+    use too_backend::Event as E;
     match event {
         E::KeyPressed { modifiers, .. }
         | E::KeyReleased { modifiers, .. }
@@ -437,7 +437,7 @@ impl Input {
 
     pub fn handle<T: 'static>(
         &mut self,
-        event: &too_events::Event,
+        event: &too_backend::Event,
         nodes: &mut thunderdome::Arena<Option<ViewNode<T>>>,
         state: &mut T,
         debug: &mut Vec<String>,
@@ -457,7 +457,7 @@ impl Input {
             };
         }
 
-        use too_events::Event as E;
+        use too_backend::Event as E;
         match *event {
             E::KeyPressed { key, .. } => {
                 let event = Event::KeyInput(KeyInput {

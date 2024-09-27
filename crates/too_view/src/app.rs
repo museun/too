@@ -1,5 +1,5 @@
-use too_events::EventReader;
-use too_runner::{Backend, Runner};
+use too_backend::{Backend, EventReader};
+use too_runner::Runner;
 
 use crate::{geom::Size, view::Context, Ui};
 

@@ -1,7 +1,8 @@
 #![cfg_attr(debug_assertions, allow(dead_code, unused_variables,))]
 use std::{any::TypeId, collections::VecDeque};
 
-use too_renderer::SurfaceMut;
+use too_math::layout::{Anchor2, LinearLayout};
+use too_renderer::{shapes::Text, SurfaceMut};
 
 pub mod geom;
 use geom::{Point, Rectf, Size, Space, Vector};
@@ -15,8 +16,6 @@ mod erased_view;
 use erased_view::{ErasedView, ViewMarker};
 
 pub mod view;
-use too_runner::layout::{Anchor2, LinearLayout};
-use too_shapes::Text;
 use view::Context;
 pub use view::{Args, NoArgs, NoResponse, View, ViewExt};
 
@@ -297,8 +296,8 @@ impl<T: 'static> Ui<T> {
         // and do it
     }
 
-    fn event(&mut self, state: &mut T, event: too_events::Event) {
-        if let too_events::Event::Resize(size) = event {
+    fn event(&mut self, state: &mut T, event: too_backend::Event) {
+        if let too_backend::Event::Resize(size) = event {
             self.rect = Rectf::min_size(Point::ZERO, size.into());
         }
 

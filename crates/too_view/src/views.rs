@@ -1,10 +1,11 @@
 use std::ops::RangeInclusive;
 
-use too_events::{Key, Keybind, Modifiers};
-use too_math::vec2;
-use too_renderer::{Pixel, Rgba};
-use too_runner::{layout::Align2, shapes::Text};
-use too_shapes::Fill;
+use too_backend::{Key, Keybind, Modifiers};
+use too_math::{layout::Align2, vec2};
+use too_renderer::{
+    shapes::{Fill, Text},
+    Pixel, Rgba,
+};
 
 use crate::{
     geom::{self, Point, Size, Space, Vector},
@@ -98,7 +99,7 @@ impl<T: 'static> View<T> for Label<T> {
     }
 
     fn layout(&mut self, ctx: LayoutCtx<T>, space: Space) -> Size {
-        use too_shapes::Label as _;
+        use too_renderer::shapes::Label as _;
         let label = (self.args)(ctx.state);
         label.size().into()
     }
@@ -115,14 +116,14 @@ pub fn label<T: 'static>(ctx: &mut Context<'_, T>, label: fn(&T) -> &str) -> Res
 
 struct StaticLabel<L>
 where
-    L: too_shapes::Label + 'static + Clone,
+    L: too_renderer::shapes::Label + 'static + Clone,
 {
     label: L,
 }
 
 impl<L, T> View<T> for StaticLabel<L>
 where
-    L: too_shapes::Label + 'static + Clone,
+    L: too_renderer::shapes::Label + 'static + Clone,
     T: 'static,
 {
     type Args<'a> = L;
@@ -146,7 +147,7 @@ where
 }
 
 pub fn static_label<T: 'static>(
-    label: impl too_shapes::Label + 'static + Clone,
+    label: impl too_renderer::shapes::Label + 'static + Clone,
     ctx: &mut Context<'_, T>,
 ) -> Response {
     StaticLabel::show(label, ctx)

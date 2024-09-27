@@ -265,6 +265,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "thunderdome"
+version = "0.6.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "92e170f93360bf9ae6fe3c31116bbf27adb1d054cedd6bc3d7857e34f2d98d0b"
+
+[[package]]
 name = "too_backend"
 version = "0.1.0"
 dependencies = [
@@ -324,6 +330,18 @@ dependencies = [
  "too_math",
  "too_overlay",
  "too_renderer",
+]
+
+[[package]]
+name = "too_view"
+version = "0.1.0"
+dependencies = [
+ "thunderdome",
+ "too_backend",
+ "too_crossterm",
+ "too_math",
+ "too_renderer",
+ "too_runner",
 ]
 
 [[package]]
