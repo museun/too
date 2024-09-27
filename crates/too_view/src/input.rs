@@ -1,12 +1,11 @@
 use std::collections::{HashMap, HashSet};
 
-use slotmap::{SecondaryMap, SlotMap};
 use too_events::{Key, Modifiers, MouseButton};
 
 use crate::{
     geom::{Point, Rectf, Vector},
     view_node::ViewNode,
-    LayoutNode, ViewId,
+    ViewId,
 };
 
 #[derive(Copy, Clone, PartialEq)]
@@ -392,18 +391,10 @@ impl<T> Layered<T> {
     }
 }
 
+#[derive(Debug)]
 pub struct Item<T> {
     pub id: ViewId,
     pub item: T,
-}
-
-impl<T: std::fmt::Debug> std::fmt::Debug for Item<T> {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.debug_struct("Item")
-            .field("id", &crate::debug_fmt::id(self.id))
-            .field("item", &self.item)
-            .finish()
-    }
 }
 
 #[derive(Debug, Default)]
@@ -447,8 +438,7 @@ impl Input {
     pub fn handle<T: 'static>(
         &mut self,
         event: &too_events::Event,
-        nodes: &mut SlotMap<ViewId, Option<ViewNode<T>>>,
-        layout: &mut SecondaryMap<ViewId, LayoutNode>,
+        nodes: &mut thunderdome::Arena<Option<ViewNode<T>>>,
         state: &mut T,
         debug: &mut Vec<String>,
     ) -> Handled {
@@ -459,7 +449,6 @@ impl Input {
             () => {
                 Context {
                     nodes,
-                    layout,
                     mouse: &mut self.mouse,
                     intersections: &mut self.intersections,
                     state,
@@ -483,12 +472,12 @@ impl Input {
                         break;
                     }
 
-                    let node = nodes[id].as_mut().unwrap();
+                    let node = nodes[id.0].as_mut().unwrap();
                     let ctx = EventCtx {
                         current_id: id,
                         children: &node.children,
                         state,
-                        rect: layout[id].rect,
+                        rect: node.rect,
                         debug,
                     };
 
@@ -600,8 +589,7 @@ impl Input {
 }
 
 struct Context<'a, T: 'static> {
-    nodes: &'a mut SlotMap<ViewId, Option<ViewNode<T>>>,
-    layout: &'a mut SecondaryMap<ViewId, LayoutNode>,
+    nodes: &'a mut thunderdome::Arena<Option<ViewNode<T>>>,
     mouse: &'a mut Mouse,
     intersections: &'a mut Intersections,
     state: &'a mut T,
@@ -615,12 +603,12 @@ impl<'a, T: 'static> Context<'a, T> {
                 continue;
             }
 
-            let node = self.nodes[id].as_mut().unwrap();
+            let node = self.nodes[id.0].as_mut().unwrap();
             let ctx = EventCtx {
                 current_id: id,
                 children: &node.children,
                 state: self.state,
-                rect: self.layout[id].rect,
+                rect: node.rect,
                 debug: self.debug,
             };
 
@@ -638,12 +626,12 @@ impl<'a, T: 'static> Context<'a, T> {
             self.intersections.entered.push(hit);
             self.mouse.hovered(hit);
 
-            let node = self.nodes[hit].as_mut().unwrap();
+            let node = self.nodes[hit.0].as_mut().unwrap();
             let ctx = EventCtx {
                 current_id: hit,
                 children: &node.children,
                 state: self.state,
-                rect: self.layout[hit].rect,
+                rect: node.rect,
                 debug: self.debug,
             };
 
@@ -664,8 +652,12 @@ impl<'a, T: 'static> Context<'a, T> {
                 continue;
             }
 
-            let Some(node) = self.layout.get(*hit) else {
+            let Some(node) = self.nodes.get_mut(hit.0) else {
                 continue;
+            };
+
+            let Some(node) = node.as_mut() else {
+                unreachable!("node {hit:?} is missing")
             };
 
             if node.rect.contains(event.pos) {
@@ -674,12 +666,11 @@ impl<'a, T: 'static> Context<'a, T> {
 
             self.mouse.mouse_over.remove(hit);
 
-            let node = self.nodes[*hit].as_mut().unwrap();
             let ctx = EventCtx {
                 current_id: *hit,
                 children: &node.children,
                 state: self.state,
-                rect: self.layout[*hit].rect,
+                rect: node.rect,
                 debug: self.debug,
             };
 
@@ -707,12 +698,12 @@ impl<'a, T: 'static> Context<'a, T> {
                 continue;
             }
 
-            let node = self.nodes[*id].as_mut().unwrap();
+            let node = self.nodes[id.0].as_mut().unwrap();
             let ctx = EventCtx {
                 current_id: *id,
                 children: &node.children,
                 state: self.state,
-                rect: self.layout[*id].rect,
+                rect: node.rect,
                 debug: self.debug,
             };
 
@@ -734,12 +725,12 @@ impl<'a, T: 'static> Context<'a, T> {
 
     fn mouse_event(&mut self, event: &Event) -> Handled {
         for &id in &self.intersections.hit {
-            let node = self.nodes[id].as_mut().unwrap();
+            let node = self.nodes[id.0].as_mut().unwrap();
             let ctx = EventCtx {
                 current_id: id,
                 children: &node.children,
                 state: self.state,
-                rect: self.layout[id].rect,
+                rect: node.rect,
                 debug: self.debug,
             };
 
@@ -753,8 +744,12 @@ impl<'a, T: 'static> Context<'a, T> {
 
     fn do_hit_test(&mut self, pos: Point) {
         for (&id, _) in self.mouse.layered.iter() {
-            let Some(node) = self.layout.get(id) else {
+            let Some(node) = self.nodes.get(id.0) else {
                 continue;
+            };
+
+            let Some(node) = node else {
+                unreachable!("node {id:?} is missing")
             };
 
             // let mut rect = node.rect;

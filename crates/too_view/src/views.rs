@@ -425,6 +425,7 @@ impl<T: 'static> View<T> for Margin {
     fn layout(&mut self, mut ctx: LayoutCtx<T>, space: Space) -> Size {
         let margin = self.margin.sum();
         let offset = self.margin.left_top().to_point();
+        // TODO this is all wrong
         let space = Space {
             min: (space.min - margin).max(Size::ZERO),
             max: (space.max - margin).max(Size::ZERO),
@@ -442,7 +443,7 @@ impl<T: 'static> View<T> for Margin {
 pub fn margin<T: 'static, R>(
     margin: impl Into<geom::Margin>,
     ctx: &mut Context<'_, T>,
-    show: fn(&mut Context<'_, T>) -> R,
+    show: impl FnOnce(&mut Context<'_, T>) -> R,
 ) -> UserResponse<R> {
     Margin::show_children(margin.into(), ctx, show)
 }

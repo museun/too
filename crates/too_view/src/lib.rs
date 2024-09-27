@@ -1,7 +1,6 @@
 #![cfg_attr(debug_assertions, allow(dead_code, unused_variables,))]
 use std::{any::TypeId, collections::VecDeque};
 
-use slotmap::{SecondaryMap, SlotMap};
 use too_renderer::SurfaceMut;
 
 pub mod geom;
@@ -27,19 +26,12 @@ use view_node::ViewNode;
 mod app;
 pub use app::{App, AppRunner};
 
-slotmap::new_key_type! {
-    pub struct ViewId;
-}
+#[derive(Copy, Clone, Debug, PartialEq, PartialOrd, Eq, Ord, Hash)]
+pub struct ViewId(thunderdome::Index);
 
 mod input;
 use input::Input;
 pub use input::{Event, EventCtx, Handled, Interest};
-
-#[derive(Debug)]
-struct LayoutNode {
-    rect: Rectf,
-    interest: Interest,
-}
 
 pub struct LayoutCtx<'a, T: 'static> {
     pub current_id: ViewId,
@@ -48,15 +40,14 @@ pub struct LayoutCtx<'a, T: 'static> {
 
     client_rect: Rectf,
     input: &'a mut Input,
-    nodes: &'a mut SlotMap<ViewId, Option<ViewNode<T>>>,
-    computed: &'a mut SecondaryMap<ViewId, LayoutNode>,
+    nodes: &'a mut thunderdome::Arena<Option<ViewNode<T>>>,
     stack: &'a mut Vec<ViewId>,
     debug: &'a mut Vec<String>,
 }
 
 impl<'a, T: 'static> LayoutCtx<'a, T> {
     pub fn compute_layout(&mut self, child: ViewId, space: Space) -> Size {
-        let Some(node) = self.nodes.get_mut(child) else {
+        let Some(node) = self.nodes.get_mut(child.0) else {
             return Size::ZERO;
         };
 
@@ -74,7 +65,6 @@ impl<'a, T: 'static> LayoutCtx<'a, T> {
                 state: self.state,
                 input: self.input,
                 nodes: self.nodes,
-                computed: self.computed,
                 stack: self.stack,
                 debug: self.debug,
             },
@@ -101,10 +91,11 @@ impl<'a, T: 'static> LayoutCtx<'a, T> {
 
         // is it here? (center { widget { another widget }})
         let rect = Rectf::from(size.clamp(Size::ZERO, self.client_rect.size()));
-        self.computed.insert(child, LayoutNode { rect, interest });
+        node.rect = rect;
+        node.interest = interest;
 
         assert_eq!(Some(child), self.stack.pop());
-        assert!(self.nodes[child].replace(node).is_none());
+        assert!(self.nodes[child.0].replace(node).is_none());
 
         size
     }
@@ -119,13 +110,20 @@ impl<'a, T: 'static> LayoutCtx<'a, T> {
     }
 
     pub fn set_position(&mut self, child: ViewId, offset: impl Into<Vector>) {
-        if let Some(node) = self.computed.get_mut(child) {
+        if let Some(node) = self.nodes.get_mut(child.0) {
+            let Some(node) = node else {
+                unreachable!("node {child:?} is missing")
+            };
+
             node.rect += offset.into();
         }
     }
 
     pub fn set_size(&mut self, child: ViewId, size: impl Into<Size>) {
-        if let Some(node) = self.computed.get_mut(child) {
+        if let Some(node) = self.nodes.get_mut(child.0) {
+            let Some(node) = node else {
+                unreachable!("node {child:?} is missing")
+            };
             node.rect += size.into()
         }
     }
@@ -141,43 +139,38 @@ pub struct DrawCtx<'a, 'c: 't, 't, T: 'static> {
     pub children: &'a [ViewId],
     pub surface: &'t mut SurfaceMut<'c>,
     pub state: &'a mut T,
-    nodes: &'a mut SlotMap<ViewId, Option<ViewNode<T>>>,
-    computed: &'a SecondaryMap<ViewId, LayoutNode>,
+
+    nodes: &'a mut thunderdome::Arena<Option<ViewNode<T>>>,
     stack: &'a mut Vec<ViewId>,
     debug: &'a mut Vec<String>,
 }
 
 impl<'a, 'c: 't, 't, T: 'static> DrawCtx<'a, 'c, 't, T> {
     pub fn draw(&mut self, id: ViewId) {
-        let Some(layout) = self.computed.get(id) else {
+        let Some(node) = self.nodes.get_mut(id.0) else {
             return;
-        };
-
-        self.stack.push(id);
-
-        let Some(node) = self.nodes.get_mut(id) else {
-            unreachable!("root node should always exist")
         };
 
         let Some(mut node) = node.take() else {
             unreachable!("node: {:?} was missing", id)
         };
 
+        self.stack.push(id);
+
         let ctx = DrawCtx {
-            rect: layout.rect,
+            rect: node.rect,
             current_id: id,
             children: &node.children,
-            surface: &mut self.surface.crop(layout.rect.into()),
+            surface: &mut self.surface.crop(node.rect.into()),
             state: self.state,
             nodes: self.nodes,
-            computed: self.computed,
             stack: self.stack,
             debug: self.debug,
         };
 
         node.view.draw(ctx);
         assert_eq!(Some(id), self.stack.pop());
-        assert!(self.nodes[id].replace(node).is_none());
+        assert!(self.nodes[id.0].replace(node).is_none());
     }
 
     pub fn debug(&mut self, msg: impl ToString) {
@@ -185,40 +178,35 @@ impl<'a, 'c: 't, 't, T: 'static> DrawCtx<'a, 'c, 't, T> {
     }
 }
 
-// TODO somehow integrate with the `Context` from too_runner (to send commands to the backend)
 pub struct Ui<T: 'static> {
-    // TODO we just need an arena for this
-    // we can store the layout rect on the node
-    //
     // Option so we can do a take/insert dance
     // FIXME this is highly annoying
-    nodes: SlotMap<ViewId, Option<ViewNode<T>>>,
-    // if we do keep the slot map, this can just be a hashmap
-    computed: SecondaryMap<ViewId, LayoutNode>,
+    nodes: thunderdome::Arena<Option<ViewNode<T>>>,
     root: ViewId,
 
     input: Input,
 
     stack: Vec<ViewId>,
     removed: Vec<ViewId>,
-    // TODO reuse vedeque from the BFS
+
+    // TODO reuse vecdeque from the BFS
     rect: Rectf,
     quit: bool,
 
     debug: Vec<String>,
 }
 
-impl<T: 'static> std::fmt::Debug for Ui<T> {
+impl<T> std::fmt::Debug for Ui<T> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("Ui")
-            .field(
-                "type",
-                &crate::debug_fmt::str(&debug_fmt::short_name(std::any::type_name::<T>())),
-            )
-            .field("nodes", &crate::debug_fmt::slot_map(&self.nodes))
-            .field("computed", &crate::debug_fmt::secondary_map(&self.computed))
-            .field("root", &crate::debug_fmt::id(self.root))
+            .field("nodes", &self.nodes)
+            .field("root", &self.root)
             .field("input", &self.input)
+            .field("stack", &self.stack)
+            .field("removed", &self.removed)
+            .field("rect", &self.rect)
+            .field("quit", &self.quit)
+            .field("debug", &self.debug)
             .finish()
     }
 }
@@ -243,11 +231,10 @@ impl<T: 'static> Ui<T> {
 
 impl<T: 'static> Ui<T> {
     fn new(rect: impl Into<Rectf>) -> Self {
-        let mut nodes = SlotMap::with_key();
+        let mut nodes = thunderdome::Arena::new();
         Self {
-            root: nodes.insert(Some(ViewNode::occupied(views::RootView))),
+            root: ViewId(nodes.insert(Some(ViewNode::occupied(views::RootView)))),
             nodes,
-            computed: SecondaryMap::new(),
 
             stack: Vec::new(),
             removed: Vec::new(),
@@ -268,7 +255,7 @@ impl<T: 'static> Ui<T> {
     }
 
     fn begin(&mut self) {
-        self.nodes[self.root].as_mut().unwrap().next = 0;
+        self.nodes[self.root.0].as_mut().unwrap().next = 0;
         self.input.begin();
     }
 
@@ -282,24 +269,25 @@ impl<T: 'static> Ui<T> {
     }
 
     fn resolve(&mut self) {
-        let Some(root) = &self.nodes[self.root] else {
+        let Some(root) = &self.nodes[self.root.0] else {
             unreachable!("root node {:?} was not found", self.root);
         };
 
         let mut queue = VecDeque::from_iter(root.children.iter().map(|&id| (id, Point::ZERO)));
 
         while let Some((id, pos)) = queue.pop_front() {
-            let Some(node) = self.computed.get_mut(id) else {
+            let Some(node) = self.nodes.get_mut(id.0) else {
                 continue;
             };
 
-            let offset = pos.to_vector();
-            node.rect += offset;
-            let Some(next) = &self.nodes[id] else {
+            let Some(next) = node.as_mut() else {
                 unreachable!("node: {id:?} was missing")
             };
 
-            queue.extend(next.children.iter().map(|&id| (id, node.rect.min)))
+            let offset = pos.to_vector();
+            next.rect += offset;
+
+            queue.extend(next.children.iter().map(|&id| (id, next.rect.min)))
         }
     }
 
@@ -313,14 +301,13 @@ impl<T: 'static> Ui<T> {
         self.input.handle(
             &event, //
             &mut self.nodes,
-            &mut self.computed,
             state,
             &mut self.debug,
         );
     }
 
     fn layout(&mut self, state: &mut T) {
-        let Some(node) = self.nodes.get_mut(self.root) else {
+        let Some(node) = self.nodes.get_mut(self.root.0) else {
             unreachable!("root node should always exist")
         };
 
@@ -335,7 +322,6 @@ impl<T: 'static> Ui<T> {
             input: &mut self.input,
             client_rect: self.rect,
             nodes: &mut self.nodes,
-            computed: &mut self.computed,
             stack: &mut self.stack,
             debug: &mut self.debug,
         };
@@ -346,11 +332,11 @@ impl<T: 'static> Ui<T> {
         };
 
         let _ = node.view.layout(ctx, space);
-        assert!(self.nodes[self.root].replace(node).is_none());
+        assert!(self.nodes[self.root.0].replace(node).is_none());
     }
 
     fn render(&mut self, state: &mut T, mut surface: SurfaceMut<'_>) {
-        let Some(node) = self.nodes.get_mut(self.root) else {
+        let Some(node) = self.nodes.get_mut(self.root.0) else {
             unreachable!("root node should always exist")
         };
 
@@ -365,13 +351,13 @@ impl<T: 'static> Ui<T> {
             surface: &mut surface,
             state,
             nodes: &mut self.nodes,
-            computed: &self.computed,
             stack: &mut self.stack,
             debug: &mut self.debug,
         };
         node.view.draw(ctx);
-        assert!(self.nodes[self.root].replace(node).is_none());
+        assert!(self.nodes[self.root.0].replace(node).is_none());
 
+        // TODO this could be done with the new `DebugOverlay` in too_runner
         let mut alloc = LinearLayout::vertical()
             .anchor(Anchor2::RIGHT_TOP)
             .wrap(true)
@@ -402,7 +388,7 @@ impl<T: 'static> Ui<T> {
         };
 
         let resp = actual_view.update(state, args);
-        self.nodes[id].as_mut().unwrap().view.inhabit(view);
+        self.nodes[id.0].as_mut().unwrap().view.inhabit(view);
         Response::new(id, resp, ()) // TODO what should `Response::inner` be?
     }
 
@@ -416,7 +402,7 @@ impl<T: 'static> Ui<T> {
     }
 
     fn append_view(&mut self, id: ViewId) -> Option<ViewId> {
-        let parent = self.nodes[id].as_mut().unwrap();
+        let parent = self.nodes[id.0].as_mut().unwrap();
         let id = parent.children.get(parent.next).copied()?;
         parent.next += 1;
         Some(id)
@@ -431,8 +417,9 @@ impl<T: 'static> Ui<T> {
         V: View<T> + 'static,
     {
         let id = self.nodes.insert(Some(ViewNode::empty(parent)));
+        let id = ViewId(id);
 
-        let parent = self.nodes[parent].as_mut().unwrap();
+        let parent = self.nodes[parent.0].as_mut().unwrap();
         if parent.next < parent.children.len() {
             parent.children[parent.next] = id;
         } else {
@@ -455,7 +442,7 @@ impl<T: 'static> Ui<T> {
             return self.allocate_view::<V>(args, parent);
         };
 
-        let Some(node) = self.nodes.get_mut(id).and_then(<Option<_>>::as_mut) else {
+        let Some(node) = self.nodes.get_mut(id.0).and_then(<Option<_>>::as_mut) else {
             unreachable!("node {id:?} must exist")
         };
 
@@ -476,10 +463,10 @@ impl<T: 'static> Ui<T> {
         let mut queue = VecDeque::from_iter([id]);
         while let Some(id) = queue.pop_front() {
             self.removed.push(id);
-            if let Some(node) = self.nodes.remove(id).flatten() {
+            if let Some(node) = self.nodes.remove(id.0).flatten() {
                 queue.extend(node.children);
                 if let Some(parent) = node.parent {
-                    if let Some(parent) = self.nodes.get_mut(parent).and_then(|s| s.as_mut()) {
+                    if let Some(parent) = self.nodes.get_mut(parent.0).and_then(|s| s.as_mut()) {
                         parent.children.retain(|&child| child != id);
                     }
                 }
@@ -488,7 +475,7 @@ impl<T: 'static> Ui<T> {
     }
 
     fn cleanup(&mut self, start: ViewId) {
-        let node = self.nodes[start].as_mut().unwrap();
+        let node = self.nodes[start.0].as_mut().unwrap();
         if node.next >= node.children.len() {
             return;
         }
@@ -500,7 +487,7 @@ impl<T: 'static> Ui<T> {
 
         while let Some(id) = queue.pop_front() {
             self.removed.push(id);
-            let Some(next) = self.nodes.remove(id).flatten() else {
+            let Some(next) = self.nodes.remove(id.0).flatten() else {
                 unreachable!("child: {id:?} should exist for {start:?}")
             };
             queue.extend(next.children);
@@ -511,10 +498,6 @@ impl<T: 'static> Ui<T> {
 mod debug_fmt {
     use std::fmt::{Debug, Formatter, Result};
 
-    use slotmap::{Key, SecondaryMap, SlotMap};
-
-    use crate::ViewId;
-
     pub const fn str(s: &str) -> impl Debug + '_ {
         struct NoQuote<'a>(&'a str);
         impl<'a> Debug for NoQuote<'a> {
@@ -523,65 +506,6 @@ mod debug_fmt {
             }
         }
         NoQuote(s)
-    }
-
-    pub const fn opt_id(id: Option<ViewId>) -> impl Debug {
-        struct ShortId(Option<ViewId>);
-        impl Debug for ShortId {
-            fn fmt(&self, f: &mut Formatter<'_>) -> Result {
-                match self.0.map(|s| s.data()) {
-                    Some(s) => write!(f, "{s:?}"),
-                    None => write!(f, "None"),
-                }
-            }
-        }
-        ShortId(id)
-    }
-
-    pub const fn id(id: ViewId) -> impl Debug {
-        struct ShortId(ViewId);
-        impl Debug for ShortId {
-            fn fmt(&self, f: &mut Formatter<'_>) -> Result {
-                write!(f, "{:?}", self.0.data())
-            }
-        }
-        ShortId(id)
-    }
-
-    pub const fn vec(list: &Vec<ViewId>) -> impl Debug + '_ {
-        struct Inner<'a>(&'a Vec<ViewId>);
-        impl<'a> Debug for Inner<'a> {
-            fn fmt(&self, f: &mut Formatter<'_>) -> Result {
-                f.debug_list()
-                    .entries(self.0.iter().map(|&id| self::id(id)))
-                    .finish()
-            }
-        }
-        Inner(list)
-    }
-
-    pub const fn slot_map<T: Debug>(map: &SlotMap<ViewId, T>) -> impl Debug + '_ {
-        struct Inner<'a, T>(&'a SlotMap<ViewId, T>);
-        impl<'a, T: Debug> Debug for Inner<'a, T> {
-            fn fmt(&self, f: &mut Formatter<'_>) -> Result {
-                f.debug_map()
-                    .entries(self.0.iter().map(|(k, v)| (self::id(k), v)))
-                    .finish()
-            }
-        }
-        Inner(map)
-    }
-
-    pub fn secondary_map<T: Debug>(map: &SecondaryMap<ViewId, T>) -> impl Debug + '_ {
-        struct Inner<'a, T>(&'a SecondaryMap<ViewId, T>);
-        impl<'a, T: Debug> Debug for Inner<'a, T> {
-            fn fmt(&self, f: &mut Formatter<'_>) -> Result {
-                f.debug_map()
-                    .entries(self.0.iter().map(|(k, v)| (id(k), v)))
-                    .finish()
-            }
-        }
-        Inner(map)
     }
 
     pub fn short_name(name: &str) -> String {

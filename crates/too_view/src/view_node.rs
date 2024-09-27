@@ -1,6 +1,7 @@
 use crate::{
     erased_view::{ErasedView, ViewMarker},
-    View, ViewId,
+    geom::Rectf,
+    Interest, View, ViewId,
 };
 
 pub struct ViewNode<T: 'static> {
@@ -8,15 +9,20 @@ pub struct ViewNode<T: 'static> {
     pub parent: Option<ViewId>,
     pub children: Vec<ViewId>, // TODO maybe use a small vec
     pub next: usize,
+
+    pub rect: Rectf,
+    pub interest: Interest,
 }
 
 impl<T: 'static> std::fmt::Debug for ViewNode<T> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("ViewNode")
             .field("view", &self.view)
-            .field("parent", &crate::debug_fmt::opt_id(self.parent))
-            .field("children", &crate::debug_fmt::vec(&self.children))
+            .field("parent", &self.parent)
+            .field("children", &self.children)
             .field("next", &self.next)
+            .field("rect", &self.rect)
+            .field("interest", &self.interest)
             .finish()
     }
 }
@@ -28,6 +34,8 @@ impl<T: 'static> ViewNode<T> {
             view: ViewNodeSlot::Vacant,
             children: Vec::new(),
             next: 0,
+            interest: Interest::NONE,
+            rect: Rectf::ZERO,
         }
     }
 
@@ -37,6 +45,8 @@ impl<T: 'static> ViewNode<T> {
             parent: None,
             children: Vec::new(),
             next: 0,
+            interest: Interest::NONE,
+            rect: Rectf::ZERO,
         }
     }
 }

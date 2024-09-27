@@ -9,12 +9,12 @@ documentation.workspace = true
 repository.workspace = true
 
 [dependencies]
-slotmap = "1.0.7"
 too_renderer.workspace = true
 too_events.workspace = true
 too_math.workspace = true
 too_shapes.workspace = true
 too_runner.workspace = true
+thunderdome = "0.6.1"
 
 [dev-dependencies]
 too_crossterm.workspace = true
