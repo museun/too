@@ -49,7 +49,11 @@ impl Keybind {
 
 impl From<char> for Keybind {
     fn from(value: char) -> Self {
-        Self::from_char(value)
+        let mut this = Self::from_char(value);
+        if value.is_ascii_uppercase() {
+            this = this.shift();
+        }
+        this
     }
 }
 
