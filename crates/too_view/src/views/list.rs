@@ -4,7 +4,6 @@ use crate::{
     geom::{Size, Space, Vector},
     response::UserResponse,
     view::Context,
-    views::AxisExt as _,
     LayoutCtx, NoResponse, UpdateCtx, View, ViewExt,
 };
 
@@ -186,8 +185,8 @@ impl<T: 'static> View<T> for List {
                 );
 
                 let size = ctx.compute_layout(ctx.children[i], space);
-                stack.state.main[i] = stack.params.axis.major(size);
-                stack.state.cross[i] = stack.params.axis.minor(size);
+                stack.state.main[i] = stack.params.axis.main(size);
+                stack.state.cross[i] = stack.params.axis.cross(size);
             }
 
             // let remaining = f32::max(main_max - gap - stack.state.main_sum(), 0.0);

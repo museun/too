@@ -1,5 +1,4 @@
 //! Layout helpers
-use crate::{vec2, Vec2};
 
 /// A direction such as _Horizontal_ or _Vertical_
 #[derive(Copy, Clone, Debug, Default, PartialEq, PartialOrd, Eq, Ord, Hash)]
@@ -10,24 +9,37 @@ pub enum Axis {
 }
 
 impl Axis {
-    pub const fn size(&self, main: i32, cross: i32) -> Vec2 {
+    pub fn main<T>(&self, value: impl Into<(T, T)>) -> T {
+        let (x, y) = value.into();
         match self {
-            Self::Horizontal => vec2(main, cross),
-            Self::Vertical => vec2(cross, main),
+            Self::Horizontal => x,
+            Self::Vertical => y,
         }
     }
 
-    pub const fn main_size(&self, size: Vec2) -> i32 {
+    pub fn cross<T>(&self, value: impl Into<(T, T)>) -> T {
+        let (x, y) = value.into();
         match self {
-            Self::Horizontal => size.x,
-            Self::Vertical => size.y,
+            Self::Horizontal => y,
+            Self::Vertical => x,
         }
     }
 
-    pub const fn cross_size(&self, size: Vec2) -> i32 {
+    pub fn pack<T, R>(&self, main: T, cross: T) -> R
+    where
+        R: From<(T, T)>,
+    {
         match self {
-            Self::Horizontal => size.y,
-            Self::Vertical => size.x,
+            Self::Horizontal => R::from((main, cross)),
+            Self::Vertical => R::from((cross, main)),
+        }
+    }
+
+    pub fn unpack<T>(&self, value: impl Into<(T, T)>) -> (T, T) {
+        let (x, y) = value.into();
+        match self {
+            Self::Horizontal => (x, y),
+            Self::Vertical => (y, x),
         }
     }
 }

@@ -1,57 +1,10 @@
-use std::f32;
-
-use too_math::{layout::Axis, pos2};
+use too_math::pos2;
 use too_renderer::{Pixel, Rgba, Shape};
 
 use crate::{
     geom::{Size, Space},
     LayoutCtx, NoArgs, NoResponse, UpdateCtx, View,
 };
-
-trait AxisExt {
-    fn major(&self, size: impl Into<(f32, f32)>) -> f32;
-    fn minor(&self, size: impl Into<(f32, f32)>) -> f32;
-    fn pack<T>(&self, main: f32, cross: f32) -> T
-    where
-        T: From<(f32, f32)>;
-    fn unpack(&self, size: impl Into<(f32, f32)>) -> (f32, f32);
-}
-
-impl AxisExt for Axis {
-    fn major(&self, size: impl Into<(f32, f32)>) -> f32 {
-        let (x, y) = size.into();
-        match self {
-            Self::Horizontal => x,
-            Self::Vertical => y,
-        }
-    }
-
-    fn minor(&self, size: impl Into<(f32, f32)>) -> f32 {
-        let (x, y) = size.into();
-        match self {
-            Self::Horizontal => y,
-            Self::Vertical => x,
-        }
-    }
-
-    fn pack<T>(&self, main: f32, cross: f32) -> T
-    where
-        T: From<(f32, f32)>,
-    {
-        match self {
-            Self::Horizontal => T::from((main, cross)),
-            Self::Vertical => T::from((cross, main)),
-        }
-    }
-
-    fn unpack(&self, size: impl Into<(f32, f32)>) -> (f32, f32) {
-        let (x, y) = size.into();
-        match self {
-            Self::Horizontal => (x, y),
-            Self::Vertical => (y, x),
-        }
-    }
-}
 
 pub(crate) struct FillCharacter {
     pub(crate) char: char,
