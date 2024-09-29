@@ -1,6 +1,6 @@
 use std::ops::RangeInclusive;
 
-use too_renderer::Pixel;
+use too::Pixel;
 
 use crate::{
     geom::{Size, Space},
@@ -99,7 +99,7 @@ impl<T: 'static> View<T> for Progress<T> {
         let filled = ctx.properties.filled::<Self>();
         let pixel = Pixel::new(filled).bg(ctx.theme.primary);
         for x in 0..(x - ctx.rect.left()).round() as i32 {
-            ctx.surface.put(too_math::pos2(x, 0), pixel);
+            ctx.surface.put(too::pos2(x, 0), pixel);
         }
     }
 }

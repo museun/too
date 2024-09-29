@@ -1,5 +1,4 @@
-use too_math::pos2;
-use too_renderer::{Pixel, Rgba, Shape};
+use too::{pos2, Pixel, Rgba, Shape};
 
 use crate::{
     geom::{Size, Space},
@@ -12,7 +11,7 @@ pub(crate) struct FillCharacter {
 }
 
 impl Shape for FillCharacter {
-    fn draw(&self, size: too_math::Vec2, mut put: impl FnMut(too_math::Pos2, Pixel)) {
+    fn draw(&self, size: too::Vec2, mut put: impl FnMut(too::Pos2, Pixel)) {
         let pixel = Pixel::new(self.char).fg(self.fg);
         for y in 0..size.y {
             for x in 0..size.x {

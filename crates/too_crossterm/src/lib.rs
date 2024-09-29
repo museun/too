@@ -1,12 +1,9 @@
 use std::{collections::VecDeque, thread::JoinHandle};
 
-use too_backend::{
-    Backend, Command, CurrentScreen, Event, EventReader, Key, Keybind, Modifiers, MouseButton,
-    MouseState, TemporalEvent,
+use too::{
+    pos2, vec2, Backend, Command, CurrentScreen, Event, EventReader, Key, Keybind, Modifiers,
+    MouseButton, MouseState, Renderer, TemporalEvent, TermRenderer, Vec2,
 };
-
-use too_math::{pos2, vec2, Vec2};
-use too_renderer::{Renderer, TermRenderer};
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
 pub struct Config {

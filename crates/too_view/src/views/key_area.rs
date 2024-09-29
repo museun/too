@@ -1,4 +1,4 @@
-use too_backend::{Key, Keybind, Modifiers};
+use too::{Key, Keybind, Modifiers};
 
 use crate::{
     view::Context, Event, EventCtx, Handled, Interest, NoArgs, Response, UpdateCtx, View, ViewExt,

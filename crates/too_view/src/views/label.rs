@@ -1,6 +1,6 @@
 use std::borrow::Cow;
 
-use too_renderer::{shapes::Text, Attribute};
+use too::{shapes::Text, Attribute};
 
 use crate::{
     geom::{Size, Space},
@@ -89,7 +89,7 @@ impl<T: 'static> View<T> for StaticLabel<T> {
     }
 
     fn layout(&mut self, ctx: LayoutCtx<T>, space: Space) -> Size {
-        use too_renderer::shapes::Label as _;
+        use too::shapes::Label as _;
         self.args.label.size().into()
     }
 
@@ -139,7 +139,7 @@ impl<T: 'static> View<T> for Label<T> {
     }
 
     fn layout(&mut self, ctx: LayoutCtx<T>, space: Space) -> Size {
-        use too_renderer::shapes::Label as _;
+        use too::shapes::Label as _;
         let params = (self.args.params)(ctx.state);
         params.label.size().into()
     }

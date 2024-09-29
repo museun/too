@@ -1,4 +1,4 @@
-use too_renderer::{shapes::Fill, Rgba};
+use too::{shapes::Fill, Rgba};
 
 use crate::{response::UserResponse, view::Context, DrawCtx, NoResponse, UpdateCtx, View, ViewExt};
 

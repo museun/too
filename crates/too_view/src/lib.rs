@@ -5,8 +5,8 @@ use std::{
     ops::Deref,
 };
 
-use too_math::layout::{Anchor2, LinearLayout};
-use too_renderer::{
+use too::{
+    layout::{Anchor2, LinearLayout},
     shapes::{Fill, Text},
     Rgba, SurfaceMut,
 };
@@ -729,7 +729,7 @@ impl<T: 'static> Ui<T> {
         }
     }
 
-    fn scope(&mut self, state: &mut T, apply: fn(&mut Context<'_, T>), ctx: too_runner::Context) {
+    fn scope(&mut self, state: &mut T, apply: fn(&mut Context<'_, T>), ctx: too::Context) {
         self.begin();
         apply(&mut Context { ui: self, state });
         self.end(state);
@@ -777,8 +777,8 @@ impl<T: 'static> Ui<T> {
         // and do it
     }
 
-    fn event(&mut self, state: &mut T, event: too_backend::Event) {
-        if let too_backend::Event::Resize(size) = event {
+    fn event(&mut self, state: &mut T, event: too::Event) {
+        if let too::Event::Resize(size) = event {
             self.rect = Rectf::min_size(Point::ZERO, size.into());
         }
 

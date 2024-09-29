@@ -250,8 +250,8 @@ impl Rectf {
     }
 }
 
-impl From<too_math::Rect> for Rectf {
-    fn from(value: too_math::Rect) -> Self {
+impl From<too::Rect> for Rectf {
+    fn from(value: too::Rect) -> Self {
         Self::new(
             Point::new(value.min.x as f32, value.min.y as f32),
             Point::new(value.max.x as f32, value.max.y as f32),
@@ -259,12 +259,12 @@ impl From<too_math::Rect> for Rectf {
     }
 }
 
-impl From<Rectf> for too_math::Rect {
+impl From<Rectf> for too::Rect {
     fn from(value: Rectf) -> Self {
         let rect = value.round();
         Self::from_min_max(
-            too_math::pos2(rect.min.x as _, rect.min.y as _),
-            too_math::pos2(rect.max.x as _, rect.max.y as _),
+            too::pos2(rect.min.x as _, rect.min.y as _),
+            too::pos2(rect.max.x as _, rect.max.y as _),
         )
     }
 }
@@ -287,16 +287,16 @@ impl From<(f32, f32)> for Rectf {
     }
 }
 
-impl std::ops::Add<too_math::Vec2> for Rectf {
+impl std::ops::Add<too::Vec2> for Rectf {
     type Output = Self;
-    fn add(self, rhs: too_math::Vec2) -> Self::Output {
+    fn add(self, rhs: too::Vec2) -> Self::Output {
         self + Vector::from(rhs)
     }
 }
 
-impl std::ops::Add<too_math::Pos2> for Rectf {
+impl std::ops::Add<too::Pos2> for Rectf {
     type Output = Self;
-    fn add(self, rhs: too_math::Pos2) -> Self::Output {
+    fn add(self, rhs: too::Pos2) -> Self::Output {
         self + Vector::from(rhs.to_vec2())
     }
 }
@@ -315,16 +315,16 @@ impl std::ops::Add<Size> for Rectf {
     }
 }
 
-impl std::ops::Sub<too_math::Vec2> for Rectf {
+impl std::ops::Sub<too::Vec2> for Rectf {
     type Output = Self;
-    fn sub(self, rhs: too_math::Vec2) -> Self::Output {
+    fn sub(self, rhs: too::Vec2) -> Self::Output {
         self - Vector::from(rhs)
     }
 }
 
-impl std::ops::Sub<too_math::Pos2> for Rectf {
+impl std::ops::Sub<too::Pos2> for Rectf {
     type Output = Self;
-    fn sub(self, rhs: too_math::Pos2) -> Self::Output {
+    fn sub(self, rhs: too::Pos2) -> Self::Output {
         self - Vector::from(rhs.to_vec2())
     }
 }
@@ -343,14 +343,14 @@ impl std::ops::Sub<Size> for Rectf {
     }
 }
 
-impl std::ops::AddAssign<too_math::Vec2> for Rectf {
-    fn add_assign(&mut self, rhs: too_math::Vec2) {
+impl std::ops::AddAssign<too::Vec2> for Rectf {
+    fn add_assign(&mut self, rhs: too::Vec2) {
         *self += Vector::from(rhs)
     }
 }
 
-impl std::ops::AddAssign<too_math::Pos2> for Rectf {
-    fn add_assign(&mut self, rhs: too_math::Pos2) {
+impl std::ops::AddAssign<too::Pos2> for Rectf {
+    fn add_assign(&mut self, rhs: too::Pos2) {
         *self += Vector::from(rhs.to_vec2())
     }
 }
@@ -367,14 +367,14 @@ impl std::ops::AddAssign<Size> for Rectf {
     }
 }
 
-impl std::ops::SubAssign<too_math::Vec2> for Rectf {
-    fn sub_assign(&mut self, rhs: too_math::Vec2) {
+impl std::ops::SubAssign<too::Vec2> for Rectf {
+    fn sub_assign(&mut self, rhs: too::Vec2) {
         *self -= Vector::from(rhs)
     }
 }
 
-impl std::ops::SubAssign<too_math::Pos2> for Rectf {
-    fn sub_assign(&mut self, rhs: too_math::Pos2) {
+impl std::ops::SubAssign<too::Pos2> for Rectf {
+    fn sub_assign(&mut self, rhs: too::Pos2) {
         *self -= Vector::from(rhs.to_vec2())
     }
 }
@@ -533,16 +533,16 @@ impl std::ops::Sub for Point {
     }
 }
 
-impl From<too_math::Pos2> for Point {
-    fn from(value: too_math::Pos2) -> Self {
+impl From<too::Pos2> for Point {
+    fn from(value: too::Pos2) -> Self {
         Self::new(value.x as _, value.y as _)
     }
 }
 
-impl From<Point> for too_math::Pos2 {
+impl From<Point> for too::Pos2 {
     fn from(value: Point) -> Self {
         let value = value.round();
-        too_math::pos2(value.x as i32, value.y as i32)
+        too::pos2(value.x as i32, value.y as i32)
     }
 }
 
@@ -751,13 +751,13 @@ impl From<Size> for Vector {
     }
 }
 
-impl From<too_math::Vec2> for Vector {
-    fn from(value: too_math::Vec2) -> Self {
+impl From<too::Vec2> for Vector {
+    fn from(value: too::Vec2) -> Self {
         Self::new(value.x as f32, value.y as f32)
     }
 }
 
-impl From<Vector> for too_math::Vec2 {
+impl From<Vector> for too::Vec2 {
     fn from(value: Vector) -> Self {
         Self::new(value.x.round() as _, value.y.round() as _)
     }
@@ -942,23 +942,23 @@ impl From<Vector> for Size {
     }
 }
 
-impl From<Size> for too_math::Pos2 {
+impl From<Size> for too::Pos2 {
     fn from(value: Size) -> Self {
         let size = value.round();
-        too_math::pos2(size.width.round() as _, size.height.round() as _)
+        too::pos2(size.width.round() as _, size.height.round() as _)
     }
 }
 
-impl From<too_math::Vec2> for Size {
-    fn from(value: too_math::Vec2) -> Self {
+impl From<too::Vec2> for Size {
+    fn from(value: too::Vec2) -> Self {
         Self::new(value.x as f32, value.y as f32)
     }
 }
 
-impl From<Size> for too_math::Vec2 {
+impl From<Size> for too::Vec2 {
     fn from(value: Size) -> Self {
         let size = value.round();
-        too_math::vec2(size.width.round() as _, size.height.round() as _)
+        too::vec2(size.width.round() as _, size.height.round() as _)
     }
 }
 
@@ -970,14 +970,14 @@ impl std::ops::Neg for Size {
 }
 
 // TODO this is totally from the wrong crate
-impl std::ops::Mul<too_math::layout::Align2> for Size {
+impl std::ops::Mul<too::layout::Align2> for Size {
     type Output = Self;
-    fn mul(self, rhs: too_math::layout::Align2) -> Self::Output {
-        fn factor(align: too_math::layout::Align) -> f32 {
+    fn mul(self, rhs: too::layout::Align2) -> Self::Output {
+        fn factor(align: too::layout::Align) -> f32 {
             match align {
-                too_math::layout::Align::Min => 0.0,
-                too_math::layout::Align::Center => 0.5,
-                too_math::layout::Align::Max => 1.0,
+                too::layout::Align::Min => 0.0,
+                too::layout::Align::Center => 0.5,
+                too::layout::Align::Max => 1.0,
             }
         }
         Self::new(self.width * factor(rhs.x), self.height * factor(rhs.y))
