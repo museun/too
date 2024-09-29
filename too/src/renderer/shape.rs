@@ -16,10 +16,9 @@ pub trait Shape {
     /// # Example:
     /// This will fill the entire rect with a specific color
     /// ```rust
-    /// # use too_renderer::{Pixel, Rgba, Shape};
-    /// # use too_math::{pos2, vec2, Pos2, Vec2};
-    /// # let mut surface = too_renderer::Surface::new(too_math::vec2(80, 25));
-    /// # let mut surface = surface.crop(too_math::rect(too_math::vec2(80, 25)));
+    /// # use too::{Pixel, Rgba, Shape, pos2, vec2, Pos2, Vec2, Surface, rect};
+    /// # let mut surface = Surface::new(vec2(80, 25));
+    /// # let mut surface = surface.crop(rect(vec2(80, 25)));
     /// struct FillBg { bg: Rgba }
     /// impl Shape for FillBg {
     ///     fn draw(&self, size: Vec2, mut put: impl FnMut(Pos2, Pixel)) {
@@ -31,7 +30,7 @@ pub trait Shape {
     ///     }
     /// }
     ///
-    /// surface.draw(FillBg { bg: too_renderer::Rgba::from_static("#FFF") });
+    /// surface.draw(FillBg { bg: too::Rgba::hex("#FFF") });
     ///
     /// ```
     fn draw(&self, size: Vec2, put: impl FnMut(Pos2, Pixel));
@@ -56,10 +55,10 @@ impl Shape for () {
 /// `fn(Vec2) -> fn(pos) -> maybe pixel`
 ///
 /// ```rust
-/// # use too_renderer::{anonymous, Pixel, SurfaceMut};
+/// # use too::{anonymous, Pixel, SurfaceMut, Surface, rect, vec2};
 /// // equivilant to [`Fill`] with 'red'
-/// # let mut surface = too_renderer::Surface::new(too_math::vec2(80, 25));
-/// # let mut surface = surface.crop(too_math::rect(too_math::vec2(80, 25)));
+/// # let mut surface = Surface::new(vec2(80, 25));
+/// # let mut surface = surface.crop(rect(vec2(80, 25)));
 /// surface.draw(anonymous(|_size| {
 ///     move |pos| Some(Pixel::new(' ').bg("#F00"))
 /// }));
@@ -107,9 +106,9 @@ where
 /// `fn(Vec2) -> fn(context, pos) -> maybe pixel`
 ///
 /// ```rust
-/// # use too_renderer::{anonymous_ctx, Rgba, Color, Pixel, Shape, SurfaceMut};
-/// # let mut surface = too_renderer::Surface::new(too_math::vec2(80, 25));
-/// # let mut surface = surface.crop(too_math::rect(too_math::vec2(80, 25)));
+/// # use too::{anonymous_ctx, Rgba, Color, Pixel, Shape, SurfaceMut, Surface, rect, vec2};
+/// # let mut surface = Surface::new(vec2(80, 25));
+/// # let mut surface = surface.crop(rect(vec2(80, 25)));
 /// // equivilant to [`Fill`] with `color` from 'self'
 ///
 /// struct State {
@@ -117,7 +116,7 @@ where
 /// }
 ///
 /// let state = State {
-///     color: Rgba::from_static("#F00")
+///     color: Rgba::hex("#F00")
 /// };
 ///
 /// surface.draw(anonymous_ctx(&state, |_size| {

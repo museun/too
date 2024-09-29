@@ -260,8 +260,7 @@ impl<'a> SurfaceMut<'a> {
     ///
     /// # Example:
     /// ```rust
-    /// # use too_renderer::{Pixel, Shape, SurfaceMut};
-    /// # use too_math::{pos2, Pos2, Vec2};
+    /// # use too::{Pixel, Shape, SurfaceMut, pos2, Pos2, Vec2, vec2, rect};
     /// struct MyShape;
     /// struct Overlay;
     ///
@@ -287,8 +286,8 @@ impl<'a> SurfaceMut<'a> {
     ///
     /// // this'll fill the surface with a red background
     /// // then the top-left quarter will be overwritten with a green background
-    /// # let mut surface = too_renderer::Surface::new(too_math::vec2(80, 25));
-    /// # let mut surface = surface.crop(too_math::rect(too_math::vec2(80, 25)));
+    /// # let mut surface = too::Surface::new(vec2(80, 25));
+    /// # let mut surface = surface.crop(rect(vec2(80, 25)));
     /// surface.draw(MyShape).draw(Overlay);
     ///
     /// ```

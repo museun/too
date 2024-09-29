@@ -13,7 +13,7 @@ impl Fill {
     /// # Example
     ///
     /// ```rust
-    /// # use too_renderer::{Rgba, Color, shapes::Fill};
+    /// # use too::{Rgba, Color, shapes::Fill};
     /// let fill_red = Fill::new("#F00");
     /// let blend_blue_half = Fill::new(Rgba::new(0, 0, 255, 128));
     /// let reset_bg = Fill::new(Color::Reset);
