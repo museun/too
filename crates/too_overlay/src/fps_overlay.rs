@@ -72,8 +72,8 @@ impl Default for FpsOverlay {
             window: EmaWindow::new(),
             axis: Axis::Horizontal,
             anchor: Anchor2::LEFT_TOP,
-            fg: Rgba::from_static("#F00"),
-            bg: Rgba::from_static("#000"),
+            fg: Rgba::hex("#F00"),
+            bg: Rgba::hex("#000"),
         }
     }
 }

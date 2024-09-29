@@ -13,6 +13,7 @@ too_renderer.workspace = true
 too_backend.workspace = true
 too_math.workspace = true
 too_runner.workspace = true
+too_overlay.workspace = true
 
 thunderdome = "0.6.1"
 

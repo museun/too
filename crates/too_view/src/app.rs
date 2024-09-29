@@ -1,7 +1,8 @@
 use too_backend::{Backend, EventReader};
+use too_overlay::Overlay;
 use too_runner::Runner;
 
-use crate::{geom::Size, view::Context, Ui};
+use crate::{geom::Size, view::Context, Properties, Ui};
 
 pub trait App: Sized + 'static {
     /// [`Context`] derefs into `Self`
@@ -9,7 +10,11 @@ pub trait App: Sized + 'static {
 }
 
 pub trait AppRunner: App + Sealed + Sized {
-    fn run(self, backend: impl Backend + EventReader) -> std::io::Result<()> {
+    fn run(
+        self,
+        properties: Properties,
+        backend: impl Backend + EventReader,
+    ) -> std::io::Result<()> {
         struct Wrapper<T: 'static> {
             ui: Ui<T>,
             app: T,
@@ -17,14 +22,14 @@ pub trait AppRunner: App + Sealed + Sized {
         }
 
         let wrapper = Wrapper {
-            ui: Ui::new(Size::from(backend.size())),
+            ui: Ui::new(Size::from(backend.size()), properties),
             app: self,
             view: Self::view,
         };
 
         <Runner<Wrapper<Self>>>::new()
-            .frame_ready(|wrapper| {
-                wrapper.ui.scope(&mut wrapper.app, wrapper.view);
+            .frame_ready(|wrapper, ctx| {
+                wrapper.ui.scope(&mut wrapper.app, wrapper.view, ctx);
             })
             .update(|wrapper, dt, _ctx| {
                 wrapper.ui.tick(dt);
@@ -34,6 +39,9 @@ pub trait AppRunner: App + Sealed + Sized {
             })
             .render(|wrapper, surface, _ctx| {
                 wrapper.ui.render(&mut wrapper.app, surface);
+            })
+            .post_render(|wrapper, overlay, surface| {
+                Overlay::default_draw(wrapper, overlay, surface);
             })
             .run(wrapper, backend)
     }

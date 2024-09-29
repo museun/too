@@ -35,7 +35,7 @@ struct Demo {
 }
 
 impl Demo {
-    const FG: Rgba = Rgba::from_static("#000000");
+    const FG: Rgba = Rgba::hex("#000000");
 
     fn new(lines: impl IntoIterator<Item = impl ToString>) -> Self {
         let lines: Vec<_> = lines.into_iter().map(|s| s.to_string()).collect();
@@ -57,8 +57,8 @@ impl Demo {
     }
 
     fn draw_torch(&self, offset: usize, surface: &mut SurfaceMut) {
-        const BG: Rgba = Rgba::from_static("#F0E68C");
-        const SHADOW: Rgba = Rgba::from_static("#333333");
+        const BG: Rgba = Rgba::hex("#F0E68C");
+        const SHADOW: Rgba = Rgba::hex("#333333");
 
         fn blend(demo: &Demo, _: Vec2, pos: Pos2) -> Rgba {
             if !demo.enabled {
@@ -83,8 +83,8 @@ impl Demo {
     }
 
     fn draw_focus(&self, offset: usize, surface: &mut SurfaceMut) {
-        const SHADOW: Rgba = Rgba::from_static("#AAAAAAAA");
-        const BG: Rgba = Rgba::from_static("#111111");
+        const SHADOW: Rgba = Rgba::hex("#AAAAAAAA");
+        const BG: Rgba = Rgba::hex("#111111");
 
         fn blend(demo: &Demo, size: Vec2, pos: Pos2) -> Rgba {
             if !demo.enabled {

@@ -340,6 +340,7 @@ dependencies = [
  "too_backend",
  "too_crossterm",
  "too_math",
+ "too_overlay",
  "too_renderer",
  "too_runner",
 ]

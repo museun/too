@@ -217,7 +217,7 @@ pub enum Color {
 
 impl From<&'static str> for Color {
     fn from(value: &'static str) -> Self {
-        Self::Rgba(Rgba::from_static(value))
+        Self::Rgba(Rgba::hex(value))
     }
 }
 

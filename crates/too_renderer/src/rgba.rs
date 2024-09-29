@@ -57,7 +57,7 @@ impl Rgba {
     }
 
     #[must_use]
-    pub const fn from_static(color: &'static str) -> Self {
+    pub const fn hex(color: &'static str) -> Self {
         #[track_caller]
         const fn to_digit(d: u8) -> u8 {
             assert!(d.is_ascii_hexdigit(), "invalid hex digit");
@@ -210,7 +210,7 @@ impl From<u16> for Rgba {
 
 impl From<&'static str> for Rgba {
     fn from(rgba: &'static str) -> Self {
-        Self::from_static(rgba)
+        Self::hex(rgba)
     }
 }
 

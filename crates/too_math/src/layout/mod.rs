@@ -17,14 +17,14 @@ impl Axis {
         }
     }
 
-    pub const fn main(&self, size: Vec2) -> i32 {
+    pub const fn main_size(&self, size: Vec2) -> i32 {
         match self {
             Self::Horizontal => size.x,
             Self::Vertical => size.y,
         }
     }
 
-    pub const fn cross(&self, size: Vec2) -> i32 {
+    pub const fn cross_size(&self, size: Vec2) -> i32 {
         match self {
             Self::Horizontal => size.y,
             Self::Vertical => size.x,

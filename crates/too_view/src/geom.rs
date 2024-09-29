@@ -179,8 +179,8 @@ impl Rectf {
     }
 
     pub fn contains(self, point: Point) -> bool {
-        let x = point.x >= self.min.x && point.x <= self.max.x;
-        let y = point.y >= self.min.y && point.y <= self.max.y;
+        let x = point.x >= self.min.x && point.x < self.max.x;
+        let y = point.y >= self.min.y && point.y < self.max.y;
         x && y
     }
 
@@ -210,7 +210,7 @@ impl Rectf {
     }
 
     pub const fn bottom(self) -> f32 {
-        self.min.y
+        self.max.y
     }
 
     pub fn left_top(self) -> Point {
@@ -757,6 +757,12 @@ impl From<too_math::Vec2> for Vector {
     }
 }
 
+impl From<Vector> for too_math::Vec2 {
+    fn from(value: Vector) -> Self {
+        Self::new(value.x.round() as _, value.y.round() as _)
+    }
+}
+
 impl std::ops::Neg for Vector {
     type Output = Self;
     fn neg(self) -> Self::Output {
@@ -823,6 +829,7 @@ impl Size {
     pub const ZERO: Self = Self::new(0.0, 0.0);
     pub const INFINITY: Self = Self::new(f32::INFINITY, f32::INFINITY);
     pub const NEG_INFINITY: Self = Self::new(f32::NEG_INFINITY, f32::NEG_INFINITY);
+    pub const FILL: Self = Self::INFINITY;
 
     pub const fn new(width: f32, height: f32) -> Self {
         Self { width, height }
@@ -899,6 +906,12 @@ impl Size {
     }
 }
 
+impl From<Size> for (f32, f32) {
+    fn from(size: Size) -> Self {
+        (size.width, size.height)
+    }
+}
+
 impl From<(f32, f32)> for Size {
     fn from((width, height): (f32, f32)) -> Self {
         Self::new(width, height)
@@ -929,6 +942,13 @@ impl From<Vector> for Size {
     }
 }
 
+impl From<Size> for too_math::Pos2 {
+    fn from(value: Size) -> Self {
+        let size = value.round();
+        too_math::pos2(size.width.round() as _, size.height.round() as _)
+    }
+}
+
 impl From<too_math::Vec2> for Size {
     fn from(value: too_math::Vec2) -> Self {
         Self::new(value.x as f32, value.y as f32)
@@ -938,7 +958,7 @@ impl From<too_math::Vec2> for Size {
 impl From<Size> for too_math::Vec2 {
     fn from(value: Size) -> Self {
         let size = value.round();
-        too_math::vec2(size.width as _, size.height as _)
+        too_math::vec2(size.width.round() as _, size.height.round() as _)
     }
 }
 
@@ -1027,8 +1047,6 @@ size_ops!(Mul, MulAssign, mul, mul_assign, *);
 size_ops!(Div, DivAssign, div, div_assign, /);
 size_ops!(Rem, RemAssign, rem, rem_assign, %);
 
-// TODO this really needs more stuff
-// TODO more stuff on this (like constraints)
 // TODO this goes into the layout module
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub struct Space {

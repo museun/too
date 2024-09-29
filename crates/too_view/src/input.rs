@@ -242,6 +242,19 @@ impl Event {
         }
         .filter(|c| !c.is_none())
     }
+
+    pub fn mouse_position(&self) -> Option<Point> {
+        match self {
+            Self::MouseEnter(MouseMove { pos, .. })
+            | Self::MouseLeave(MouseMove { pos, .. })
+            | Self::MouseMove(MouseMove { pos, .. })
+            | Self::MouseClick(MouseClick { pos, .. })
+            | Self::MouseHeld(MouseHeld { pos, .. })
+            | Self::MouseDrag(MouseDrag { pos, .. })
+            | Self::MouseScroll(MouseScroll { pos, .. }) => Some(*pos),
+            _ => None,
+        }
+    }
 }
 
 #[derive(Debug, Default)]
@@ -273,6 +286,7 @@ impl Mouse {
         self.layered.current_root()
     }
 
+    // this is never called
     pub fn clear(&mut self) {
         self.layered.clear();
     }
@@ -314,6 +328,7 @@ impl Keyboard {
         self.layered.current_root()
     }
 
+    // this is never called
     pub fn clear(&mut self) {
         self.layered.clear();
     }
@@ -429,10 +444,13 @@ impl Input {
     }
 
     pub fn end(&mut self, removed: &[ViewId]) {
+        self.mouse.clear();
+        self.keyboard.clear();
+
         // TODO focus stuff
-        // for &id in removed {
-        //     self.remove(id);
-        // }
+        for &id in removed {
+            self.remove(id);
+        }
     }
 
     pub fn handle<T: 'static>(
@@ -582,8 +600,8 @@ impl Input {
     }
 
     fn remove(&mut self, id: ViewId) {
-        self.keyboard.remove(id);
-        self.mouse.remove(id);
+        // self.keyboard.remove(id);
+        // self.mouse.remove(id);
         self.mouse.mouse_over.remove(&id);
     }
 }

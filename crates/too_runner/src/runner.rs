@@ -11,7 +11,7 @@ use crate::Context;
 
 /// Configurable type to 'hook' into different steps of the run loop
 pub struct Runner<T> {
-    frame_ready: fn(&mut T),
+    frame_ready: fn(&mut T, Context<'_>),
     min_ups: fn(&T) -> f32,
     max_ups: fn(&T) -> f32,
     init: fn(&mut T, Context<'_>),
@@ -30,7 +30,7 @@ impl<T> Default for Runner<T> {
 impl<T> Runner<T> {
     pub const fn new() -> Self {
         Self {
-            frame_ready: |_| {},
+            frame_ready: |_, _| {},
             min_ups: |_| 10.0,
             max_ups: |_| 60.0,
             init: |_, _| {},
@@ -42,7 +42,7 @@ impl<T> Runner<T> {
     }
 
     /// After updating and before rendering, this is called
-    pub const fn frame_ready(mut self, ready: fn(&mut T)) -> Self {
+    pub const fn frame_ready(mut self, ready: fn(&mut T, Context<'_>)) -> Self {
         self.frame_ready = ready;
         self
     }
@@ -152,7 +152,12 @@ impl<T> Runner<T> {
                 }
             }
 
-            (self.frame_ready)(&mut state);
+            let ctx = Context {
+                overlay: &mut overlay,
+                commands: &mut commands,
+                size: surface.rect().size(),
+            };
+            (self.frame_ready)(&mut state, ctx);
 
             if term.should_draw() {
                 let ctx = Context {

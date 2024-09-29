@@ -36,37 +36,42 @@ impl<T: Label> Text<T> {
         self
     }
 
-    pub const fn attr(mut self, attr: Attribute) -> Self {
+    pub const fn attribute(mut self, attr: Attribute) -> Self {
         self.attr = Some(attr);
         self
     }
 
+    pub const fn maybe_attribute(mut self, attr: Option<Attribute>) -> Self {
+        self.attr = attr;
+        self
+    }
+
     pub const fn bold(self) -> Self {
-        self.attr(Attribute::BOLD)
+        self.attribute(Attribute::BOLD)
     }
 
     pub const fn faint(self) -> Self {
-        self.attr(Attribute::FAINT)
+        self.attribute(Attribute::FAINT)
     }
 
     pub const fn italic(self) -> Self {
-        self.attr(Attribute::ITALIC)
+        self.attribute(Attribute::ITALIC)
     }
 
     pub const fn underline(self) -> Self {
-        self.attr(Attribute::UNDERLINE)
+        self.attribute(Attribute::UNDERLINE)
     }
 
     pub const fn blink(self) -> Self {
-        self.attr(Attribute::BLINK)
+        self.attribute(Attribute::BLINK)
     }
 
     pub const fn reverse(self) -> Self {
-        self.attr(Attribute::REVERSE)
+        self.attribute(Attribute::REVERSE)
     }
 
     pub const fn strikeout(self) -> Self {
-        self.attr(Attribute::STRIKEOUT)
+        self.attribute(Attribute::STRIKEOUT)
     }
 
     pub const fn h_align(mut self, align: Align) -> Self {

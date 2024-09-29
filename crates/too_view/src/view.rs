@@ -1,7 +1,7 @@
 use crate::{
     geom::{Size, Space},
     input::{Event, EventCtx, Handled},
-    DrawCtx, Interest, LayoutCtx, Response, Ui,
+    DrawCtx, Interest, LayoutCtx, Response, Ui, UpdateCtx,
 };
 
 pub trait Args: Clone {}
@@ -16,7 +16,7 @@ pub trait View<T: 'static>: Sized {
 
     fn create(args: Self::Args<'_>) -> Self;
 
-    fn update(&mut self, state: &mut T, args: Self::Args<'_>) -> Self::Response;
+    fn update(&mut self, ctx: UpdateCtx<T>, args: Self::Args<'_>) -> Self::Response;
 
     fn interest(&self) -> Interest {
         Interest::NONE
@@ -54,7 +54,6 @@ pub trait View<T: 'static>: Sized {
     }
 }
 
-// this has to be passed around as a &mut
 pub struct Context<'a, T: 'static> {
     pub ui: &'a mut Ui<T>,
     pub state: &'a mut T,

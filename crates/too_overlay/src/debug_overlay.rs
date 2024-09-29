@@ -34,8 +34,8 @@ impl Default for DebugOverlay {
             show: false,
             axis: Axis::Vertical,
             anchor: Anchor2::RIGHT_TOP,
-            fg: Rgba::from_static("#F00"),
-            bg: Rgba::from_static("#000"),
+            fg: Rgba::hex("#F00"),
+            bg: Rgba::hex("#000"),
             limit: 100,
             queue: VecDeque::new(),
         }

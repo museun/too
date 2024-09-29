@@ -130,7 +130,7 @@ impl App for Hello {
         surface
             .crop(self.rect)
             .draw(Fill::new(
-                Rgba::from_static(view_color).to_transparent(self.alpha * 100.0),
+                Rgba::hex(view_color).to_transparent(self.alpha * 100.0),
             ))
             .draw(
                 Text::new(format!("{},{}", self.pos.x, self.pos.y))
