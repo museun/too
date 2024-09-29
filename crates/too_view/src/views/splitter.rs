@@ -1,5 +1,4 @@
-use too_math::{inverse_lerp, layout::Axis};
-use too_renderer::{anonymous, Pixel};
+use too::{anonymous, inverse_lerp, layout::Axis, Pixel};
 
 use crate::{
     geom::{Point, Size, Space},
@@ -102,8 +101,8 @@ pub fn split<T: 'static, L, R>(
 
     let ratio = *split_ratio(ctx.state);
     let (main, cross) = match axis {
-        Axis::Horizontal => too_math::Rect::from(rect).split_horizontal(1, ratio),
-        Axis::Vertical => too_math::Rect::from(rect).split_vertical(1, ratio),
+        Axis::Horizontal => too::Rect::from(rect).split_horizontal(1, ratio),
+        Axis::Vertical => too::Rect::from(rect).split_vertical(1, ratio),
     };
 
     let (main, cross) = (main.size(), cross.size());

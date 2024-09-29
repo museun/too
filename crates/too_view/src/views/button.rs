@@ -1,7 +1,6 @@
-use too_math::vec2;
-use too_renderer::{
+use too::{
     shapes::{Fill, Text},
-    Attribute,
+    vec2, Attribute,
 };
 
 use crate::{

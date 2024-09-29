@@ -1,4 +1,4 @@
-use too_math::layout::Align2;
+use too::layout::Align2;
 
 use crate::{
     geom::{Size, Space},

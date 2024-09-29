@@ -1,4 +1,4 @@
-use too_math::layout::Axis;
+use too::layout::Axis;
 
 use crate::{
     geom::{Size, Space, Vector},

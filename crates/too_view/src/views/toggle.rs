@@ -1,5 +1,4 @@
-use too_math::pos2;
-use too_renderer::Pixel;
+use too::{pos2, Pixel};
 
 use crate::{
     geom::{Size, Space},

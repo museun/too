@@ -1,6 +1,6 @@
 use std::ops::RangeInclusive;
 
-use too_renderer::Pixel;
+use too::Pixel;
 
 use crate::{
     geom::{Point, Size, Space},
@@ -121,7 +121,7 @@ impl<T: 'static> View<T> for Slider<T> {
         // TODO make helpers for this
         // surface::crop does not work -- we need to normalize our rect to 0,0
         for x in 0..(x - ctx.rect.left()).round() as i32 {
-            ctx.surface.put(too_math::pos2(x, 0), pixel);
+            ctx.surface.put(too::pos2(x, 0), pixel);
         }
 
         let point = Point::new(x - ctx.rect.left(), 0.0);
