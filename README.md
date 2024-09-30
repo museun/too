@@ -20,7 +20,7 @@ A description of some of the examples:
 
 ### Backend implementations
 
-- [too_crossterm](https://crates.io/too_crossterm)
+- [too_crossterm](https://crates.io/crates/too_crossterm)
 
 ---
 
