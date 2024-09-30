@@ -16,7 +16,7 @@ A description of some of the examples:
 |[hello](https://github.com/museun/too/tree/dev/too/examples/hello.rs)|Drag a square to see transparency effects|
 |[layout](https://github.com/museun/too/tree/dev/too/examples/layout.rs)|Dynamic linear run-packing layouts|
 |[rect_split](https://github.com/museun/too/tree/dev/too/examples/rect_split.rs)|Splitting a rectangle and resizing it|
-|[torch](https://github.com/museun/too/tree/dev/too/examples/torch.rs)|like `less` with but an accurate dark mode|
+|[torch](https://github.com/museun/too/tree/dev/too/examples/torch.rs)|like `less` but with an accurate dark mode|
 
 ### Backend implementations
 
