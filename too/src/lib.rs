@@ -9,7 +9,7 @@ pub use backend::{
 // TODO this should be placed elsewhere
 // TODO also change the name of `App` and `AppRunner`
 mod immediate;
-pub use immediate::*;
+pub use immediate::{App, AppRunner};
 
 pub mod ema_window;
 
