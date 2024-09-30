@@ -1,4 +1,4 @@
-use too::{Backend, EventReader, Overlay, Runner};
+use too::{overlay::Overlay, Backend, EventReader, Runner};
 
 use crate::{geom::Size, view::Context, Properties, Ui};
 

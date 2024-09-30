@@ -1,6 +1,6 @@
 use std::collections::VecDeque;
 
-use crate::{math::Vec2, Command, Overlay};
+use crate::{math::Vec2, overlay::Overlay, Command};
 
 /// Provides the ability to send [`Command`] to the backend and access to the [`Overlay`]
 pub struct Context<'a> {

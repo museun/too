@@ -1,4 +1,4 @@
-use crate::{App, Backend, EventReader, Overlay, Runner};
+use crate::{overlay::Overlay, App, Backend, EventReader, Runner};
 
 /// A trait to run your application
 ///

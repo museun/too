@@ -1,8 +1,11 @@
 use crate::{
+    ema_window::EmaWindow,
+    ema_window::WindowStats,
     layout::{Anchor2, Axis, LinearLayout},
     math::vec2,
+    overlay::Overlay,
     shapes::Text,
-    EmaWindow, Overlay, Rgba, SurfaceMut, WindowStats,
+    Rgba, SurfaceMut,
 };
 
 /// An FPS overlay

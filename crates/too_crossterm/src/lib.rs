@@ -3,7 +3,7 @@ use std::{collections::VecDeque, thread::JoinHandle};
 use too::{
     math::{pos2, vec2, Vec2},
     Backend, Command, CurrentScreen, Event, EventReader, Key, Keybind, Modifiers, MouseButton,
-    MouseState, Renderer, TemporalEvent, TermRenderer,
+    MouseState, Renderer, TemporalMouseEvent, TermRenderer,
 };
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
@@ -302,15 +302,15 @@ fn translate(ev: crossterm::event::Event, mouse_state: &mut MouseState) -> Optio
 
             match ev.kind {
                 M::Down(button) => {
-                    let ev = TemporalEvent::Down(pos, translate_button(button));
+                    let ev = TemporalMouseEvent::Down(pos, translate_button(button));
                     mouse_state.update(ev, pos, modifiers)?
                 }
                 M::Up(button) => {
-                    let ev = TemporalEvent::Up(pos, translate_button(button));
+                    let ev = TemporalMouseEvent::Up(pos, translate_button(button));
                     mouse_state.update(ev, pos, modifiers)?
                 }
                 M::Drag(button) => {
-                    let ev = TemporalEvent::Drag(pos, translate_button(button));
+                    let ev = TemporalMouseEvent::Drag(pos, translate_button(button));
                     mouse_state.update(ev, pos, modifiers)?
                 }
                 M::Moved => Event::MouseMove { pos, modifiers },

@@ -15,6 +15,7 @@ enum MouseKind {
     },
 }
 
+/// State so backends can interpolate mouse events using [`TemporalMouseEvent`]
 #[derive(Default)]
 pub struct MouseState {
     pos: Pos2,
@@ -25,11 +26,11 @@ pub struct MouseState {
 impl MouseState {
     pub fn update(
         &mut self,
-        ev: TemporalEvent,
+        ev: TemporalMouseEvent,
         raw_pos: Pos2,
         modifiers: Modifiers,
     ) -> Option<Event> {
-        use TemporalEvent as E;
+        use TemporalMouseEvent as E;
 
         let mev = match ev {
             E::Down(pos, button) => {
@@ -134,7 +135,8 @@ impl MouseState {
     }
 }
 
-pub enum TemporalEvent {
+/// A time-based event for backends to interpolate Mouse events
+pub enum TemporalMouseEvent {
     Down(Pos2, MouseButton),
     Up(Pos2, MouseButton),
     Drag(Pos2, MouseButton),

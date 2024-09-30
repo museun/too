@@ -1,9 +1,6 @@
 //! Overlays are (optionally) drawn ontop of the surface
 use crate::SurfaceMut;
 
-mod ema_window;
-pub use ema_window::{EmaWindow, WindowStats};
-
 #[derive(Default)] // don't mem swap me
 #[non_exhaustive]
 /// Overlays are drawn ontop of all over renders

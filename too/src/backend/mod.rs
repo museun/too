@@ -7,7 +7,7 @@ pub use events::{
     key_bind::Keybind,
     modifiers::Modifiers,
     mouse_button::MouseButton,
-    mouse_event::{MouseState, TemporalEvent},
+    mouse_event::{MouseState, TemporalMouseEvent},
 };
 
 mod current_screen;

@@ -3,8 +3,9 @@ use std::collections::VecDeque;
 use crate::{
     layout::{Anchor2, Axis, LinearLayout},
     math::vec2,
+    overlay::Overlay,
     shapes::Text,
-    Overlay, Rgba, SurfaceMut,
+    Rgba, SurfaceMut,
 };
 
 /// Allows you to show messages ontop of everything
