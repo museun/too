@@ -4,7 +4,7 @@ use crate::{
 };
 
 // TODO rename this (something like `quad`)
-/// Fill the region with a specific [`Color`]
+/// Fill the region with a specific [`PixelColor`]
 #[derive(Debug)]
 pub struct Fill {
     color: PixelColor,
