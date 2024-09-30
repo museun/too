@@ -8,6 +8,7 @@ use crate::{
     Event,
 };
 
+/// An owned view of a rect region that allows drawing and diffing
 pub struct Surface {
     front: Buffer,
     back: Buffer,
@@ -187,7 +188,11 @@ impl CursorState {
         Self::maybe_color(color, wrote_reset, &mut self.bg)
     }
 
-    fn maybe_color(color: PixelColor, wrote_reset: bool, cache: &mut Option<PixelColor>) -> Option<PixelColor> {
+    fn maybe_color(
+        color: PixelColor,
+        wrote_reset: bool,
+        cache: &mut Option<PixelColor>,
+    ) -> Option<PixelColor> {
         if matches!(color, PixelColor::Reuse) {
             return None;
         }

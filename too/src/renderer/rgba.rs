@@ -6,6 +6,7 @@ use crate::math::{inverse_lerp, Vec3};
 
 // TODO should this use linear srgb?
 // TODO should we store [f32;4] instead of [u8;4]?
+/// 32-bit color in the form of: red, green, blue, alpha
 #[derive(Copy, Clone, Debug, PartialEq, PartialOrd, Eq, Ord, Hash)]
 pub struct Rgba(pub u8, pub u8, pub u8, pub u8);
 

@@ -1,4 +1,4 @@
-// TODO should these use f32 instead of i32?
+//! Math types and  helpers used by this crate
 
 mod rect;
 pub use rect::{rect, Rect};

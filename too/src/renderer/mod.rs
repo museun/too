@@ -20,6 +20,7 @@ pub mod shapes;
 
 use crate::math;
 
+/// Abstraction for rendering to a surface.
 pub trait Renderer {
     fn begin(&mut self) -> std::io::Result<()>;
     fn end(&mut self) -> std::io::Result<()>;

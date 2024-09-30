@@ -1,6 +1,7 @@
 use super::Renderer;
 use crate::{math::Pos2, Attribute, Rgba};
 
+/// A renderer that explains the actions a render phase would take
 #[derive(Default)]
 pub struct DebugRenderer {
     out: String,

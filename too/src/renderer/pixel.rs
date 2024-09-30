@@ -1,5 +1,6 @@
 use crate::Rgba;
 
+/// A unit to be drawn to a [`Surface`](crate::Surface)
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
 pub struct Pixel {
     pub char: char, // this has to be a &str
@@ -79,6 +80,7 @@ impl Default for Pixel {
     }
 }
 
+/// Attributes for a [`Pixel`] like _italic_ or _bold_
 #[derive(Copy, Clone, Default, PartialEq, PartialOrd, Eq, Ord, Hash)]
 pub struct Attribute(u8);
 

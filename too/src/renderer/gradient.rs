@@ -3,6 +3,15 @@ use crate::{
     Rgba,
 };
 
+/// A gradient type
+///
+/// This is generally used for linear gradients based on sine waves
+///
+/// This is composed of components of a wave:
+/// * the offset
+/// * the amplitude
+/// * the frequency
+/// * the phase
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub struct Gradient {
     pub offset: Vec3,

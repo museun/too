@@ -3,6 +3,7 @@ use std::io::{BufWriter, Write as _};
 use super::Renderer;
 use crate::{math::Pos2, Attribute, Backend, Rgba};
 
+/// Renders to a `Backend` using ANSI escape sequences
 pub struct TermRenderer<'a, B: Backend + 'a> {
     out: BufWriter<B::Out<'a>>,
 }
