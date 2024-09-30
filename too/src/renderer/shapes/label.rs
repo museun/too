@@ -1,6 +1,6 @@
 use std::{borrow::Cow, cell::Ref, char, rc::Rc, sync::Arc};
 
-use crate::{vec2, Vec2};
+use crate::math::{vec2, Vec2};
 
 pub trait Label: std::fmt::Debug {
     type Static: Label + 'static;

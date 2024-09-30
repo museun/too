@@ -1,25 +1,7 @@
-use too::{pos2, Pixel, Rgba, Shape};
-
 use crate::{
     geom::{Size, Space},
     LayoutCtx, NoArgs, NoResponse, UpdateCtx, View,
 };
-
-pub(crate) struct FillCharacter {
-    pub(crate) char: char,
-    pub(crate) fg: Rgba,
-}
-
-impl Shape for FillCharacter {
-    fn draw(&self, size: too::Vec2, mut put: impl FnMut(too::Pos2, Pixel)) {
-        let pixel = Pixel::new(self.char).fg(self.fg);
-        for y in 0..size.y {
-            for x in 0..size.x {
-                put(pos2(x, y), pixel)
-            }
-        }
-    }
-}
 
 mod aligned;
 pub use aligned::{align, center};

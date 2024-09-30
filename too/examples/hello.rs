@@ -2,9 +2,9 @@ use too_crossterm::{Config, Term};
 
 use too::{
     layout::Align2,
-    rect,
+    math::{rect, vec2, Pos2, Rect},
     shapes::{Fill, Text},
-    vec2, App, AppRunner as _, Command, Context, Event, Pos2, Rect, Rgba, SurfaceMut,
+    App, AppRunner as _, Command, Context, Event, Rgba, SurfaceMut,
 };
 
 fn main() -> std::io::Result<()> {

@@ -1,7 +1,7 @@
 use std::io::{BufWriter, Write as _};
 
 use super::Renderer;
-use crate::{Attribute, Backend, Pos2, Rgba};
+use crate::{math::Pos2, Attribute, Backend, Rgba};
 
 pub struct TermRenderer<'a, B: Backend + 'a> {
     out: BufWriter<B::Out<'a>>,

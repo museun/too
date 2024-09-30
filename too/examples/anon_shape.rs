@@ -1,7 +1,7 @@
 use too::{
-    pos2,
+    math::{pos2, Rect},
     shapes::{anonymous, anonymous_ctx},
-    App, AppRunner as _, Context, Pixel, Rect, Rgba, SurfaceMut,
+    App, AppRunner as _, Context, Pixel, Rgba, SurfaceMut,
 };
 use too_crossterm::{Config, Term};
 

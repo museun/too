@@ -16,7 +16,7 @@ pub trait Shape {
     /// # Example:
     /// This will fill the entire rect with a specific color
     /// ```rust
-    /// # use too::{Pixel, Rgba, Shape, pos2, vec2, Pos2, Vec2, Surface, rect};
+    /// # use too::{Pixel, Rgba, Shape, Surface, math::{pos2, vec2, Pos2, Vec2, rect}};
     /// # let mut surface = Surface::new(vec2(80, 25));
     /// # let mut surface = surface.crop(rect(vec2(80, 25)));
     /// struct FillBg { bg: Rgba }

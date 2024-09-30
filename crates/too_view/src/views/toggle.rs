@@ -1,4 +1,4 @@
-use too::{pos2, Pixel};
+use too::{math::pos2, Pixel};
 
 use crate::{
     geom::{Size, Space},
@@ -6,8 +6,6 @@ use crate::{
     DrawCtx, Elements, Event, EventCtx, FilledProperty, Handled, HeightProperty, Interest,
     LayoutCtx, NoResponse, Response, UnfilledProperty, UpdateCtx, View, ViewExt, WidthProperty,
 };
-
-use super::FillCharacter;
 
 impl WidthProperty for Toggle {
     const WIDTH: f32 = 4.0;
@@ -71,10 +69,8 @@ impl<T: 'static> View<T> for Toggle<T> {
 
         // TODO axis unpack
 
-        ctx.surface.draw(FillCharacter {
-            char: ctx.properties.unfilled::<Toggle>(),
-            fg: ctx.theme.contrast,
-        });
+        let pixel = Pixel::new(ctx.properties.unfilled::<Toggle>()).fg(ctx.theme.contrast);
+        ctx.surface.draw(pixel);
 
         let x = if selected {
             ctx.rect.width() as i32 - 1

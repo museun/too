@@ -9,8 +9,6 @@ use crate::{
     UnfilledProperty, UpdateCtx, View, ViewExt, WidthProperty,
 };
 
-use super::FillCharacter;
-
 pub struct ProgressBarParams<'a> {
     pub value: &'a f32,
     pub range: RangeInclusive<f32>,
@@ -89,17 +87,15 @@ impl<T: 'static> View<T> for Progress<T> {
         let x = Self::normalize(*params.value, &params.range);
         let x = min + (x * (max - min));
 
-        ctx.surface.draw(FillCharacter {
-            char: ctx.properties.unfilled::<Self>(),
-            fg: ctx.theme.outline,
-        });
+        let pixel = Pixel::new(ctx.properties.unfilled::<Self>()).fg(ctx.theme.outline);
+        ctx.surface.draw(pixel);
 
         // surface::crop does not work -- we need to normalize our rect to 0,0
         // TODO axis
         let filled = ctx.properties.filled::<Self>();
-        let pixel = Pixel::new(filled).bg(ctx.theme.primary);
+        let pixel = Pixel::new(filled).fg(ctx.theme.primary);
         for x in 0..(x - ctx.rect.left()).round() as i32 {
-            ctx.surface.put(too::pos2(x, 0), pixel);
+            ctx.surface.put(too::math::pos2(x, 0), pixel);
         }
     }
 }

@@ -1,4 +1,7 @@
-use crate::{pos2, rect, Color, Pixel, Pos2, Rect, Vec2};
+use crate::{
+    math::{pos2, rect, Pos2, Rect, Vec2},
+    Color, Pixel,
+};
 
 pub struct Buffer {
     pub(crate) pixels: Vec<Pixel>,

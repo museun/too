@@ -1,4 +1,7 @@
-use crate::{vec3, Rgba, Vec3};
+use crate::{
+    math::{vec3, Vec3},
+    Rgba,
+};
 
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub struct Gradient {

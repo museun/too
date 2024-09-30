@@ -1,5 +1,5 @@
 use super::{Anchor, Anchor2, Axis};
-use crate::{pos2, Pos2, Rect, Vec2};
+use crate::math::{pos2, Pos2, Rect, Vec2};
 
 /// A linear allocator
 ///
@@ -29,7 +29,7 @@ impl LinearAllocator {
     ///
     /// # Example
     /// ```rust
-    /// # use too::{vec2, Rect, pos2, layout::LinearLayout};
+    /// # use too::{math::{vec2, Rect, pos2}, layout::LinearLayout};
     /// let input = Rect::from_min_size(pos2(5, 10), vec2(20, 20));
     /// let sizes = [vec2(5, 10), vec2(3, 1), vec2(4, 4)];
     /// let expected = [

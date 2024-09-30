@@ -1,4 +1,7 @@
-use crate::{pos2, Pixel, Pos2, Shape, Vec2};
+use crate::{
+    math::{pos2, Pos2, Vec2},
+    Pixel, Shape,
+};
 
 /// Draw a shape from an anonymous function
 ///
@@ -9,7 +12,7 @@ use crate::{pos2, Pixel, Pos2, Shape, Vec2};
 /// `fn(Vec2) -> fn(pos) -> maybe pixel`
 ///
 /// ```rust
-/// # use too::{shapes::anonymous, Pixel, SurfaceMut, Surface, rect, vec2};
+/// # use too::{shapes::anonymous, Pixel, SurfaceMut, Surface, math::{rect, vec2}};
 /// // equivilant to [`Fill`] with 'red'
 /// # let mut surface = Surface::new(vec2(80, 25));
 /// # let mut surface = surface.crop(rect(vec2(80, 25)));
@@ -60,7 +63,7 @@ where
 /// `fn(Vec2) -> fn(context, pos) -> maybe pixel`
 ///
 /// ```rust
-/// # use too::{shapes::anonymous_ctx, Rgba, Color, Pixel, Shape, SurfaceMut, Surface, rect, vec2};
+/// # use too::{shapes::anonymous_ctx, Rgba, Color, Pixel, Shape, SurfaceMut, Surface, math::{rect, vec2}};
 /// # let mut surface = Surface::new(vec2(80, 25));
 /// # let mut surface = surface.crop(rect(vec2(80, 25)));
 /// // equivilant to [`Fill`] with `color` from 'self'

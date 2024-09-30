@@ -1,4 +1,7 @@
-use crate::{vec2, Backend, Command, Event, EventReader, Vec2};
+use crate::{
+    math::{vec2, Vec2},
+    Backend, Command, Event, EventReader,
+};
 
 /// A dummy backend that does nothing
 pub struct DummyBackend;

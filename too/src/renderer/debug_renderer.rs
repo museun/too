@@ -1,5 +1,5 @@
 use super::Renderer;
-use crate::{Attribute, Pos2, Rgba};
+use crate::{math::Pos2, Attribute, Rgba};
 
 #[derive(Default)]
 pub struct DebugRenderer {

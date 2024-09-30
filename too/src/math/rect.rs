@@ -1,4 +1,4 @@
-use crate::{lerp, pos2, vec2, Pos2, Vec2};
+use crate::math::{lerp, pos2, vec2, Pos2, Vec2};
 
 #[derive(Copy, Clone, Default, PartialEq, Eq, Hash)]
 pub struct Rect {

@@ -1,4 +1,7 @@
-use crate::{pos2, rect, Color, Pixel, Pos2, Shape, Vec2};
+use crate::{
+    math::{pos2, rect, Pos2, Vec2},
+    Color, Pixel, Shape,
+};
 
 #[derive(Copy, Clone, Debug)]
 pub struct Border {

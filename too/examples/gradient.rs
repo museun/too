@@ -1,8 +1,10 @@
 use too_crossterm::{Config, Term};
 
 use too::{
-    layout::Align2, lerp, pos2, shapes::Text, App, AppRunner as _, Context, Event, Gradient,
-    Keybind, Pixel, Pos2, Shape, SurfaceMut, Vec2,
+    layout::Align2,
+    math::{lerp, pos2, Pos2, Vec2},
+    shapes::Text,
+    App, AppRunner as _, Context, Event, Gradient, Keybind, Pixel, Shape, SurfaceMut,
 };
 
 fn main() -> std::io::Result<()> {

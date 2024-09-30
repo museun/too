@@ -1,4 +1,7 @@
-use crate::{pos2, Pixel, Pos2, Rgba, Shape, Vec2};
+use crate::{
+    math::{pos2, Pos2, Vec2},
+    Pixel, Rgba, Shape,
+};
 
 pub enum Line {
     Vertical(Pixel),

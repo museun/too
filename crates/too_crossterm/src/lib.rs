@@ -1,8 +1,9 @@
 use std::{collections::VecDeque, thread::JoinHandle};
 
 use too::{
-    pos2, vec2, Backend, Command, CurrentScreen, Event, EventReader, Key, Keybind, Modifiers,
-    MouseButton, MouseState, Renderer, TemporalEvent, TermRenderer, Vec2,
+    math::{pos2, vec2, Vec2},
+    Backend, Command, CurrentScreen, Event, EventReader, Key, Keybind, Modifiers, MouseButton,
+    MouseState, Renderer, TemporalEvent, TermRenderer,
 };
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]

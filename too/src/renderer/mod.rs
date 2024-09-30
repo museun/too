@@ -18,10 +18,12 @@ pub use gradient::Gradient;
 
 pub mod shapes;
 
+use crate::math;
+
 pub trait Renderer {
     fn begin(&mut self) -> std::io::Result<()>;
     fn end(&mut self) -> std::io::Result<()>;
-    fn move_to(&mut self, pos: crate::Pos2) -> std::io::Result<()>;
+    fn move_to(&mut self, pos: math::Pos2) -> std::io::Result<()>;
     fn write(&mut self, ch: char) -> std::io::Result<()>;
     fn set_fg(&mut self, rgb: Rgba) -> std::io::Result<()>;
     fn set_bg(&mut self, rgb: Rgba) -> std::io::Result<()>;

@@ -1,6 +1,7 @@
 use crate::{
     layout::{Align, Align2},
-    midpoint, pos2, rect, Attribute, Color, Pixel, Pos2, Rect, Shape, Vec2,
+    math::{midpoint, pos2, rect, Pos2, Rect, Vec2},
+    Attribute, Color, Pixel, Shape,
 };
 
 use super::Label;

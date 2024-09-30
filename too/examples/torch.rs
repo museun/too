@@ -3,8 +3,9 @@ use std::io::Read as _;
 use too_crossterm::{Config, Term};
 
 use too::{
-    lerp, pos2, shapes::Fill, App, AppRunner as _, Context, Event, Key, Pixel, Pos2, Rect, Rgba,
-    Shape, SurfaceMut, Vec2,
+    math::{lerp, pos2, Pos2, Rect, Vec2},
+    shapes::Fill,
+    App, AppRunner as _, Context, Event, Key, Pixel, Rgba, Shape, SurfaceMut,
 };
 
 fn main() -> std::io::Result<()> {

@@ -1,4 +1,4 @@
-use crate::{vec2, Vec2};
+use crate::math::{vec2, Vec2};
 
 #[derive(Copy, Clone, Default, PartialEq, Eq, Hash)]
 pub struct Pos2 {

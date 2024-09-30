@@ -1,6 +1,7 @@
 use too::{
+    math::vec2,
     shapes::{Fill, Text},
-    vec2, Attribute,
+    Attribute,
 };
 
 use crate::{

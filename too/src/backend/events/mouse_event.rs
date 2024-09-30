@@ -1,4 +1,7 @@
-use crate::{Event, Modifiers, MouseButton, Pos2, Vec2};
+use crate::{
+    math::{Pos2, Vec2},
+    Event, Modifiers, MouseButton,
+};
 
 #[derive(Default, Debug)]
 enum MouseKind {

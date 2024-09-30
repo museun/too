@@ -3,7 +3,10 @@ use super::{
     Buffer, Pixel, Renderer, Shape,
 };
 
-use crate::{Event, Pos2, Rect, Vec2};
+use crate::{
+    math::{Pos2, Rect, Vec2},
+    Event,
+};
 
 pub struct Surface {
     front: Buffer,
@@ -260,7 +263,7 @@ impl<'a> SurfaceMut<'a> {
     ///
     /// # Example:
     /// ```rust
-    /// # use too::{Pixel, Shape, SurfaceMut, pos2, Pos2, Vec2, vec2, rect};
+    /// # use too::{Pixel, Shape, SurfaceMut, math::{pos2, Pos2, Vec2, vec2, rect}};
     /// struct MyShape;
     /// struct Overlay;
     ///

@@ -6,9 +6,7 @@ pub use backend::*;
 mod immediate;
 pub use immediate::*;
 
-// TODO this should be its own module
-mod math;
-pub use math::*;
+pub mod math;
 
 mod overlay;
 pub use overlay::*;
@@ -19,3 +17,5 @@ pub use renderer::*;
 
 mod runner;
 pub use runner::*;
+
+pub mod layout;

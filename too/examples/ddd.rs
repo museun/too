@@ -1,6 +1,10 @@
 use too_crossterm::{Config, Term};
 
-use too::{shapes::{Fill, Text}, vec2, vec3, App, AppRunner as _, Context, Event, Key, Keybind, Pixel, Pos2, Rect, Rgba, SurfaceMut, Vec2, Vec3};
+use too::{
+    math::{vec2, vec3, Pos2, Rect, Vec2, Vec3},
+    shapes::{Fill, Text},
+    App, AppRunner as _, Context, Event, Key, Keybind, Pixel, Rgba, SurfaceMut,
+};
 
 use rayon::iter::*;
 

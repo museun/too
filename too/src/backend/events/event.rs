@@ -1,4 +1,7 @@
-use crate::{Key, Keybind, Modifiers, MouseButton, Pos2, Vec2};
+use crate::{
+    math::{Pos2, Vec2},
+    Key, Keybind, Modifiers, MouseButton,
+};
 
 /// An event produced by the user's interaction
 #[derive(Clone, Debug, PartialEq)]

@@ -9,8 +9,6 @@ use crate::{
     LayoutCtx, NoResponse, Response, UnfilledProperty, UpdateCtx, View, ViewExt, WidthProperty,
 };
 
-use super::FillCharacter;
-
 // TODO &mut &f32 could do disable
 pub struct SliderParams<'a> {
     pub value: &'a mut f32,
@@ -110,10 +108,8 @@ impl<T: 'static> View<T> for Slider<T> {
         let x = Self::normalize(*params.value, &params.range);
         let x = min + (x * (max - min));
 
-        ctx.surface.draw(FillCharacter {
-            char: ctx.properties.unfilled::<Slider>(),
-            fg: ctx.theme.outline,
-        });
+        let pixel = Pixel::new(ctx.properties.unfilled::<Slider>()).fg(ctx.theme.outline);
+        ctx.surface.draw(pixel);
 
         let track = ctx.properties.filled::<Slider>();
         let pixel = Pixel::new(track).fg(ctx.theme.contrast);
@@ -121,7 +117,7 @@ impl<T: 'static> View<T> for Slider<T> {
         // TODO make helpers for this
         // surface::crop does not work -- we need to normalize our rect to 0,0
         for x in 0..(x - ctx.rect.left()).round() as i32 {
-            ctx.surface.put(too::pos2(x, 0), pixel);
+            ctx.surface.put(too::math::pos2(x, 0), pixel);
         }
 
         let point = Point::new(x - ctx.rect.left(), 0.0);

@@ -1,4 +1,7 @@
-use crate::{pos2, Color, Pixel, Pos2, Shape, Vec2};
+use crate::{
+    math::{pos2, Pos2, Vec2},
+    Color, Pixel, Shape,
+};
 
 // TODO rename this (something like `quad`)
 /// Fill the region with a specific [`Color`]

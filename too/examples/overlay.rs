@@ -2,8 +2,9 @@ use too_crossterm::{Config, Term};
 
 use too::{
     layout::{Anchor2, Axis},
+    math::Rect,
     shapes::Fill,
-    App, AppRunner as _, Context, Event, Rect, Rgba, SurfaceMut,
+    App, AppRunner as _, Context, Event, Rgba, SurfaceMut,
 };
 
 fn main() -> std::io::Result<()> {
