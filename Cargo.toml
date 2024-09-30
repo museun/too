@@ -13,7 +13,6 @@ license = "MIT OR Apache-2.0"
 authors = [ "museun <museun@users.noreply.github.com>" ]
 documentation = "https://docs.rs/too"
 repository = "https://github.com/museun/too"
-readme = "README.md"
 
 [workspace.dependencies]
 too = { path = "too", version = "0.1.0" }
