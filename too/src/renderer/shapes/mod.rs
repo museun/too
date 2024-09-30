@@ -1,3 +1,5 @@
+//! Convenient 'shapes' for drawing to a [`Surface`](crate::Surface)
+
 mod fill;
 pub use fill::Fill;
 

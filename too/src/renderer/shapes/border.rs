@@ -3,6 +3,7 @@ use crate::{
     Color, Pixel, Shape,
 };
 
+/// Draw a border on the extent of a region
 #[derive(Copy, Clone, Debug)]
 pub struct Border {
     pub left_top: Pixel,

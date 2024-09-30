@@ -1,3 +1,5 @@
+//! A EMA window for samples `f32` data
+
 /// Stats for an [`EmaWindow`]
 #[derive(Copy, Clone, Debug, PartialEq, PartialOrd)]
 pub struct WindowStats {

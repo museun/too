@@ -3,6 +3,7 @@ use crate::{
     Pixel, Rgba, Shape,
 };
 
+/// Draw a vertical or horizontal line
 pub enum Line {
     Vertical(Pixel),
     Horizontal(Pixel),

@@ -2,6 +2,7 @@ use std::{borrow::Cow, cell::Ref, char, rc::Rc, sync::Arc};
 
 use crate::math::{vec2, Vec2};
 
+/// Used by [`Text`](super::Text) to measure text for layouts
 pub trait Label: std::fmt::Debug {
     type Static: Label + 'static;
     fn into_static(self) -> Self::Static

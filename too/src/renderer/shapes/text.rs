@@ -6,6 +6,7 @@ use crate::{
 
 use super::Label;
 
+/// Draw some text within a region
 pub struct Text<T: Label> {
     fg: Color,
     bg: Color,
