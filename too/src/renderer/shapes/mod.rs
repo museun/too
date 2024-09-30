@@ -12,3 +12,6 @@ pub use label::Label;
 
 mod text;
 pub use text::Text;
+
+mod anonymous;
+pub use anonymous::{anonymous, anonymous_ctx};

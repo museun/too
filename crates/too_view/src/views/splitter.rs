@@ -1,4 +1,4 @@
-use too::{anonymous, inverse_lerp, layout::Axis, Pixel};
+use too::{inverse_lerp, layout::Axis, shapes::anonymous, Pixel};
 
 use crate::{
     geom::{Point, Size, Space},

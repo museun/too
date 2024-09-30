@@ -5,7 +5,7 @@ mod surface;
 pub use surface::{Surface, SurfaceMut};
 
 mod shape;
-pub use shape::{anonymous, anonymous_ctx, Shape};
+pub use shape::Shape;
 
 mod pixel;
 pub use pixel::{Attribute, Color, Pixel};

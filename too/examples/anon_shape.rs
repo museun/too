@@ -1,5 +1,7 @@
 use too::{
-    anonymous, anonymous_ctx, pos2, App, AppRunner as _, Context, Pixel, Rect, Rgba, SurfaceMut,
+    pos2,
+    shapes::{anonymous, anonymous_ctx},
+    App, AppRunner as _, Context, Pixel, Rect, Rgba, SurfaceMut,
 };
 use too_crossterm::{Config, Term};
 
