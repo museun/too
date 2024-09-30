@@ -6,6 +6,7 @@ license = "MIT OR Apache-2.0"
 name = "too"
 readme = "README.md"
 repository = "https://github.com/museun/too"
+publish = true
 
 [dependencies]
 
