@@ -1,5 +1,4 @@
 [package]
-categories = [ "terminal" ]
 description = "too -- a tui framework"
 documentation = "https://docs.rs/too"
 edition = "2021"
