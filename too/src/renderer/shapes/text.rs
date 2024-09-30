@@ -1,15 +1,15 @@
 use crate::{
     layout::{Align, Align2},
     math::{midpoint, pos2, rect, Pos2, Rect, Vec2},
-    Attribute, Color, Pixel, Shape,
+    Attribute, Pixel, PixelColor, Shape,
 };
 
 use super::Label;
 
 /// Draw some text within a region
 pub struct Text<T: Label> {
-    fg: Color,
-    bg: Color,
+    fg: PixelColor,
+    bg: PixelColor,
     attr: Option<Attribute>,
     align: Align2,
     pub label: T,
@@ -18,20 +18,20 @@ pub struct Text<T: Label> {
 impl<T: Label> Text<T> {
     pub const fn new(label: T) -> Self {
         Self {
-            fg: Color::Reset,
-            bg: Color::Reuse,
+            fg: PixelColor::Reset,
+            bg: PixelColor::Reuse,
             attr: None,
             align: Align2::LEFT_TOP,
             label,
         }
     }
 
-    pub fn fg(mut self, fg: impl Into<Color>) -> Self {
+    pub fn fg(mut self, fg: impl Into<PixelColor>) -> Self {
         self.fg = fg.into();
         self
     }
 
-    pub fn bg(mut self, bg: impl Into<Color>) -> Self {
+    pub fn bg(mut self, bg: impl Into<PixelColor>) -> Self {
         self.bg = bg.into();
         self
     }

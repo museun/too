@@ -3,24 +3,24 @@ use crate::Rgba;
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
 pub struct Pixel {
     pub char: char, // this has to be a &str
-    pub fg: Color,
-    pub bg: Color,
+    pub fg: PixelColor,
+    pub bg: PixelColor,
     pub attr: Attribute,
 }
 
 impl Pixel {
     pub const EMPTY: Self = Self {
         char: ' ',
-        fg: Color::Reset,
-        bg: Color::Reset,
+        fg: PixelColor::Reset,
+        bg: PixelColor::Reset,
         attr: Attribute::RESET,
     };
 
     pub const fn new(char: char) -> Self {
         Self {
             char,
-            fg: Color::Reset,
-            bg: Color::Reuse,
+            fg: PixelColor::Reset,
+            bg: PixelColor::Reuse,
             attr: Attribute::RESET,
         }
     }
@@ -30,12 +30,12 @@ impl Pixel {
         self
     }
 
-    pub fn fg(mut self, fg: impl Into<Color>) -> Self {
+    pub fn fg(mut self, fg: impl Into<PixelColor>) -> Self {
         self.fg = fg.into();
         self
     }
 
-    pub fn bg(mut self, bg: impl Into<Color>) -> Self {
+    pub fn bg(mut self, bg: impl Into<PixelColor>) -> Self {
         self.bg = bg.into();
         self
     }
@@ -51,12 +51,14 @@ impl Pixel {
 
     pub fn merge(&mut self, other: Self) {
         match (other.bg, self.bg) {
-            (Color::Rgba(a), Color::Rgba(b)) => self.bg = Color::Rgba(a.blend_alpha(b)),
-            (Color::Reset | Color::Rgba(..), ..) => self.bg = other.bg,
+            (PixelColor::Rgba(a), PixelColor::Rgba(b)) => {
+                self.bg = PixelColor::Rgba(a.blend_alpha(b))
+            }
+            (PixelColor::Reset | PixelColor::Rgba(..), ..) => self.bg = other.bg,
             _ => {}
         }
 
-        if let (Color::Reset | Color::Rgba(..), ..) = (other.fg, self.fg) {
+        if let (PixelColor::Reset | PixelColor::Rgba(..), ..) = (other.fg, self.fg) {
             self.fg = other.fg
         }
 
@@ -207,27 +209,33 @@ impl std::str::FromStr for Attribute {
     }
 }
 
+// TODO rename this
+
+/// Color mode for a Pixel
 #[derive(Copy, Clone, Default, Debug, PartialEq, Eq)]
-pub enum Color {
+pub enum PixelColor {
+    /// Use this color
     Rgba(Rgba),
     #[default]
+    /// Reuse the existing color
     Reuse,
+    /// Reset the default color
     Reset,
 }
 
-impl From<&'static str> for Color {
+impl From<&'static str> for PixelColor {
     fn from(value: &'static str) -> Self {
         Self::Rgba(Rgba::hex(value))
     }
 }
 
-impl From<Rgba> for Color {
+impl From<Rgba> for PixelColor {
     fn from(value: Rgba) -> Self {
         Self::Rgba(value)
     }
 }
 
-impl<T: Into<Rgba>> From<Option<T>> for Color {
+impl<T: Into<Rgba>> From<Option<T>> for PixelColor {
     fn from(value: Option<T>) -> Self {
         value.map_or(Self::Reset, |val| Self::Rgba(val.into()))
     }

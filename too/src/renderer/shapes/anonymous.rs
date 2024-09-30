@@ -63,7 +63,7 @@ where
 /// `fn(Vec2) -> fn(context, pos) -> maybe pixel`
 ///
 /// ```rust
-/// # use too::{shapes::anonymous_ctx, Rgba, Color, Pixel, Shape, SurfaceMut, Surface, math::{rect, vec2}};
+/// # use too::{shapes::anonymous_ctx, Rgba, Pixel, Shape, SurfaceMut, Surface, math::{rect, vec2}};
 /// # let mut surface = Surface::new(vec2(80, 25));
 /// # let mut surface = surface.crop(rect(vec2(80, 25)));
 /// // equivilant to [`Fill`] with `color` from 'self'

@@ -1,5 +1,5 @@
 use super::{
-    pixel::{Attribute, Color},
+    pixel::{Attribute, PixelColor},
     Buffer, Pixel, Renderer, Shape,
 };
 
@@ -114,8 +114,8 @@ impl Surface {
             }
 
             match state.maybe_fg(change.fg, wrote_reset) {
-                Some(Color::Rgba(fg)) => renderer.set_fg(fg)?,
-                Some(Color::Reset) => {
+                Some(PixelColor::Rgba(fg)) => renderer.set_fg(fg)?,
+                Some(PixelColor::Reset) => {
                     // PERF if we're going to be writing (a lot of) spaces we don't have to reset the fg until the next visible character
                     renderer.reset_fg()?
                 }
@@ -123,8 +123,8 @@ impl Surface {
             }
 
             match state.maybe_bg(change.bg, wrote_reset) {
-                Some(Color::Rgba(bg)) => renderer.set_bg(bg)?,
-                Some(Color::Reset) => renderer.reset_bg()?,
+                Some(PixelColor::Rgba(bg)) => renderer.set_bg(bg)?,
+                Some(PixelColor::Reset) => renderer.reset_bg()?,
                 _ => {}
             }
 
@@ -161,8 +161,8 @@ impl Surface {
 #[derive(Default)]
 struct CursorState {
     last: Option<Pos2>,
-    fg: Option<Color>,
-    bg: Option<Color>,
+    fg: Option<PixelColor>,
+    bg: Option<PixelColor>,
     attr: Option<Attribute>,
 }
 
@@ -179,16 +179,16 @@ impl CursorState {
         should_move
     }
 
-    fn maybe_fg(&mut self, color: Color, wrote_reset: bool) -> Option<Color> {
+    fn maybe_fg(&mut self, color: PixelColor, wrote_reset: bool) -> Option<PixelColor> {
         Self::maybe_color(color, wrote_reset, &mut self.fg)
     }
 
-    fn maybe_bg(&mut self, color: Color, wrote_reset: bool) -> Option<Color> {
+    fn maybe_bg(&mut self, color: PixelColor, wrote_reset: bool) -> Option<PixelColor> {
         Self::maybe_color(color, wrote_reset, &mut self.bg)
     }
 
-    fn maybe_color(color: Color, wrote_reset: bool, cache: &mut Option<Color>) -> Option<Color> {
-        if matches!(color, Color::Reuse) {
+    fn maybe_color(color: PixelColor, wrote_reset: bool, cache: &mut Option<PixelColor>) -> Option<PixelColor> {
+        if matches!(color, PixelColor::Reuse) {
             return None;
         }
 
@@ -198,11 +198,11 @@ impl CursorState {
         }
 
         match (color, *cache) {
-            (Color::Reset, None) => {
+            (PixelColor::Reset, None) => {
                 cache.replace(color);
-                Some(Color::Reset)
+                Some(PixelColor::Reset)
             }
-            (Color::Reset, Some(Color::Reset)) => None,
+            (PixelColor::Reset, Some(PixelColor::Reset)) => None,
             _ => (cache.replace(color) != Some(color)).then_some(color),
         }
     }

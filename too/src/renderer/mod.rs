@@ -1,5 +1,5 @@
 mod buffer;
-pub use buffer::Buffer;
+use buffer::Buffer;
 
 mod surface;
 pub use surface::{Surface, SurfaceMut};
@@ -8,7 +8,7 @@ mod shape;
 pub use shape::Shape;
 
 mod pixel;
-pub use pixel::{Attribute, Color, Pixel};
+pub use pixel::{Attribute, Pixel, PixelColor};
 
 mod rgba;
 pub use rgba::Rgba;

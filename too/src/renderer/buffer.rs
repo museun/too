@@ -1,6 +1,6 @@
 use crate::{
     math::{pos2, rect, Pos2, Rect, Vec2},
-    Color, Pixel,
+    Pixel, PixelColor,
 };
 
 pub struct Buffer {
@@ -55,7 +55,9 @@ impl Buffer {
             .zip(other.pixels.iter())
             .enumerate()
             .filter_map(|(i, (left, right))| {
-                if *left == *right || (right.fg == Color::Reuse && right.bg == Color::Reuse) {
+                if *left == *right
+                    || (right.fg == PixelColor::Reuse && right.bg == PixelColor::Reuse)
+                {
                     return None;
                 }
                 *left = *right;

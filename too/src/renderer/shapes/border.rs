@@ -1,6 +1,6 @@
 use crate::{
     math::{pos2, rect, Pos2, Vec2},
-    Color, Pixel, Shape,
+    Pixel, PixelColor, Shape,
 };
 
 /// Draw a border on the extent of a region
@@ -17,7 +17,7 @@ pub struct Border {
 }
 
 impl Border {
-    pub fn fg(mut self, fg: impl Into<Color> + Copy) -> Self {
+    pub fn fg(mut self, fg: impl Into<PixelColor> + Copy) -> Self {
         for pixel in [
             &mut self.left_top,
             &mut self.right_top,
@@ -33,7 +33,7 @@ impl Border {
         self
     }
 
-    pub fn bg(mut self, bg: impl Into<Color> + Copy) -> Self {
+    pub fn bg(mut self, bg: impl Into<PixelColor> + Copy) -> Self {
         for pixel in [
             &mut self.left_top,
             &mut self.right_top,

@@ -1,13 +1,13 @@
 use crate::{
     math::{pos2, Pos2, Vec2},
-    Color, Pixel, Shape,
+    Pixel, PixelColor, Shape,
 };
 
 // TODO rename this (something like `quad`)
 /// Fill the region with a specific [`Color`]
 #[derive(Debug)]
 pub struct Fill {
-    color: Color,
+    color: PixelColor,
 }
 
 impl Fill {
@@ -16,12 +16,12 @@ impl Fill {
     /// # Example
     ///
     /// ```rust
-    /// # use too::{Rgba, Color, shapes::Fill};
+    /// # use too::{Rgba, PixelColor, shapes::Fill};
     /// let fill_red = Fill::new("#F00");
     /// let blend_blue_half = Fill::new(Rgba::new(0, 0, 255, 128));
-    /// let reset_bg = Fill::new(Color::Reset);
+    /// let reset_bg = Fill::new(PixelColor::Reset);
     /// ```
-    pub fn new(fill: impl Into<Color>) -> Self {
+    pub fn new(fill: impl Into<PixelColor>) -> Self {
         Self { color: fill.into() }
     }
 }
