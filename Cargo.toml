@@ -1,7 +1,9 @@
 [package]
+categories = [ "terminal" ]
 description = "too -- a tui framework"
 documentation = "https://docs.rs/too"
 edition = "2021"
+keywords = [ "terminal" ]
 license = "MIT OR Apache-2.0"
 name = "too"
 readme = "README.md"
