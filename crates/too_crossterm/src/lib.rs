@@ -6,6 +6,27 @@ use too::{
     MouseState, Renderer, TemporalMouseEvent, TermRenderer,
 };
 
+/// Configuration for [`Term`]
+///
+/// The defaults for this are:
+///
+/// |option|enabled|
+/// |---|---|
+/// |[`hide_cursor`](Self::hide_cursor)|true|
+/// |[`mouse_capture`](Self::mouse_capture)|true|
+/// |[`ctrl_c_quits`](Self::ctrl_c_quits)|true|
+/// |[`ctrl_z_switches`](Self::ctrl_z_switches)|false|
+/// |[`use_alt_screen`](Self::use_alt_screen)|true|
+/// |[`enable_line_wrap`](Self::enable_line_wrap)|false|
+/// |[`hook_panics`](Self::hook_panics)|false|
+///
+/// # When using [`too`](https://crates.io/too)
+/// You'll likely want to keep most of the defaults.
+/// - [`ctrl_c_quits`](Self::ctrl_c_quits) can be set to `false`
+/// - [`hook_panics`](Self::hook_panics) can be set to `true`
+/// - [`ctrl_z_switches`](Self::ctrl_z_switches) can be set to `true`
+///
+/// The others should be kept default for unsurprising behavior.
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
 pub struct Config {
     pub(crate) hide_cursor: bool,
@@ -20,37 +41,44 @@ pub struct Config {
 }
 
 impl Config {
+    /// Should we hide the cursor?
     pub fn hide_cursor(mut self, hide_cursor: bool) -> Self {
         self.hide_cursor = hide_cursor;
         self
     }
 
+    /// Should we capture the mouse?
     pub fn mouse_capture(mut self, mouse_capture: bool) -> Self {
         self.mouse_capture = mouse_capture;
         self
     }
 
+    /// Should pressing `Ctrl-C` signal a quit?
     pub fn ctrl_c_quits(mut self, ctrl_c_quits: bool) -> Self {
         self.ctrl_c_quits = ctrl_c_quits;
         self
     }
 
+    /// Should pressing `Ctrl-Z` switch out of the alternative screen?
     pub fn ctrl_z_switches(mut self, ctrl_z_switches: bool) -> Self {
         self.ctrl_z_switches = ctrl_z_switches;
         self
     }
 
+    /// Should we use an alternative screen
     pub fn use_alt_screen(mut self, use_alt_screen: bool) -> Self {
         self.use_alt_screen = use_alt_screen;
         self.current_screen = CurrentScreen::Alt;
         self
     }
 
+    /// Should we enable line wrapping?
     pub fn enable_line_wrap(mut self, enable_line_wrap: bool) -> Self {
         self.enable_line_wrap = enable_line_wrap;
         self
     }
 
+    /// Should we hook into panics?
     pub fn hook_panics(mut self, hook_panics: bool) -> Self {
         self.hook_panics = hook_panics;
         self
@@ -72,6 +100,7 @@ impl Default for Config {
     }
 }
 
+/// A terminal handle
 pub struct Term {
     _handle: JoinHandle<()>,
     events: flume::Receiver<Event>,
