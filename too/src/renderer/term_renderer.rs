@@ -65,22 +65,32 @@ impl<'a, B: Backend> Renderer for TermRenderer<'a, B> {
 
     #[inline(always)]
     fn set_attr(&mut self, attr: Attribute) -> std::io::Result<()> {
-        [
-            attr.is_reset(),
-            attr.is_bold(),
-            attr.is_faint(),
-            attr.is_italic(),
-            attr.is_underline(),
-            attr.is_blink(),
-            false, // placeholder
-            attr.is_reverse(),
-            false, // placeholder
-            attr.is_strikeout(),
-        ]
-        .into_iter()
-        .enumerate()
-        .filter(|(_, c)| *c)
-        .try_for_each(|(n, _)| write!(self.out, "\x1b[{n}m"))
+        fn iter(data: u16) -> impl Iterator<Item = u8> {
+            let mut pos = 0;
+            std::iter::from_fn(move || loop {
+                if pos >= u16::BITS {
+                    return None;
+                }
+
+                let set = (data & (1 << pos)) != 0;
+                pos += 1;
+                if set {
+                    return Some(pos as _);
+                }
+            })
+        }
+
+        let mut seen = false;
+        for i in iter(attr.0) {
+            seen = true;
+            write!(self.out, "\x1b[{i}m")?;
+        }
+
+        if !seen {
+            self.out.write_all(csi!("[0m"))?;
+        }
+
+        Ok(())
     }
 
     #[inline(always)]

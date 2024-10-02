@@ -82,7 +82,7 @@ impl Default for Pixel {
 
 /// Attributes for a [`Pixel`] like _italic_ or _bold_
 #[derive(Copy, Clone, Default, PartialEq, PartialOrd, Eq, Ord, Hash)]
-pub struct Attribute(u8);
+pub struct Attribute(pub u16);
 
 impl Attribute {
     pub const RESET: Self = Self(0);
@@ -91,8 +91,8 @@ impl Attribute {
     pub const ITALIC: Self = Self(1 << 2);
     pub const UNDERLINE: Self = Self(1 << 3);
     pub const BLINK: Self = Self(1 << 4);
-    pub const REVERSE: Self = Self(1 << 5);
-    pub const STRIKEOUT: Self = Self(1 << 6);
+    pub const REVERSE: Self = Self(1 << 6);
+    pub const STRIKEOUT: Self = Self(1 << 8);
 }
 
 impl Attribute {
@@ -121,11 +121,11 @@ impl Attribute {
     }
 
     pub const fn is_reverse(&self) -> bool {
-        self.0 & (1 << 5) != 0
+        self.0 & (1 << 6) != 0
     }
 
     pub const fn is_strikeout(&self) -> bool {
-        self.0 & (1 << 6) != 0
+        self.0 & (1 << 8) != 0
     }
 }
 
@@ -162,18 +162,24 @@ impl std::ops::Not for Attribute {
 
 impl std::fmt::Debug for Attribute {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        const FIELDS: [&str; 7] = [
+        const FIELDS: [&str; 9] = [
             "Bold",
             "Faint",
             "Italic",
             "Underline",
             "Blink",
+            "", // rapid blink
             "Reverse",
+            "", // conceal
             "Strikeout",
         ];
 
         let mut seen = false;
         for (flag, repr) in (0..).zip(FIELDS) {
+            if repr.is_empty() {
+                continue;
+            }
+
             if (self.0 >> flag) & 1 == 1 {
                 if seen {
                     f.write_str(" | ")?;
@@ -183,7 +189,7 @@ impl std::fmt::Debug for Attribute {
             }
         }
 
-        if !seen {
+        if !seen || self.0 == 0 {
             f.write_str("Reset")?;
         }
 
