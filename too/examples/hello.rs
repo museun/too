@@ -1,10 +1,8 @@
 use too_crossterm::{Config, Term};
 
 use too::{
-    layout::Align2,
     math::{rect, vec2, Pos2, Rect},
-    shapes::{Fill, Text},
-    App, AppRunner as _, Command, Context, Event, Rgba, SurfaceMut,
+    App, AppRunner as _, Command, Context, Event, Justification, Rgba, Surface, Text,
 };
 
 fn main() -> std::io::Result<()> {
@@ -113,11 +111,13 @@ impl App for Hello {
         self.up = self.up ^ (self.value >= 1.0) ^ (self.value <= 0.0)
     }
 
-    fn render(&mut self, mut surface: SurfaceMut, _ctx: Context<'_>) {
+    fn render(&mut self, surface: &mut Surface, _ctx: Context<'_>) {
         let rect = surface.rect();
-        surface
-            .crop(Rect::from_center_size(rect.center(), rect.size() / 3))
-            .draw(Fill::new(Rgba::sine(self.value)));
+
+        surface.fill(
+            Rect::from_center_size(rect.center(), rect.size() / 3),
+            Rgba::sine(self.value),
+        );
 
         let view_color = match self.grabbed {
             Grabbed::Held => "#173",
@@ -127,16 +127,22 @@ impl App for Hello {
         };
 
         surface
-            .crop(self.rect)
-            .draw(Fill::new(
+            .fill(
+                self.rect,
                 Rgba::hex(view_color).to_transparent(self.alpha * 100.0),
-            ))
-            .draw(
+            )
+            .text(
+                self.rect,
                 Text::new(format!("{},{}", self.pos.x, self.pos.y))
                     .fg("#FFF")
-                    .align2(Align2::CENTER_CENTER),
+                    .main(Justification::Center)
+                    .cross(Justification::Center),
+            )
+            .text(
+                rect,
+                Text::new(format!("{:?}", self.rect))
+                    .main(Justification::End)
+                    .cross(Justification::Start),
             );
-
-        surface.draw(Text::new(format!("{:?}", self.rect)).align2(Align2::RIGHT_TOP));
     }
 }

@@ -4,8 +4,7 @@ use crate::{
     layout::{Anchor2, Axis, LinearLayout},
     math::vec2,
     overlay::Overlay,
-    shapes::Text,
-    Rgba, SurfaceMut,
+    Rgba, Surface, Text,
 };
 
 /// Allows you to show messages ontop of everything
@@ -64,7 +63,7 @@ impl DebugOverlay {
     /// Draws the default debug overlay
     ///
     /// This does not check whether its shown -- thats up to you
-    pub fn default_draw(overlay: &mut Overlay, surface: &mut SurfaceMut<'_>) {
+    pub fn default_draw(overlay: &mut Overlay, surface: &mut Surface) {
         let mut alloc = LinearLayout::new(overlay.debug.axis)
             .anchor(overlay.debug.anchor)
             .wrap(true)
@@ -76,7 +75,7 @@ impl DebugOverlay {
         for msg in overlay.debug.drain().rev() {
             let part = Text::new(msg).fg(fg).bg(bg);
             if let Some(rect) = alloc.allocate(part.size()) {
-                surface.crop(rect).draw(part);
+                surface.text(rect, part);
             }
         }
     }

@@ -1,10 +1,9 @@
 use too_crossterm::{Config, Term};
 
 use too::{
-    layout::Align2,
-    math::{lerp, pos2, Pos2, Vec2},
-    shapes::Text,
-    App, AppRunner as _, Context, Event, Gradient, Keybind, Pixel, Shape, SurfaceMut,
+    layout::Anchor2,
+    math::{lerp, pos2},
+    App, AppRunner as _, Context, Event, Gradient, Keybind, Pixel, Surface, Text,
 };
 
 fn main() -> std::io::Result<()> {
@@ -66,6 +65,7 @@ impl App for Demo {
         const SKEW_LESS: Keybind = Keybind::from_char('2');
 
         if event.is_keybind_pressed('t') {
+            ctx.overlay().fps.anchor = Anchor2::RIGHT_BOTTOM;
             ctx.toggle_fps();
         }
 
@@ -101,47 +101,41 @@ impl App for Demo {
         self.up = self.up ^ (self.theta >= 1.0) ^ (self.theta <= -1.0)
     }
 
-    fn render(&mut self, mut surface: SurfaceMut, _ctx: Context<'_>) {
-        let (label, _) = &self.gradients[self.pos];
-        surface
-            .draw(&*self)
-            .draw(
-                Text::new(label)
-                    .fg("#FFF")
-                    .bg("#000")
-                    .align2(Align2::RIGHT_TOP),
-            )
-            .draw(
-                Text::new(format!("duration: {:.2?}", self.duration))
-                    .fg("#FF0")
-                    .bg("#000")
-                    .align2(Align2::LEFT_TOP),
-            )
-            .draw(
-                Text::new(format!("skew: {:.2?}", self.skew))
-                    .fg("#FF0")
-                    .bg("#000")
-                    .align2(Align2::CENTER_TOP),
-            );
-    }
-}
-
-impl Shape for Demo {
-    fn draw(&self, size: Vec2, mut put: impl FnMut(Pos2, Pixel)) {
+    fn render(&mut self, surface: &mut Surface, _ctx: Context<'_>) {
         fn normalize(x: i32, y: i32, w: i32, h: i32, factor: f32) -> f32 {
             let x = x as f32 / (w as f32 - 1.0);
             let y = y as f32 / (h as f32 - 1.0);
             lerp(x, y, factor)
         }
 
-        let (_, gradient) = &self.gradients[self.pos];
+        let (name, gradient) = &self.gradients[self.pos];
+        let size = surface.rect().size();
+
         for y in 0..size.y.max(1) {
             for x in 0..size.x {
                 let pos = pos2(x, y);
                 let t = normalize(x, y, size.x, size.y, self.theta * self.skew);
                 let bg = gradient.as_rgba(t);
-                put(pos, Pixel::new(' ').bg(bg))
+                surface.set(pos, Pixel::new(' ').bg(bg));
             }
         }
+
+        let rect = surface.rect();
+
+        let dur = Text::new(format!("duration: {:.2?}", self.duration))
+            .fg("#FF0")
+            .bg("#000");
+
+        let skew = Text::new(format!("skew: {:.2?}", self.skew))
+            .fg("#FF0")
+            .bg("#000")
+            .main(too::Justification::Center);
+
+        let name = Text::new(name)
+            .main(too::Justification::End)
+            .fg("#FF0")
+            .bg("#000");
+
+        surface.text(rect, dur).text(rect, skew).text(rect, name);
     }
 }

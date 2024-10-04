@@ -6,7 +6,7 @@ use std::{
 use crate::{
     backend::{Backend, Event, EventReader},
     overlay::Overlay,
-    renderer::{Surface, SurfaceMut, TermRenderer},
+    renderer::{Surface, TermRenderer},
 };
 
 mod context;
@@ -20,8 +20,8 @@ pub struct Runner<T> {
     init: fn(&mut T, Context<'_>),
     event: fn(&mut T, Event, Context<'_>),
     update: fn(&mut T, f32, Context<'_>),
-    render: for<'c> fn(&mut T, SurfaceMut<'c>, Context<'_>),
-    post_render: for<'c> fn(&mut T, overlay: &mut Overlay, SurfaceMut<'c>),
+    render: for<'c> fn(&mut T, &mut Surface, Context<'_>),
+    post_render: for<'c> fn(&mut T, overlay: &mut Overlay, &mut Surface),
 }
 
 impl<T> Default for Runner<T> {
@@ -75,14 +75,14 @@ impl<T> Runner<T> {
         self
     }
 
-    pub const fn render(mut self, render: for<'c> fn(&mut T, SurfaceMut<'c>, Context<'_>)) -> Self {
+    pub const fn render(mut self, render: for<'c> fn(&mut T, &mut Surface, Context<'_>)) -> Self {
         self.render = render;
         self
     }
 
     pub const fn post_render(
         mut self,
-        post_render: for<'c> fn(&mut T, &mut Overlay, SurfaceMut<'c>),
+        post_render: for<'c> fn(&mut T, &mut Overlay, &mut Surface),
     ) -> Self {
         self.post_render = post_render;
         self
@@ -168,8 +168,8 @@ impl<T> Runner<T> {
                     commands: &mut commands,
                     size: surface.rect().size(),
                 };
-                (self.render)(&mut state, surface.crop(surface.rect()), ctx);
-                (self.post_render)(&mut state, &mut overlay, surface.crop(surface.rect()));
+                (self.render)(&mut state, &mut surface, ctx);
+                (self.post_render)(&mut state, &mut overlay, &mut surface);
                 surface.render(&mut TermRenderer::new(&mut term))?;
             }
 

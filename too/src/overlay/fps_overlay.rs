@@ -1,11 +1,9 @@
 use crate::{
-    ema_window::EmaWindow,
-    ema_window::WindowStats,
+    ema_window::{EmaWindow, WindowStats},
     layout::{Anchor2, Axis, LinearLayout},
     math::vec2,
     overlay::Overlay,
-    shapes::Text,
-    Rgba, SurfaceMut,
+    Rgba, Surface, Text,
 };
 
 /// An FPS overlay
@@ -44,7 +42,7 @@ impl FpsOverlay {
     /// Draws the default fps overlay
     ///
     /// This does not check whether its shown -- thats up to you
-    pub fn default_draw(overlay: &mut Overlay, surface: &mut SurfaceMut<'_>) {
+    pub fn default_draw(overlay: &mut Overlay, surface: &mut Surface) {
         let frame_stats = overlay.fps.get_current_stats();
 
         let mut alloc = LinearLayout::new(overlay.fps.axis)
@@ -61,7 +59,7 @@ impl FpsOverlay {
         ] {
             let part = Text::new(part).fg(fg).bg(bg);
             if let Some(rect) = alloc.allocate(part.size()) {
-                surface.crop(rect).draw(part);
+                surface.text(rect, part);
             }
         }
     }

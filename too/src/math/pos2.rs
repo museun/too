@@ -1,5 +1,6 @@
 use crate::math::{vec2, Vec2};
 
+// TODO rename this to point
 #[derive(Copy, Clone, Default, PartialEq, Eq, Hash)]
 pub struct Pos2 {
     pub x: i32,

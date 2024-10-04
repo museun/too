@@ -1,108 +1,133 @@
 use super::{
-    pixel::{Attribute, PixelColor},
-    Buffer, Pixel, Renderer, Shape,
+    cell::{Attribute, Cell, Color},
+    Pixel, Renderer,
 };
 
 use crate::{
-    math::{Pos2, Rect, Vec2},
-    Event,
+    math::{pos2, rect, Pos2, Rect, Vec2},
+    text::MeasureText,
+    Event, Text,
 };
 
-/// An owned view of a rect region that allows drawing and diffing
+/// An owned view of a rect region that allows drawing
 pub struct Surface {
-    front: Buffer,
-    back: Buffer,
+    front: Vec<Cell>,
+    back: Vec<Cell>,
+    size: Vec2,
 }
 
 impl Surface {
-    pub fn new(size: Vec2) -> Self {
-        Self {
-            front: Buffer::new(size),
-            back: Buffer::new(size),
-        }
-    }
-
     pub fn update(&mut self, event: &Event) {
         match event {
             &Event::Resize(size) => self.resize(size),
-            Event::SwitchAltScreen => self.front.reset(),
+            Event::SwitchAltScreen => Self::reset(&mut self.front, Cell::Empty),
             _ => {}
         }
     }
 
-    pub fn resize(&mut self, size: Vec2) {
-        const DIRTY: Pixel = Pixel {
-            char: '!',
-            ..Pixel::EMPTY
-        };
-
-        self.back.resize(size, Pixel::EMPTY);
-        self.front.resize(size, DIRTY);
-    }
-
-    pub fn reset(&mut self) {
-        self.front.reset();
-        self.back.reset();
-    }
-
-    pub const fn current(&self) -> &Buffer {
-        &self.back
-    }
-
-    pub fn current_mut(&mut self) -> &mut Buffer {
-        &mut self.back
-    }
-
-    pub fn get(&self, pos: Pos2) -> Option<&Pixel> {
-        self.current().get(pos)
-    }
-
-    pub fn get_mut(&mut self, pos: Pos2) -> Option<&mut Pixel> {
-        self.current_mut().get_mut(pos)
-    }
-
-    pub fn put(&mut self, pos: Pos2, pixel: Pixel) {
-        Self::put_buffer(&mut self.back, pos, pixel)
-    }
-
     #[track_caller]
-    pub fn draw(&mut self, shape: impl Shape) -> &mut Self {
-        shape.draw(self.rect().size(), |pos, pixel| {
-            if self.rect().contains(pos) {
-                self[pos].merge(pixel)
+    pub fn set(&mut self, pos: Pos2, cell: impl Into<Cell>) {
+        // implictly clip cell
+        if !self.rect().contains(pos) {
+            return;
+        }
+
+        let (width, x) = (self.size.x as usize, pos.x as usize);
+        let index = Self::pos_to_index(pos, self.size.x);
+
+        let empty = self
+            .back
+            .get(index)
+            .map(Cell::width)
+            .unwrap_or(0)
+            .min(width - x);
+
+        // take the old one so we can merge it with the new one
+        let mut old = std::mem::take(&mut self.back[index]);
+
+        for i in 0..empty {
+            if index + i < self.back.len() {
+                self.back[index + i] = Cell::Empty // its because its an empty
             }
-        });
-        self
-    }
+        }
 
-    pub fn rect(&self) -> Rect {
-        self.current().rect() //this is wrong
-    }
+        let cell = cell.into();
+        let width = cell.width().min(width - x);
 
-    pub fn crop(&mut self, rect: Rect) -> SurfaceMut<'_> {
-        SurfaceMut {
-            rect,
-            surface: self,
+        Cell::merge(&mut old, cell);
+        self.back[index] = old;
+
+        for i in 1..width {
+            if index + i < self.back.len() {
+                self.back[index + i] = Cell::Continuation
+            }
         }
     }
 
+    pub fn fill(&mut self, rect: Rect, pixel: impl Into<Pixel>) -> &mut Self {
+        let pixel = pixel.into();
+        let rect = self.rect().intersection(rect);
+        for y in rect.top()..rect.bottom() {
+            for x in rect.left()..rect.right() {
+                self.set(pos2(x, y), pixel);
+            }
+        }
+        self
+    }
+
+    pub fn text<T: MeasureText>(&mut self, rect: Rect, text: impl Into<Text<T>>) -> &mut Self {
+        let text: Text<T> = text.into();
+        let rect = self.rect().intersection(rect);
+        text.draw(rect, self);
+        self
+    }
+
+    pub const fn rect(&self) -> Rect {
+        rect(self.size)
+    }
+}
+
+impl Surface {
+    pub(crate) fn new(size: Vec2) -> Self {
+        Self {
+            front: vec![Cell::Empty; size.x as usize * size.y as usize],
+            back: vec![Cell::Empty; size.x as usize * size.y as usize],
+            size,
+        }
+    }
+
+    pub(crate) fn resize(&mut self, size: Vec2) {
+        if self.size == size {
+            return;
+        }
+
+        self.front = vec![Cell::Empty; size.x as usize * size.y as usize];
+        self.back = vec![Cell::Pixel(Pixel::DEFAULT); size.x as usize * size.y as usize];
+
+        self.size = size;
+    }
+
     // TODO `force invalidate` (rather than a lazy invalidate)
-    pub fn render(&mut self, renderer: &mut impl Renderer) -> std::io::Result<()> {
+    pub(crate) fn render(&mut self, renderer: &mut impl Renderer) -> std::io::Result<()> {
         let mut state = CursorState::default();
         let mut seen = false;
         let mut wrote_reset = false;
+        let mut buf = [0u8; 4];
 
-        for (pos, change) in self.front.diff(&self.back) {
+        for (pos, change) in Self::diff(&mut self.front, &mut self.back, self.size.x) {
+            assert!(!change.is_continuation());
+            assert!(!change.is_empty());
+
             if !seen {
                 renderer.begin()?;
                 seen = true;
             }
 
-            if state.maybe_move(pos) {
+            if state.maybe_move(pos, change.width() as i32) {
                 renderer.move_to(pos)?;
             }
 
-            match state.maybe_attr(change.attr) {
+            match state.maybe_attr(change.attribute()) {
                 Some(attr) if attr == Attribute::RESET => {
                     wrote_reset = true;
                     renderer.reset_attr()?;
@@ -114,28 +139,42 @@ impl Surface {
                 _ => {}
             }
 
-            match state.maybe_fg(change.fg, wrote_reset) {
-                Some(PixelColor::Rgba(fg)) => renderer.set_fg(fg)?,
-                Some(PixelColor::Reset) => {
-                    // PERF if we're going to be writing (a lot of) spaces we don't have to reset the fg until the next visible character
-                    renderer.reset_fg()?
-                }
+            match state.maybe_fg(change.fg(), wrote_reset) {
+                Some(Color::Set(fg)) => renderer.set_fg(fg)?,
+                Some(Color::Reset) => renderer.reset_fg()?,
                 _ => {}
             }
 
-            match state.maybe_bg(change.bg, wrote_reset) {
-                Some(PixelColor::Rgba(bg)) => renderer.set_bg(bg)?,
-                Some(PixelColor::Reset) => renderer.reset_bg()?,
+            match state.maybe_bg(change.bg(), wrote_reset) {
+                Some(Color::Set(bg)) => renderer.set_bg(bg)?,
+                Some(Color::Reset) => renderer.reset_bg()?,
                 _ => {}
             }
 
             wrote_reset = false;
 
-            renderer.write(change.char)?;
+            match change {
+                Cell::Grapheme(grapheme) => {
+                    use unicode_segmentation::UnicodeSegmentation as _;
+                    use unicode_width::UnicodeWidthStr as _;
+                    let mut available = self.size.x as usize - pos.x as usize;
+                    for cluster in grapheme.cluster.graphemes(true) {
+                        match available.checked_sub(cluster.width()) {
+                            Some(n) => available = n,
+                            None => break,
+                        }
+                        renderer.write_str(cluster)?;
+                    }
+                }
+                Cell::Pixel(pixel) => {
+                    renderer.write_str(pixel.char.encode_utf8(&mut buf))?;
+                }
+                _ => {}
+            }
         }
 
         if seen {
-            if state.maybe_move(Pos2::ZERO) {
+            if state.maybe_move(Pos2::ZERO, 0) {
                 renderer.move_to(Pos2::ZERO)?;
             }
             renderer.reset_bg()?;
@@ -144,34 +183,65 @@ impl Surface {
             renderer.end()?;
         }
 
-        // this is a forced invalidate. ideally the user knows if we should invalid
-        self.back.reset(); // shouldn't we just swap this?
-                           // std::mem::swap(&mut self.front, &mut self.back)
         Ok(())
     }
 
-    #[track_caller]
-    fn put_buffer(buffer: &mut Buffer, pos: Pos2, pixel: Pixel) {
-        if !buffer.contains(pos) {
-            return;
+    fn diff<'a>(
+        front: &'a mut [Cell],
+        back: &'a mut [Cell],
+        width: i32,
+    ) -> impl Iterator<Item = (Pos2, &'a Cell)> {
+        let iter = front.iter_mut().zip(back.iter_mut()).enumerate();
+        // TODO clean this up
+        iter.filter_map(move |(i, (front, back))| match (&*front, &*back) {
+            (Cell::Grapheme(left), Cell::Grapheme(right)) if left.is_different(right) => {
+                *front = std::mem::replace(back, Cell::erase());
+                Some((Self::index_to_pos(i, width), &*front))
+            }
+            (Cell::Pixel(left), Cell::Pixel(right)) if left.is_different(right) => {
+                *front = std::mem::replace(back, Cell::erase());
+                Some((Self::index_to_pos(i, width), &*front))
+            }
+            (.., Cell::Grapheme(..) | Cell::Pixel(..)) => {
+                *front = std::mem::replace(back, Cell::erase());
+                Some((Self::index_to_pos(i, width), &*front))
+            }
+            _ => {
+                *front = std::mem::replace(back, Cell::erase());
+                None
+            }
+        })
+    }
+
+    fn reset(buf: &mut [Cell], cell: impl Into<Cell>) {
+        let cell = cell.into();
+        for x in buf {
+            *x = cell.clone()
         }
-        buffer[pos].merge(pixel)
+    }
+
+    const fn pos_to_index(pos: Pos2, w: i32) -> usize {
+        pos.y as usize * w as usize + pos.x as usize
+    }
+
+    const fn index_to_pos(index: usize, w: i32) -> Pos2 {
+        let index = index as i32;
+        pos2(index % w, index / w)
     }
 }
 
 #[derive(Default)]
 struct CursorState {
     last: Option<Pos2>,
-    fg: Option<PixelColor>,
-    bg: Option<PixelColor>,
+    fg: Option<Color>,
+    bg: Option<Color>,
     attr: Option<Attribute>,
 }
 
 impl CursorState {
-    // TODO this is moving when there's a space
-    fn maybe_move(&mut self, pos: Pos2) -> bool {
+    fn maybe_move(&mut self, pos: Pos2, width: i32) -> bool {
         let should_move = match self.last {
-            Some(last) if last.y != pos.y || last.x != pos.x - 1 => true,
+            Some(last) if last.y != pos.y || last.x != pos.x - width => true,
             None => true,
             _ => false,
         };
@@ -180,20 +250,16 @@ impl CursorState {
         should_move
     }
 
-    fn maybe_fg(&mut self, color: PixelColor, wrote_reset: bool) -> Option<PixelColor> {
+    fn maybe_fg(&mut self, color: Color, wrote_reset: bool) -> Option<Color> {
         Self::maybe_color(color, wrote_reset, &mut self.fg)
     }
 
-    fn maybe_bg(&mut self, color: PixelColor, wrote_reset: bool) -> Option<PixelColor> {
+    fn maybe_bg(&mut self, color: Color, wrote_reset: bool) -> Option<Color> {
         Self::maybe_color(color, wrote_reset, &mut self.bg)
     }
 
-    fn maybe_color(
-        color: PixelColor,
-        wrote_reset: bool,
-        cache: &mut Option<PixelColor>,
-    ) -> Option<PixelColor> {
-        if matches!(color, PixelColor::Reuse) {
+    fn maybe_color(color: Color, wrote_reset: bool, cache: &mut Option<Color>) -> Option<Color> {
+        if matches!(color, Color::Reuse) {
             return None;
         }
 
@@ -203,11 +269,11 @@ impl CursorState {
         }
 
         match (color, *cache) {
-            (PixelColor::Reset, None) => {
+            (Color::Reset, None) => {
                 cache.replace(color);
-                Some(PixelColor::Reset)
+                Some(Color::Reset)
             }
-            (PixelColor::Reset, Some(PixelColor::Reset)) => None,
+            (Color::Reset, Some(Color::Reset)) => None,
             _ => (cache.replace(color) != Some(color)).then_some(color),
         }
     }
@@ -221,152 +287,5 @@ impl CursorState {
             (a, Some(b)) if a == Attribute::RESET && b == Attribute::RESET => None,
             _ => (self.attr.replace(attr) != Some(attr)).then_some(attr),
         }
-    }
-}
-
-impl std::ops::Index<Pos2> for Surface {
-    type Output = Pixel;
-    fn index(&self, index: Pos2) -> &Self::Output {
-        &self.current()[index]
-    }
-}
-
-impl std::ops::IndexMut<Pos2> for Surface {
-    fn index_mut(&mut self, index: Pos2) -> &mut Self::Output {
-        &mut self.current_mut()[index]
-    }
-}
-
-/// SurfaceMut is a mutable borrow of a rect, possibly clipped to a specific sub-rect
-pub struct SurfaceMut<'a> {
-    surface: &'a mut Surface,
-    rect: Rect,
-}
-
-impl<'a> SurfaceMut<'a> {
-    /// The [`Rect`] for this surface
-    pub const fn rect(&self) -> Rect {
-        self.rect
-    }
-
-    /// Crop this [`SurfaceMut`] to a smaller [`Rect`]`
-    pub fn crop<'b>(&'b mut self, rect: Rect) -> SurfaceMut<'b>
-    where
-        'a: 'b,
-    {
-        SurfaceMut {
-            rect: self.rect().intersection(rect),
-            surface: self.surface,
-        }
-    }
-
-    /// Draw this [`Shape`] onto this [`SurfaceMut`]
-    ///
-    /// This is chainable.
-    ///
-    /// **Note** Future shapes drawn onto the same surface will be drawn ___ontop___ of prior shapes.
-    ///
-    /// # Example:
-    /// ```rust
-    /// # use too::{Pixel, Shape, SurfaceMut, math::{pos2, Pos2, Vec2, vec2, rect}};
-    /// struct MyShape;
-    /// struct Overlay;
-    ///
-    /// impl Shape for MyShape {
-    ///     fn draw(&self, size: Vec2, mut put: impl FnMut(Pos2, Pixel)) {
-    ///         for y in 0..size.y {
-    ///             for x in 0..size.x {
-    ///                 put(pos2(x, y), Pixel::new(' ').bg("#F00"))
-    ///             }
-    ///         }
-    ///     }
-    /// }
-    ///
-    /// impl Shape for Overlay {
-    ///     fn draw(&self, size: Vec2, mut put: impl FnMut(Pos2, Pixel)) {
-    ///         for y in 0..size.y / 2{
-    ///             for x in 0..size.x / 2 {
-    ///                 put(pos2(x, y), Pixel::new(' ').bg("#0F0"))
-    ///             }
-    ///         }
-    ///     }
-    /// }
-    ///
-    /// // this'll fill the surface with a red background
-    /// // then the top-left quarter will be overwritten with a green background
-    /// # let mut surface = too::Surface::new(vec2(80, 25));
-    /// # let mut surface = surface.crop(rect(vec2(80, 25)));
-    /// surface.draw(MyShape).draw(Overlay);
-    ///
-    /// ```
-    pub fn draw(&mut self, shape: impl Shape) -> &mut Self {
-        shape.draw(self.rect.size(), |pos, pixel| {
-            let pos = self.translate(pos);
-            // clip any draws outside of this sub-rect
-            if !self.rect.contains(pos) {
-                return;
-            }
-            Surface::put_buffer(&mut self.surface.back, pos, pixel)
-        });
-        self
-    }
-
-    /// Put a [`Pixel`] as a [`Pos2`]
-    ///
-    /// This is chainable.
-    ///
-    /// If this surface does not contain that position, it does not put it.
-    ///
-    /// The `pos` here is local to the top-left of this surface's [`Rect`]
-    ///
-    /// e.g. 0,0 is top-left (the origin) of this rect.
-    #[track_caller]
-    pub fn put(&mut self, pos: Pos2, pixel: Pixel) -> &mut Self {
-        let pos = self.translate(pos);
-        // clip any draws outside of this sub-rect
-        if !self.rect.contains(pos) {
-            return self;
-        }
-        Surface::put_buffer(&mut self.surface.back, pos, pixel);
-        self
-    }
-
-    /// Tries to get the [`Pixel`] at this [`Pos2`]
-    ///
-    /// The `pos` here is local to the top-left of this surface's [`Rect`]
-    ///
-    /// e.g. 0,0 is top-left (the origin) of this rect.
-    pub fn get(&self, pos: Pos2) -> Option<&Pixel> {
-        let pos = self.translate(pos);
-        self.surface.get(pos)
-    }
-
-    /// Tries to get the [`Pixel`], mutably at this [`Pos2`]
-    ///
-    /// The `pos` here is local to the top-left of this surface's [`Rect`]
-    ///
-    /// e.g. 0,0 is top-left (the origin) of this rect.
-    pub fn get_mut(&mut self, pos: Pos2) -> Option<&mut Pixel> {
-        let pos = self.translate(pos);
-        self.surface.get_mut(pos)
-    }
-
-    fn translate(&self, pos: Pos2) -> Pos2 {
-        pos + self.rect.left_top()
-    }
-}
-
-impl<'a> std::ops::Index<Pos2> for SurfaceMut<'a> {
-    type Output = Pixel;
-    fn index(&self, index: Pos2) -> &Self::Output {
-        let index = self.translate(index);
-        &self.surface[index]
-    }
-}
-
-impl<'a> std::ops::IndexMut<Pos2> for SurfaceMut<'a> {
-    fn index_mut(&mut self, index: Pos2) -> &mut Self::Output {
-        let index = self.translate(index);
-        &mut self.surface[index]
     }
 }

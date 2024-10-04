@@ -3,8 +3,7 @@ use too_crossterm::{Config, Term};
 use too::{
     layout::{Anchor, Anchor2, Axis, LinearLayout},
     math::{vec2, Vec2},
-    shapes::{Fill, Text},
-    App, AppRunner as _, Context, Event, Key, Rgba, SurfaceMut,
+    App, AppRunner as _, Context, Event, Key, Rgba, Surface, Text,
 };
 
 fn main() -> std::io::Result<()> {
@@ -103,7 +102,7 @@ impl App for Demo {
         }
     }
 
-    fn render(&mut self, mut surface: SurfaceMut, _ctx: Context<'_>) {
+    fn render(&mut self, surface: &mut Surface, _ctx: Context<'_>) {
         let mut layout = LinearLayout::new(self.axis)
             .wrap(self.wrap)
             .spacing(self.spacing)
@@ -112,9 +111,7 @@ impl App for Demo {
 
         for (i, &size) in self.elements.iter().enumerate() {
             if let Some(rect) = layout.allocate(size) {
-                surface
-                    .crop(rect)
-                    .draw(Fill::new(Rgba::sine(i as f32 * 0.1)));
+                surface.fill(rect, Rgba::sine(i as f32 * 0.1));
             }
         }
 
@@ -132,7 +129,7 @@ impl App for Demo {
         };
         let elements = self.elements.len();
 
-        surface.draw(
+        surface.text(surface.rect(),
             Text::new(format!(
                 "{elements} | {dir}, anchor x: {anchor_x}, anchor y: {anchor_y} | {sx}, {sy} | {wrap}",
                 sx = self.spacing.x, sy = self.spacing.y, wrap = self.wrap

@@ -1,3 +1,6 @@
+use unicode_segmentation::UnicodeSegmentation;
+use unicode_width::UnicodeWidthStr;
+
 use super::Renderer;
 use crate::{math::Pos2, Attribute, Rgba};
 
@@ -30,7 +33,7 @@ impl std::fmt::Display for DebugRenderer {
     }
 }
 
-use std::fmt::Write as _;
+use std::{borrow::Cow, fmt::Write as _};
 
 impl Renderer for DebugRenderer {
     fn begin(&mut self) -> std::io::Result<()> {
@@ -51,16 +54,21 @@ impl Renderer for DebugRenderer {
         Ok(())
     }
 
-    fn write(&mut self, ch: char) -> std::io::Result<()> {
+    fn write_str(&mut self, data: &str) -> std::io::Result<()> {
         if !self.incomplete {
             self.out.push_str("    ");
         }
         self.incomplete = true;
-        let ch = match ch {
-            ' ' => '▒',
-            d => d,
-        };
-        _ = write!(&mut self.out, "{ch}");
+
+        for cluster in data.graphemes(true) {
+            let cluster = if cluster.chars().all(|c| c.is_whitespace()) {
+                Cow::from("▪".repeat(cluster.width()))
+            } else {
+                Cow::from(cluster)
+            };
+
+            _ = write!(&mut self.out, "{cluster}");
+        }
         Ok(())
     }
 

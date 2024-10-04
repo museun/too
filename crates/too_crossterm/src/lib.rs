@@ -175,6 +175,8 @@ impl Term {
     }
 }
 
+// TODO on windows GetConsoleCP() -> mode, SetConsoleCP(65001) and revert on drop
+// then we can use the `File` bypass of std::io::Stdout
 impl Backend for Term {
     type Out<'a> = &'a mut std::io::StdoutLock<'static>;
     // type Out<'a> = std::fs::File;

@@ -6,7 +6,7 @@ use crate::{overlay::Overlay, App, Backend, EventReader, Runner};
 ///
 /// # Example:
 /// ```rust
-/// use too::{SurfaceMut, Context, AppRunner as _};
+/// use too::{Surface, Context, AppRunner as _};
 ///
 /// struct Demo {
 ///     state: i32
@@ -19,7 +19,7 @@ use crate::{overlay::Overlay, App, Backend, EventReader, Runner};
 /// }
 ///
 /// impl too::App for Demo {
-///     fn render(&mut self, surface: SurfaceMut, ctx: Context) {}
+///     fn render(&mut self, surface: &mut Surface, ctx: Context) {}
 /// }
 ///
 /// # fn get_backend() -> std::io::Result<too::DummyBackend> { Ok(too::DummyBackend) }

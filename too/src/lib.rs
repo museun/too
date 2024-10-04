@@ -15,11 +15,14 @@ pub mod overlay;
 
 mod renderer;
 pub use renderer::{
-    shapes, Attribute, DebugRenderer, Gradient, Pixel, PixelColor, Renderer, Rgba, Shape, Surface,
-    SurfaceMut, TermRenderer,
+    Attribute, Cell, Color, DebugRenderer, Gradient, Grapheme, Pixel, Renderer, Rgba, Surface,
+    TermRenderer,
 };
 
 mod runner;
 pub use runner::{Context, Runner};
 
 pub mod layout;
+
+mod text;
+pub use text::{Justification, Text};

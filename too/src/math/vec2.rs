@@ -1,5 +1,6 @@
 use crate::math::{pos2, Pos2};
 
+// TODO make this into Size and provide a different Vec2
 #[derive(Copy, Clone, Default, PartialEq, Eq, Hash)]
 pub struct Vec2 {
     pub x: i32,

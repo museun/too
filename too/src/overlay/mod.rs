@@ -1,5 +1,5 @@
 //! Overlays are (optionally) drawn ontop of the surface
-use crate::SurfaceMut;
+use crate::Surface;
 
 #[derive(Default)] // don't mem swap me
 #[non_exhaustive]
@@ -15,13 +15,13 @@ pub struct Overlay {
 
 impl Overlay {
     /// A default overlay draw function.
-    pub fn default_draw<T>(_: T, overlay: &mut Overlay, mut surface: SurfaceMut<'_>) {
+    pub fn default_draw<T>(_: T, overlay: &mut Overlay, surface: &mut Surface) {
         if overlay.fps.show {
-            FpsOverlay::default_draw(overlay, &mut surface);
+            FpsOverlay::default_draw(overlay, surface);
         }
 
         if overlay.debug.show {
-            DebugOverlay::default_draw(overlay, &mut surface);
+            DebugOverlay::default_draw(overlay, surface);
         }
     }
 }

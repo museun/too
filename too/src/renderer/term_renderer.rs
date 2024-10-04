@@ -47,8 +47,8 @@ impl<'a, B: Backend> Renderer for TermRenderer<'a, B> {
     }
 
     #[inline(always)]
-    fn write(&mut self, ch: char) -> std::io::Result<()> {
-        self.out.write_all(ch.encode_utf8(&mut [0; 4]).as_bytes())
+    fn write_str(&mut self, data: &str) -> std::io::Result<()> {
+        write!(self.out, "{data}")
     }
 
     #[inline(always)]
@@ -87,7 +87,7 @@ impl<'a, B: Backend> Renderer for TermRenderer<'a, B> {
         }
 
         if !seen {
-            self.out.write_all(csi!("[0m"))?;
+            self.out.write_all(csi!("0m"))?;
         }
 
         Ok(())

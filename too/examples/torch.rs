@@ -4,8 +4,7 @@ use too_crossterm::{Config, Term};
 
 use too::{
     math::{lerp, pos2, Pos2, Rect, Vec2},
-    shapes::Fill,
-    App, AppRunner as _, Context, Event, Key, Pixel, Rgba, Shape, SurfaceMut,
+    App, AppRunner as _, Context, Event, Key, Pixel, Rgba, Surface,
 };
 
 fn main() -> std::io::Result<()> {
@@ -57,7 +56,7 @@ impl Demo {
         self.pos = (self.pos + lines).min(self.lines.len())
     }
 
-    fn draw_torch(&self, offset: usize, surface: &mut SurfaceMut) {
+    fn draw_torch(&self, offset: usize, surface: &mut Surface) {
         const BG: Rgba = Rgba::hex("#F0E68C");
         const SHADOW: Rgba = Rgba::hex("#333333");
 
@@ -76,14 +75,17 @@ impl Demo {
         }
 
         let bg = if self.enabled { Self::FG } else { BG };
-        surface.draw(Fill::new(bg)).draw(TorchText {
+        surface.fill(surface.rect(), bg);
+
+        let text = TorchText {
             demo: self,
             offset,
             blend,
-        });
+        };
+        text.draw(surface);
     }
 
-    fn draw_focus(&self, offset: usize, surface: &mut SurfaceMut) {
+    fn draw_focus(&self, offset: usize, surface: &mut Surface) {
         const SHADOW: Rgba = Rgba::hex("#AAAAAAAA");
         const BG: Rgba = Rgba::hex("#111111");
 
@@ -100,11 +102,14 @@ impl Demo {
             }
         }
 
-        surface.draw(Fill::new(BG)).draw(TorchText {
+        surface.fill(surface.rect(), BG);
+
+        let text = TorchText {
             demo: self,
             offset,
             blend,
-        });
+        };
+        text.draw(surface);
     }
 }
 
@@ -150,15 +155,15 @@ impl App for Demo {
         }
     }
 
-    fn render(&mut self, mut surface: SurfaceMut, _ctx: Context<'_>) {
+    fn render(&mut self, surface: &mut Surface, _ctx: Context<'_>) {
         let offset = self.lines.len().saturating_sub(self.pos);
         let offset = offset
             .checked_sub(surface.rect().height().saturating_sub_unsigned(1) as _)
             .unwrap_or(offset);
 
         match self.mode {
-            Mode::Torch => self.draw_torch(offset, &mut surface),
-            Mode::Focus => self.draw_focus(offset, &mut surface),
+            Mode::Torch => self.draw_torch(offset, surface),
+            Mode::Focus => self.draw_focus(offset, surface),
         }
     }
 }
@@ -169,8 +174,9 @@ struct TorchText<'a> {
     blend: fn(&'a Demo, Vec2, Pos2) -> Rgba,
 }
 
-impl<'a> Shape for TorchText<'a> {
-    fn draw(&self, size: Vec2, mut put: impl FnMut(Pos2, Pixel)) {
+impl<'a> TorchText<'a> {
+    fn draw(&self, surface: &mut Surface) {
+        let size = surface.rect().size();
         let mut start = Pos2::ZERO;
         for line in self.demo.lines.iter().skip(self.offset) {
             if start.y >= size.y {
@@ -184,13 +190,13 @@ impl<'a> Shape for TorchText<'a> {
                 }
 
                 let bg = (self.blend)(self.demo, size, start);
-                put(start, Pixel::new(ch).fg(Demo::FG).bg(bg));
+                surface.set(start, Pixel::new(ch).fg(Demo::FG).bg(bg));
                 start.x += 1;
             }
 
             while start.x < size.x {
                 let bg = (self.blend)(self.demo, size, start);
-                put(start, Pixel::new(' ').fg(Demo::FG).bg(bg));
+                surface.set(start, Pixel::new(' ').fg(Demo::FG).bg(bg));
                 start.x += 1;
             }
 
@@ -203,7 +209,7 @@ impl<'a> Shape for TorchText<'a> {
                 for x in 0..size.x {
                     let pos = pos2(x, y);
                     let bg = (self.blend)(self.demo, size, pos);
-                    put(pos, Pixel::new(' ').bg(bg))
+                    surface.set(pos, Pixel::new(' ').bg(bg))
                 }
             }
         }

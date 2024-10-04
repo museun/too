@@ -1,22 +1,14 @@
-mod buffer;
-use buffer::Buffer;
-
 mod surface;
-pub use surface::{Surface, SurfaceMut};
+pub use surface::Surface;
 
-mod shape;
-pub use shape::Shape;
-
-mod pixel;
-pub use pixel::{Attribute, Pixel, PixelColor};
+mod cell;
+pub use cell::{Attribute, Cell, Color, Grapheme, Pixel};
 
 mod rgba;
 pub use rgba::Rgba;
 
 mod gradient;
 pub use gradient::Gradient;
-
-pub mod shapes;
 
 use crate::math;
 
@@ -25,7 +17,7 @@ pub trait Renderer {
     fn begin(&mut self) -> std::io::Result<()>;
     fn end(&mut self) -> std::io::Result<()>;
     fn move_to(&mut self, pos: math::Pos2) -> std::io::Result<()>;
-    fn write(&mut self, ch: char) -> std::io::Result<()>;
+    fn write_str(&mut self, data: &str) -> std::io::Result<()>;
     fn set_fg(&mut self, rgb: Rgba) -> std::io::Result<()>;
     fn set_bg(&mut self, rgb: Rgba) -> std::io::Result<()>;
     fn set_attr(&mut self, attr: Attribute) -> std::io::Result<()>;

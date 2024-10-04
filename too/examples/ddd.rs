@@ -2,8 +2,7 @@ use too_crossterm::{Config, Term};
 
 use too::{
     math::{vec2, vec3, Pos2, Rect, Vec2, Vec3},
-    shapes::{Fill, Text},
-    App, AppRunner as _, Context, Event, Key, Keybind, Pixel, Rgba, SurfaceMut,
+    App, AppRunner as _, Context, Event, Key, Keybind, Pixel, Rgba, Surface, Text,
 };
 
 use rayon::iter::*;
@@ -192,6 +191,7 @@ impl Demo {
         if ev.is_keybind_pressed(self.keybinds.toggle_fps) {
             ctx.toggle_fps()
         }
+
         if ev.is_keybind_pressed(self.keybinds.jump) {
             self.space_was_pressed = true
         }
@@ -253,7 +253,7 @@ impl Demo {
         self.velocity.y += GRAVITY * dt
     }
 
-    fn render_scene(&mut self, surface: &mut SurfaceMut) {
+    fn render_scene(&mut self, surface: &mut Surface) {
         self.screen.raytrace(&self.camera, &self.map);
 
         let mut pos = Pos2::ZERO;
@@ -261,7 +261,7 @@ impl Demo {
             for x in 0..self.screen.buffer[y].len() {
                 let item = self.screen.buffer[y][x].0;
                 let bg = Rgba::new(item.x as u8, item.y as u8, item.z as u8, 255);
-                surface.put(pos, Pixel::new(' ').bg(bg));
+                surface.set(pos, Pixel::new(' ').bg(bg));
                 pos.x += 1;
             }
             pos.x = 0;
@@ -269,7 +269,7 @@ impl Demo {
         }
     }
 
-    fn show_keybinds(&mut self, surface: &mut SurfaceMut) {
+    fn show_keybinds(&mut self, surface: &mut Surface) {
         let rect = surface.rect();
 
         let column = &[
@@ -299,11 +299,7 @@ impl Demo {
             vec2((max_left + max_right + 3) as i32, column.len() as _),
         );
 
-        surface
-            .crop(rect.expand2(vec2(1, 0)))
-            .draw(Fill::new("#222D"));
-
-        let mut surface = surface.crop(rect);
+        surface.fill(rect.expand2(vec2(1, 0)), Rgba::hex("#222D"));
 
         for (y, (label, bind)) in column.iter().enumerate() {
             let shape = Text::new(format!(
@@ -311,7 +307,7 @@ impl Demo {
                 s = ' ',
                 pad = max_left + 1 - label.len()
             ));
-            surface.crop(rect.translate(vec2(0, y as _))).draw(shape);
+            surface.text(rect.translate(vec2(0, y as _)), shape);
         }
     }
 }
@@ -651,11 +647,11 @@ impl App for Demo {
         self.integrate(dt);
     }
 
-    fn render(&mut self, mut surface: SurfaceMut<'_>, _ctx: Context<'_>) {
-        self.render_scene(&mut surface);
+    fn render(&mut self, surface: &mut Surface, _ctx: Context<'_>) {
+        self.render_scene(surface);
 
         if self.show_help {
-            self.show_keybinds(&mut surface);
+            self.show_keybinds(surface);
         }
     }
 }

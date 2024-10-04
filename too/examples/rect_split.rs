@@ -1,6 +1,6 @@
 use too_crossterm::*;
 
-use too::{shapes::Fill, App, AppRunner, Context, Event, SurfaceMut};
+use too::{App, AppRunner, Context, Event, Rgba, Surface};
 
 fn main() -> std::io::Result<()> {
     let term = Term::setup(Config::default())?;
@@ -27,7 +27,7 @@ impl App for Test {
         }
     }
 
-    fn render(&mut self, mut surface: SurfaceMut, _ctx: Context) {
+    fn render(&mut self, surface: &mut Surface, _ctx: Context) {
         let rect = surface.rect();
 
         let (main, cross) = match self.horz {
@@ -35,7 +35,8 @@ impl App for Test {
             false => rect.split_vertical(1, self.t),
         };
 
-        surface.crop(main).draw(Fill::new("#F00"));
-        surface.crop(cross).draw(Fill::new("#00F"));
+        surface
+            .fill(main, Rgba::hex("#F00"))
+            .fill(cross, Rgba::hex("#00F"));
     }
 }
