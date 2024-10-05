@@ -4,7 +4,7 @@ pub use surface::Surface;
 mod cell;
 pub use cell::{Attribute, Cell, Color, Grapheme, Pixel};
 
-mod rgba;
+pub mod rgba;
 pub use rgba::Rgba;
 
 mod gradient;

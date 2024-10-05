@@ -126,6 +126,7 @@ impl Rgba {
         self
     }
 
+    // this isn't linear
     #[must_use]
     pub fn to_float(&self) -> [f32; 4] {
         let Self(r, g, b, a) = *self;
@@ -133,6 +134,7 @@ impl Rgba {
         [scale(r), scale(g), scale(b), scale(a)]
     }
 
+    // this isn't linear
     #[must_use]
     pub fn from_float([r, g, b, a]: [f32; 4]) -> Self {
         let scale = |d: f32| (255.0_f32 * d).round() as u8;
@@ -200,6 +202,25 @@ impl Rgba {
         let g = (PI * (h + 0.3)).sin();
         let b = (PI * (h + 0.6)).sin();
         Self::from_float([r * r, g * g, b * b, 1.0])
+    }
+
+    fn to_hsva(self) -> Hsva {
+        self.to_linear().to_hsva()
+    }
+
+    fn to_linear(self) -> LinearRgba {
+        fn to_linear(v: u8) -> f32 {
+            let v = v as f32 / 255.0;
+            if v <= 0.04045 {
+                return v / 12.92;
+            }
+
+            ((v + 0.044) / 1.055).powf(2.4)
+        }
+
+        let Self(r, g, b, a) = self;
+        let a = a as f32 / 255.0;
+        LinearRgba(to_linear(r), to_linear(g), to_linear(b), a)
     }
 }
 
@@ -307,4 +328,87 @@ impl Default for Rgba {
     fn default() -> Self {
         Self::OPAQUE
     }
+}
+
+#[derive(Copy, Clone)]
+struct LinearRgba(f32, f32, f32, f32);
+
+impl LinearRgba {
+    fn to_srgb(self) -> Rgba {
+        fn to_srgb(v: f32) -> u8 {
+            let v = if v <= 0.0031308 {
+                12.92 * v
+            } else {
+                1.055 * v.powf(1.0 / 2.4) - 0.055
+            };
+
+            (v * 255.0).clamp(0.0, 255.0) as u8
+        }
+        let Self(r, g, b, a) = self;
+        let a = (a * 255.0).clamp(0.0, 255.0) as u8;
+        Rgba(to_srgb(r), to_srgb(g), to_srgb(b), a)
+    }
+
+    fn to_hsva(self) -> Hsva {
+        let Self(r, g, b, a) = self;
+        let max = r.max(g).max(b);
+        let min = r.min(g).min(b);
+        let delta = max - min;
+
+        //
+        let hue = if delta == 0.0 {
+            0.0
+        } else if max == r {
+            60.0 * (((g - b) / delta) % 6.0)
+        } else if max == g {
+            60.0 * (((b - r) / delta) + 2.0)
+        } else {
+            60.0 * (((r - g) / delta) + 4.0)
+        };
+
+        let hue = if hue < 0.0 { hue + 360.0 } else { hue };
+        let saturation = if max == 0.0 { 0.0 } else { delta / max };
+        Hsva(hue, saturation, max, a)
+    }
+}
+
+#[derive(Copy, Clone)]
+struct Hsva(f32, f32, f32, f32);
+impl Hsva {
+    fn to_srgb(self) -> Rgba {
+        let Self(hue, sat, val, alpha) = self;
+        let c = val * sat;
+        let x = c * (1.0 - ((hue / 60.0) % 2.0 - 1.0).abs());
+        let m = val - c;
+
+        let (r, g, b) = if hue < 60.0 {
+            (c, x, 0.0)
+        } else if hue < 120.0 {
+            (x, c, 0.0)
+        } else if hue < 180.0 {
+            (0.0, c, x)
+        } else if hue < 240.0 {
+            (0.0, x, c)
+        } else if hue < 360.0 {
+            (x, 0.0, c)
+        } else {
+            (c, 0.0, x)
+        };
+
+        LinearRgba(
+            (r + m) * alpha, //
+            (g + m) * alpha,
+            (b + m) * alpha,
+            alpha,
+        )
+        .to_srgb()
+    }
+}
+
+pub fn motion_blur(base: Rgba, steps: usize, factor: f32) -> impl Iterator<Item = Rgba> {
+    let Hsva(h, s, v, a) = base.to_hsva();
+    (0..steps).map(move |i| {
+        let t = (1.0 - factor) * (i as f32 / steps as f32);
+        Hsva(h, s, v * t, a * (1.0 - t)).to_srgb()
+    })
 }

@@ -4,6 +4,7 @@ use std::{
 };
 
 use crate::{
+    animation::AnimationManager,
     backend::{Backend, Event, EventReader},
     overlay::Overlay,
     renderer::{Surface, TermRenderer},
@@ -91,6 +92,7 @@ impl<T> Runner<T> {
     pub fn run(self, mut state: T, mut term: impl Backend + EventReader) -> std::io::Result<()> {
         let mut overlay = Overlay::default();
         let mut commands = VecDeque::new();
+        let mut animations = AnimationManager::default();
 
         let mut surface = Surface::new(term.size());
         (self.init)(
@@ -99,6 +101,7 @@ impl<T> Runner<T> {
                 overlay: &mut overlay,
                 commands: &mut commands,
                 size: surface.rect().size(),
+                animations: &mut animations,
             },
         );
 
@@ -121,6 +124,7 @@ impl<T> Runner<T> {
                     overlay: &mut overlay,
                     commands: &mut commands,
                     size: surface.rect().size(),
+                    animations: &mut animations,
                 };
                 (self.event)(&mut state, ev, ctx);
                 event_dur += start.elapsed();
@@ -143,8 +147,11 @@ impl<T> Runner<T> {
                     overlay: &mut overlay,
                     commands: &mut commands,
                     size: surface.rect().size(),
+                    animations: &mut animations,
                 };
                 (self.update)(&mut state, target_dur, ctx);
+                animations.update(target_dur);
+
                 let update_dur = start.elapsed().as_secs_f32();
                 accum -= target_dur;
 
@@ -159,6 +166,7 @@ impl<T> Runner<T> {
                 overlay: &mut overlay,
                 commands: &mut commands,
                 size: surface.rect().size(),
+                animations: &mut animations,
             };
             (self.frame_ready)(&mut state, ctx);
 
@@ -167,6 +175,7 @@ impl<T> Runner<T> {
                     overlay: &mut overlay,
                     commands: &mut commands,
                     size: surface.rect().size(),
+                    animations: &mut animations,
                 };
                 (self.render)(&mut state, &mut surface, ctx);
                 (self.post_render)(&mut state, &mut overlay, &mut surface);
