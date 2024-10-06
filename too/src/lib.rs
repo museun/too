@@ -15,7 +15,7 @@ pub mod overlay;
 
 mod renderer;
 pub use renderer::{
-    rgba, Attribute, Cell, Color, DebugRenderer, Gradient, Grapheme, Pixel, Renderer, Rgba,
+    rgba, Attribute, Canvas, Cell, Color, DebugRenderer, Gradient, Grapheme, Pixel, Renderer, Rgba,
     Surface, TermRenderer,
 };
 
@@ -25,7 +25,7 @@ pub use runner::{Context, Runner};
 pub mod layout;
 
 mod text;
-pub use text::{Justification, Text};
+pub use text::{Justification, MeasureText, Text};
 
 pub mod animation;
 

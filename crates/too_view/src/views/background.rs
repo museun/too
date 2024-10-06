@@ -1,4 +1,4 @@
-use too::{shapes::Fill, Rgba};
+use too::Rgba;
 
 use crate::{response::UserResponse, view::Context, DrawCtx, NoResponse, UpdateCtx, View, ViewExt};
 
@@ -18,8 +18,8 @@ impl<T: 'static> View<T> for Background {
         self.bg = args;
     }
 
-    fn draw(&mut self, ctx: DrawCtx<T>) {
-        ctx.surface.draw(Fill::new(self.bg));
+    fn draw(&mut self, mut ctx: DrawCtx<T>) {
+        ctx.surface.fill(self.bg);
         self.default_draw(ctx);
     }
 }

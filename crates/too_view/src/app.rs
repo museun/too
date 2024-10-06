@@ -29,14 +29,14 @@ pub trait AppRunner: App + Sealed + Sized {
             .frame_ready(|wrapper, ctx| {
                 wrapper.ui.scope(&mut wrapper.app, wrapper.view, ctx);
             })
-            .update(|wrapper, dt, _ctx| {
-                wrapper.ui.tick(dt);
+            .update(|wrapper, dt, ctx| {
+                wrapper.ui.animate(&mut wrapper.app, dt, ctx);
             })
-            .event(|wrapper, ev, _ctx| {
-                wrapper.ui.event(&mut wrapper.app, ev);
+            .event(|wrapper, ev, ctx| {
+                wrapper.ui.event(&mut wrapper.app, ev, ctx);
             })
-            .render(|wrapper, surface, _ctx| {
-                wrapper.ui.render(&mut wrapper.app, surface);
+            .render(|wrapper, surface, ctx| {
+                wrapper.ui.render(&mut wrapper.app, surface, ctx);
             })
             .post_render(|wrapper, overlay, surface| {
                 Overlay::default_draw(wrapper, overlay, surface);

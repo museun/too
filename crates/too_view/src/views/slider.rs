@@ -6,8 +6,13 @@ use crate::{
     geom::{Point, Size, Space},
     view::Context,
     DrawCtx, Elements, Event, EventCtx, FilledProperty, Handled, HeightProperty, Interest, Knob,
-    LayoutCtx, NoResponse, Response, UnfilledProperty, UpdateCtx, View, ViewExt, WidthProperty,
+    LayoutCtx, Response, UnfilledProperty, UpdateCtx, View, ViewExt, WidthProperty,
 };
+
+#[derive(Copy, Clone, Debug, PartialEq)]
+pub struct SliderResponse {
+    pub changed: bool,
+}
 
 // TODO &mut &f32 could do disable
 pub struct SliderParams<'a> {
@@ -30,6 +35,7 @@ impl<'a> SliderParams<'a> {
 }
 
 pub struct Slider<T: 'static = ()> {
+    previous: f32,
     params: fn(&mut T) -> SliderParams<'_>,
 }
 
@@ -63,13 +69,22 @@ impl<T: 'static> Slider<T> {
 
 impl<T: 'static> View<T> for Slider<T> {
     type Args<'a> = fn(&mut T) -> SliderParams<'_>;
-    type Response = NoResponse;
+    type Response = SliderResponse;
 
     fn create(args: Self::Args<'_>) -> Self {
-        Self { params: args }
+        Self {
+            params: args,
+            previous: 0.0,
+        }
     }
 
-    fn update(&mut self, ctx: UpdateCtx<T>, args: Self::Args<'_>) -> Self::Response {}
+    fn update(&mut self, ctx: UpdateCtx<T>, args: Self::Args<'_>) -> Self::Response {
+        self.params = args;
+        let value = *(self.params)(ctx.state).value;
+        SliderResponse {
+            changed: value != self.previous,
+        }
+    }
 
     fn interest(&self) -> Interest {
         Interest::MOUSE
@@ -85,6 +100,8 @@ impl<T: 'static> View<T> for Slider<T> {
 
         // we need to round to the next step
         let params = (self.params)(ctx.state);
+        self.previous = *params.value;
+
         let p = (ev.pos.x - min) / (max - min);
         *params.value = Self::denormalize(p, &params.range);
 
@@ -99,7 +116,7 @@ impl<T: 'static> View<T> for Slider<T> {
         )
     }
 
-    fn draw(&mut self, ctx: DrawCtx<T>) {
+    fn draw(&mut self, mut ctx: DrawCtx<T>) {
         let params = (self.params)(ctx.state);
 
         // TODO axis
@@ -109,27 +126,25 @@ impl<T: 'static> View<T> for Slider<T> {
         let x = min + (x * (max - min));
 
         let pixel = Pixel::new(ctx.properties.unfilled::<Slider>()).fg(ctx.theme.outline);
-        ctx.surface.draw(pixel);
+        ctx.surface.fill(pixel);
 
         let track = ctx.properties.filled::<Slider>();
         let pixel = Pixel::new(track).fg(ctx.theme.contrast);
 
-        // TODO make helpers for this
-        // surface::crop does not work -- we need to normalize our rect to 0,0
-        for x in 0..(x - ctx.rect.left()).round() as i32 {
-            ctx.surface.put(too::math::pos2(x, 0), pixel);
-        }
+        let pos = x - ctx.rect.left();
+        ctx.surface.horizontal_fill(0.0, pos, pixel);
 
-        let point = Point::new(x - ctx.rect.left(), 0.0);
+        let point = Point::new(pos, 0.0);
         let &knob = ctx.properties.get_or_default::<Knob>();
-        ctx.surface
-            .put(point.into(), Pixel::new(knob).fg(ctx.theme.primary));
+        let pixel = Pixel::new(knob).fg(ctx.theme.primary);
+        ctx.surface.set(point, pixel);
     }
 }
 
+// TODO this should return a bool if changed
 pub fn slider<T: 'static>(
     ctx: &mut Context<T>,
     params: fn(&mut T) -> SliderParams<'_>,
-) -> Response<()> {
+) -> Response<SliderResponse> {
     Slider::show(params, ctx)
 }

@@ -55,6 +55,12 @@ impl DebugOverlay {
         self.show = !self.show
     }
 
+    pub fn extend(&mut self, sink: impl IntoIterator<Item = String>) {
+        for msg in sink {
+            self.push(msg);
+        }
+    }
+
     /// Drain all of the queued debug messages
     pub fn drain(&mut self) -> impl ExactSizeIterator<Item = String> + DoubleEndedIterator + '_ {
         self.queue.drain(..)

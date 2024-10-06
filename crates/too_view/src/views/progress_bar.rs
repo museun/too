@@ -80,23 +80,21 @@ impl<T: 'static> View<T> for Progress<T> {
         )
     }
 
-    fn draw(&mut self, ctx: DrawCtx<T>) {
+    fn draw(&mut self, mut ctx: DrawCtx<T>) {
         let params = (self.params)(ctx.state);
 
         let (min, max) = (ctx.rect.left(), ctx.rect.right());
         let x = Self::normalize(*params.value, &params.range);
         let x = min + (x * (max - min));
 
-        let pixel = Pixel::new(ctx.properties.unfilled::<Self>()).fg(ctx.theme.outline);
-        ctx.surface.draw(pixel);
+        let unfilled = ctx.properties.unfilled::<Self>();
+        let pixel = Pixel::new(unfilled).fg(ctx.theme.outline);
+        ctx.surface.fill(pixel);
 
-        // surface::crop does not work -- we need to normalize our rect to 0,0
         // TODO axis
         let filled = ctx.properties.filled::<Self>();
         let pixel = Pixel::new(filled).fg(ctx.theme.primary);
-        for x in 0..(x - ctx.rect.left()).round() as i32 {
-            ctx.surface.put(too::math::pos2(x, 0), pixel);
-        }
+        ctx.surface.horizontal_fill(0.0, x - ctx.rect.left(), pixel);
     }
 }
 

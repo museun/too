@@ -5,7 +5,7 @@ use crate::{
     geom::{Size, Space},
     input::{Event, EventCtx, Handled},
     view::View,
-    DrawCtx, Interest, LayoutCtx,
+    AnimateCtx, DrawCtx, Interest, LayoutCtx,
 };
 
 impl<T: 'static> std::fmt::Debug for dyn ErasedView<State = T> {
@@ -27,7 +27,7 @@ pub trait ErasedView: std::any::Any {
     type State: 'static;
     fn interest(&self) -> Interest;
     fn event(&mut self, ctx: EventCtx<Self::State>, event: &Event) -> Handled;
-    fn animate(&mut self, state: &mut Self::State, dt: f32);
+    fn animate(&mut self, ctx: AnimateCtx<Self::State>, dt: f32);
     fn layout(&mut self, ctx: LayoutCtx<Self::State>, space: Space) -> Size;
     fn draw(&mut self, ctx: DrawCtx<Self::State>);
     fn type_name(&self) -> &'static str;
@@ -59,8 +59,8 @@ impl<T: 'static, V: View<T> + 'static> ErasedView for ViewMarker<T, V> {
         <V as View<T>>::event(&mut self.view, ctx, event)
     }
 
-    fn animate(&mut self, state: &mut Self::State, dt: f32) {
-        <V as View<T>>::animate(&mut self.view, state, dt);
+    fn animate(&mut self, ctx: AnimateCtx<Self::State>, dt: f32) {
+        <V as View<T>>::animate(&mut self.view, ctx, dt);
     }
 
     // we won't have the state here

@@ -4,10 +4,10 @@ use crate::{animation::AnimationManager, math::Vec2, overlay::Overlay, Command};
 
 /// Provides the ability to send [`Command`] to the backend and access to the [`Overlay`]
 pub struct Context<'a> {
-    pub(crate) overlay: &'a mut Overlay,
-    pub(crate) commands: &'a mut VecDeque<Command>,
-    pub(crate) size: Vec2,
-    pub(crate) animations: &'a mut AnimationManager,
+    pub overlay: &'a mut Overlay,
+    pub commands: &'a mut VecDeque<Command>,
+    pub size: Vec2,
+    pub animations: &'a mut AnimationManager,
 }
 
 impl<'a> Context<'a> {

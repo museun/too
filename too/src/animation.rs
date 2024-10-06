@@ -8,6 +8,12 @@ pub mod easing;
 mod manager;
 pub use manager::{AnimationManager, AnimationMut, AnimationRef};
 
+struct Keyframe {
+    easing: Easing,
+    scheduled: Duration,
+    requested: Option<Duration>,
+}
+
 /// An animation with keyframes
 ///
 /// Keyframes are evaluated first to last
@@ -15,11 +21,12 @@ pub use manager::{AnimationManager, AnimationMut, AnimationRef};
 /// This interpolates time, with easing functions in the range of `0.0..=1.0`
 #[derive(Default)]
 pub struct Animation {
-    keyframes: Vec<(Easing, Option<Duration>)>,
+    keyframes: Vec<Keyframe>,
     scheduled: f32,
     current: f32,
     repeat: bool,
     round_trip: bool,
+    oneshot: bool,
     position: f32,
 }
 
@@ -31,6 +38,7 @@ impl Animation {
             current: 0.0,
             repeat: false,
             round_trip: false,
+            oneshot: false,
             position: 0.0,
         }
     }
@@ -47,33 +55,47 @@ impl Animation {
         self
     }
 
+    /// Should this animation be discarded once its done?
+    pub fn oneshot(mut self, oneshot: bool) -> Self {
+        self.oneshot = oneshot;
+        self
+    }
+
     /// Add this keyframe.
     ///
     /// The duration of this will come from an even distribution of keyframes that don't specify their time
     pub fn with(mut self, easing: Easing) -> Self {
-        self.keyframes.push((easing, None));
+        self.keyframes.push(Keyframe {
+            easing,
+            scheduled: Duration::ZERO,
+            requested: None,
+        });
         self
     }
 
     /// Add this keyframe with a specific duration
     pub fn with_time(mut self, easing: Easing, duration: Duration) -> Self {
-        self.keyframes.push((easing, duration.into()));
+        self.keyframes.push(Keyframe {
+            easing,
+            scheduled: Duration::ZERO,
+            requested: Some(duration),
+        });
         self
     }
 
-    /// Create the keyframe schedule over a `total_time`
+    /// Recreate the keyframe schedule over a `total_time`
     ///
     /// If no keyframes were added, an error is returned.
     ///
     /// If `total_time` is less than the provided key frames, an error is returned.
-    pub fn schedule(mut self, total_time: impl Into<Duration>) -> Result<Self, &'static str> {
+    pub fn reschedule(&mut self, total_time: impl Into<Duration>) -> Result<(), &'static str> {
         if self.keyframes.is_empty() {
             return Err("No keyfounds were provided");
         }
 
         let total_time = total_time.into().as_secs_f32();
-        let total_duration = self.keyframes.iter().fold(0.0, |a, (_, d)| {
-            a + d.as_ref().map_or(0.0, Duration::as_secs_f32)
+        let total_duration = self.keyframes.iter().fold(0.0, |a, frame| {
+            a + frame.requested.as_ref().map_or(0.0, Duration::as_secs_f32)
         });
 
         if total_duration > total_time {
@@ -89,15 +111,28 @@ impl Animation {
             1.0
         };
 
-        for (_, dur) in &mut self.keyframes {
-            if dur.is_none() {
-                *dur = Some(Duration::from_secs_f32(
-                    1.0 / count as f32 * self.scheduled * scale,
-                ))
+        for frame in &mut self.keyframes {
+            if frame.requested.is_none() {
+                let dt = 1.0 / count as f32 * self.scheduled * scale;
+                frame.scheduled = Duration::from_secs_f32(dt)
             }
         }
 
-        Ok(self)
+        Ok(())
+    }
+
+    /// Create the keyframe schedule over a `total_time`
+    ///
+    /// If no keyframes were added, an error is returned.
+    ///
+    /// If `total_time` is less than the provided key frames, an error is returned.
+    pub fn schedule(mut self, total_time: impl Into<Duration>) -> Result<Self, &'static str> {
+        self.reschedule(total_time).map(|_| self)
+    }
+
+    /// Returns whether the animation is done and should be discarded
+    pub fn is_done(&self) -> bool {
+        self.current > self.scheduled && self.oneshot
     }
 
     /// Reset the position of each keyframe (e.g. this animation is reset to zero)
@@ -118,13 +153,13 @@ impl Animation {
         }
 
         let mut elapsed = Duration::ZERO;
-        for (func, dur) in &self.keyframes {
-            let dur = dur.unwrap(); // we set it above
-            elapsed += dur;
+        for frame in &self.keyframes {
+            elapsed += frame.scheduled;
             if self.current <= elapsed.as_secs_f32() {
-                let time = (self.current - (elapsed - dur).as_secs_f32()) / dur.as_secs_f32();
+                let time = (self.current - (elapsed - frame.scheduled).as_secs_f32())
+                    / frame.scheduled.as_secs_f32();
                 let apply = if self.round_trip { round_trip } else { linear };
-                self.position = apply(func(time));
+                self.position = apply((frame.easing)(time));
                 break;
             }
         }

@@ -33,6 +33,14 @@ impl<T: ?Sized> Index<T> {
         self.key ^= hash_fnv_1a(key.as_bytes());
         self
     }
+
+    /// Construct a key from a raw unique identifier
+    pub const fn from_raw(raw: u64) -> Self {
+        Self {
+            key: raw,
+            _marker: std::marker::PhantomData,
+        }
+    }
 }
 
 #[inline(always)]

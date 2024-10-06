@@ -62,7 +62,7 @@ impl App for Demo {
         }
     }
 
-    fn render(&mut self, surface: &mut too::Surface, ctx: too::Context<'_>) {
+    fn render(&mut self, surface: &mut impl too::Canvas, ctx: too::Context<'_>) {
         let x = *ctx.animations().value("xt").value;
 
         let rect = surface.rect();

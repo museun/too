@@ -39,7 +39,7 @@ impl App for Wave {
         self.theta %= 1.0;
     }
 
-    fn render(&mut self, surface: &mut too::Surface, _ctx: too::Context<'_>) {
+    fn render(&mut self, surface: &mut impl too::Canvas, _ctx: too::Context<'_>) {
         let rect = surface.rect();
         let size = rect.size();
         let w = size.x;

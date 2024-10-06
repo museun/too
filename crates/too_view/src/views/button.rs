@@ -1,12 +1,9 @@
-use too::{
-    math::vec2,
-    shapes::{Fill, Text},
-    Attribute,
-};
+use too::Attribute;
 
 use crate::{
     geom::{Size, Space, Vector},
     response::UserResponse,
+    text::Text,
     view::Context,
     DrawCtx, Event, EventCtx, Handled, Interest, LayoutCtx, Response, UpdateCtx, View, ViewExt,
 };
@@ -98,11 +95,10 @@ impl<T: 'static> View<T> for Button<T> {
 
     fn layout(&mut self, ctx: LayoutCtx<T>, space: Space) -> Size {
         let params = (self.params)(ctx.state);
-        let size = Text::new(params.label).size();
-        Size::from(size) + Vector::new(2.0, 0.0)
+        Text::measure(params.label)
     }
 
-    fn draw(&mut self, ctx: DrawCtx<T>) {
+    fn draw(&mut self, mut ctx: DrawCtx<T>) {
         let params = (self.params)(ctx.state);
 
         let fg = if params.enabled {
@@ -119,11 +115,15 @@ impl<T: 'static> View<T> for Button<T> {
             _ => ctx.theme.surface,
         };
 
-        let offset = ctx.surface.rect().translate(vec2(1, 0));
-        ctx.surface
-            .draw(Fill::new(bg))
-            .crop(offset) // this is such a hack
-            .draw(Text::new(params.label).fg(fg));
+        let offset = ctx.surface.rect() + Vector::X;
+        ctx.surface.fill(bg);
+
+        Text {
+            data: params.label,
+            fg,
+            attribute: Attribute::RESET,
+        }
+        .draw(ctx.rect, ctx.surface.surface_raw());
     }
 }
 
@@ -168,7 +168,7 @@ pub fn todo_value<T: 'static>(
             let attr = value.then(|| Attribute::STRIKEOUT | Attribute::FAINT);
             let args = LabelArgs {
                 params: text,
-                attribute: None,
+                attribute: attr,
             };
             Label::show(args, ctx);
         });
@@ -201,6 +201,8 @@ pub fn selected<T: 'static, R>(
     Response::new(id, okay, inner)
 }
 
+// TODO this should return a bool if it was selected
+// and not the inner response
 pub fn radio<T: 'static, R, V: PartialEq>(
     ctx: &mut Context<'_, T>,
     selected: V,

@@ -2,7 +2,7 @@ use too_crossterm::{Config, Term};
 
 use too::{
     math::{vec2, vec3, Pos2, Rect, Vec2, Vec3},
-    App, AppRunner as _, Context, Event, Key, Keybind, Pixel, Rgba, Surface, Text,
+    App, AppRunner as _, Context, Event, Key, Keybind, Pixel, Rgba, Text,
 };
 
 use rayon::iter::*;
@@ -253,7 +253,7 @@ impl Demo {
         self.velocity.y += GRAVITY * dt
     }
 
-    fn render_scene(&mut self, surface: &mut Surface) {
+    fn render_scene(&mut self, surface: &mut impl too::Canvas) {
         self.screen.raytrace(&self.camera, &self.map);
 
         let mut pos = Pos2::ZERO;
@@ -269,7 +269,7 @@ impl Demo {
         }
     }
 
-    fn show_keybinds(&mut self, surface: &mut Surface) {
+    fn show_keybinds(&mut self, surface: &mut impl too::Canvas) {
         let rect = surface.rect();
 
         let column = &[
@@ -647,7 +647,7 @@ impl App for Demo {
         self.integrate(dt);
     }
 
-    fn render(&mut self, surface: &mut Surface, _ctx: Context<'_>) {
+    fn render(&mut self, surface: &mut impl too::Canvas, _ctx: Context<'_>) {
         self.render_scene(surface);
 
         if self.show_help {

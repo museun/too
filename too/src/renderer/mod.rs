@@ -1,5 +1,5 @@
 mod surface;
-pub use surface::Surface;
+pub use surface::{Canvas, Surface};
 
 mod cell;
 pub use cell::{Attribute, Cell, Color, Grapheme, Pixel};

@@ -1,7 +1,9 @@
 use crate::{NoResponse, ViewId};
 
+// TODO what is the difference between Response<R, ()> and Response<(), R>?
 pub type UserResponse<R> = Response<NoResponse, R>;
 
+// TODO redo this type. its really confusing
 #[derive(Debug)]
 pub struct Response<T = (), R = ()> {
     resp: T,

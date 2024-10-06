@@ -110,6 +110,14 @@ impl ListParams {
         self.cross_align = cross_align;
         self
     }
+
+    pub fn show<T: 'static, R>(
+        self,
+        ctx: &mut Context<T>,
+        show: impl FnOnce(&mut Context<T>) -> R,
+    ) -> UserResponse<R> {
+        List::show_children(self, ctx, show)
+    }
 }
 
 // where would we store this?

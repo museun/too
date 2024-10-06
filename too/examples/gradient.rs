@@ -3,7 +3,7 @@ use too_crossterm::{Config, Term};
 use too::{
     layout::Anchor2,
     math::{lerp, pos2},
-    App, AppRunner as _, Context, Event, Gradient, Keybind, Pixel, Surface, Text,
+    App, AppRunner as _, Context, Event, Gradient, Keybind, Pixel, Text,
 };
 
 fn main() -> std::io::Result<()> {
@@ -101,7 +101,7 @@ impl App for Demo {
         self.up = self.up ^ (self.theta >= 1.0) ^ (self.theta <= -1.0)
     }
 
-    fn render(&mut self, surface: &mut Surface, _ctx: Context<'_>) {
+    fn render(&mut self, surface: &mut impl too::Canvas, _ctx: Context<'_>) {
         fn normalize(x: i32, y: i32, w: i32, h: i32, factor: f32) -> f32 {
             let x = x as f32 / (w as f32 - 1.0);
             let y = y as f32 / (h as f32 - 1.0);

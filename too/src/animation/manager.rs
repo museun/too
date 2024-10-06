@@ -48,6 +48,20 @@ impl AnimationManager {
             .map(|(animation, _)| animation)
     }
 
+    /// Add this animation, lazily.
+    ///
+    /// This returns a [`&mut Animation`](Animation)
+    ///
+    /// If it does not exist for the key it'll be added
+    pub fn add_once<T: ?Sized>(
+        &mut self,
+        key: impl Into<Index<T>>,
+        once: impl FnOnce() -> (Animation, f32),
+    ) -> &mut Animation {
+        let key = key.into();
+        &mut self.animations.entry(key.key).or_insert_with(once).0
+    }
+
     /// Get an immutable reference to the animation and its value
     ///
     /// This panics if the 'key' was not in the manager
@@ -88,8 +102,16 @@ impl AnimationManager {
 
     /// Update all animations with this delta-time
     pub fn update(&mut self, dt: f32) {
-        for (animation, value) in self.animations.values_mut() {
-            *value = animation.update(dt)
+        let mut dead = vec![];
+        for (key, (animation, value)) in self.animations.iter_mut() {
+            *value = animation.update(dt);
+            if animation.is_done() {
+                dead.push(*key);
+            }
+        }
+
+        for dead in dead.drain(..) {
+            self.animations.remove(&dead);
         }
     }
 

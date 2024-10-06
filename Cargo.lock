@@ -312,6 +312,12 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "a2eb9349b6444b326872e140eb1cf5e7c522154d69e7a0ffb0fb81c06b37543f"
 
 [[package]]
+name = "thunderdome"
+version = "0.6.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "92e170f93360bf9ae6fe3c31116bbf27adb1d054cedd6bc3d7857e34f2d98d0b"
+
+[[package]]
 name = "too"
 version = "0.1.0"
 dependencies = [
@@ -330,6 +336,17 @@ dependencies = [
  "crossterm",
  "flume",
  "too",
+]
+
+[[package]]
+name = "too_view"
+version = "0.1.0"
+dependencies = [
+ "thunderdome",
+ "too",
+ "too_crossterm",
+ "unicode-segmentation",
+ "unicode-width",
 ]
 
 [[package]]

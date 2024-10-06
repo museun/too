@@ -9,6 +9,31 @@ use crate::{
     Event, Text,
 };
 
+pub trait Canvas: Sized {
+    fn set(&mut self, pos: Pos2, cell: impl Into<Cell>);
+    fn fill(&mut self, rect: Rect, pixel: impl Into<Pixel>) -> &mut Self;
+    fn text<T: MeasureText>(&mut self, rect: Rect, text: impl Into<Text<T>>) -> &mut Self;
+    fn rect(&self) -> Rect;
+}
+
+impl Canvas for Surface {
+    fn set(&mut self, pos: Pos2, cell: impl Into<Cell>) {
+        Self::set(self, pos, cell);
+    }
+
+    fn fill(&mut self, rect: Rect, pixel: impl Into<Pixel>) -> &mut Self {
+        Self::fill(self, rect, pixel)
+    }
+
+    fn text<T: MeasureText>(&mut self, rect: Rect, text: impl Into<Text<T>>) -> &mut Self {
+        Self::text(self, rect, text)
+    }
+
+    fn rect(&self) -> Rect {
+        Self::rect(self)
+    }
+}
+
 /// An owned view of a rect region that allows drawing
 pub struct Surface {
     front: Vec<Cell>,
@@ -25,7 +50,6 @@ impl Surface {
         }
     }
 
-    #[track_caller]
     pub fn set(&mut self, pos: Pos2, cell: impl Into<Cell>) {
         // implictly clip cell
         if !self.rect().contains(pos) {
@@ -75,6 +99,7 @@ impl Surface {
         self
     }
 
+    // this can't be a trait method probably
     pub fn text<T: MeasureText>(&mut self, rect: Rect, text: impl Into<Text<T>>) -> &mut Self {
         let text: Text<T> = text.into();
         let rect = self.rect().intersection(rect);

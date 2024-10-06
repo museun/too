@@ -5,7 +5,7 @@ use crate::{
 };
 
 pub struct ViewNode<T: 'static> {
-    pub view: ViewNodeSlot<T>,
+    pub view: NodeSlot<Box<dyn ErasedView<State = T>>>,
     pub parent: Option<ViewId>,
     pub children: Vec<ViewId>, // TODO maybe use a small vec
     pub next: usize,
@@ -31,7 +31,7 @@ impl<T: 'static> ViewNode<T> {
     pub const fn empty(parent: ViewId) -> Self {
         Self {
             parent: Some(parent),
-            view: ViewNodeSlot::Vacant,
+            view: NodeSlot::Vacant,
             children: Vec::new(),
             next: 0,
             interest: Interest::NONE,
@@ -41,7 +41,7 @@ impl<T: 'static> ViewNode<T> {
 
     pub fn occupied(view: impl View<T> + 'static) -> Self {
         Self {
-            view: ViewNodeSlot::occupied(view),
+            view: NodeSlot::occupied(view),
             parent: None,
             children: Vec::new(),
             next: 0,
@@ -51,12 +51,12 @@ impl<T: 'static> ViewNode<T> {
     }
 }
 
-pub enum ViewNodeSlot<T: 'static> {
+pub(crate) enum NodeSlot<T: 'static> {
     Vacant,
-    Occupied(Box<dyn ErasedView<State = T>>),
+    Occupied(T),
 }
 
-impl<T: 'static> std::fmt::Debug for ViewNodeSlot<T> {
+impl<T: 'static + std::fmt::Debug> std::fmt::Debug for NodeSlot<T> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             Self::Vacant => write!(f, "Vacant"),
@@ -65,9 +65,10 @@ impl<T: 'static> std::fmt::Debug for ViewNodeSlot<T> {
     }
 }
 
-impl<T: 'static> std::ops::Deref for ViewNodeSlot<T> {
-    type Target = Box<dyn ErasedView<State = T>>;
+impl<T: 'static> std::ops::Deref for NodeSlot<T> {
+    type Target = T;
     #[inline(always)]
+    #[track_caller]
     fn deref(&self) -> &Self::Target {
         let Self::Occupied(view) = self else {
             unreachable!()
@@ -76,8 +77,9 @@ impl<T: 'static> std::ops::Deref for ViewNodeSlot<T> {
     }
 }
 
-impl<T: 'static> std::ops::DerefMut for ViewNodeSlot<T> {
+impl<T: 'static> std::ops::DerefMut for NodeSlot<T> {
     #[inline(always)]
+    #[track_caller]
     fn deref_mut(&mut self) -> &mut Self::Target {
         let Self::Occupied(view) = self else {
             unreachable!()
@@ -86,25 +88,40 @@ impl<T: 'static> std::ops::DerefMut for ViewNodeSlot<T> {
     }
 }
 
-impl<T: 'static> Default for ViewNodeSlot<T> {
+impl<T: 'static> Default for NodeSlot<T> {
     fn default() -> Self {
         Self::Vacant
     }
 }
 
-impl<T: 'static> ViewNodeSlot<T> {
-    pub fn take(&mut self) -> Option<Box<dyn ErasedView<State = T>>> {
+impl<T: 'static> NodeSlot<T> {
+    pub fn take(&mut self) -> Option<T> {
         match std::mem::take(self) {
             Self::Vacant => None,
-            Self::Occupied(erased_view) => Some(erased_view),
+            Self::Occupied(node) => Some(node),
         }
     }
 
-    pub fn inhabit(&mut self, view: Box<dyn ErasedView<State = T>>) {
-        assert!(matches!(self, Self::Vacant { .. }));
-        *self = Self::Occupied(view)
+    pub const fn is_occupied(&self) -> bool {
+        matches!(self, Self::Occupied(..))
     }
 
+    #[track_caller]
+    pub fn inhabit(&mut self, node: T) {
+        assert!(matches!(self, Self::Vacant { .. }));
+        *self = Self::Occupied(node)
+    }
+
+    pub fn as_ref(&self) -> &T {
+        self
+    }
+
+    pub fn as_mut(&mut self) -> &mut T {
+        self
+    }
+}
+
+impl<T: 'static> NodeSlot<Box<dyn ErasedView<State = T>>> {
     fn occupied(view: impl View<T> + 'static) -> Self {
         Self::Occupied(Box::new(ViewMarker::new(view)))
     }

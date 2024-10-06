@@ -2,7 +2,7 @@ use too_crossterm::{Config, Term};
 
 use too::{
     math::{rect, vec2, Pos2, Rect},
-    App, AppRunner as _, Command, Context, Event, Justification, Rgba, Surface, Text,
+    App, AppRunner as _, Command, Context, Event, Justification, Rgba, Text,
 };
 
 fn main() -> std::io::Result<()> {
@@ -111,7 +111,7 @@ impl App for Hello {
         self.up = self.up ^ (self.value >= 1.0) ^ (self.value <= 0.0)
     }
 
-    fn render(&mut self, surface: &mut Surface, _ctx: Context<'_>) {
+    fn render(&mut self, surface: &mut impl too::Canvas, _ctx: Context<'_>) {
         let rect = surface.rect();
 
         surface.fill(

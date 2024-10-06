@@ -3,7 +3,7 @@ use too_crossterm::{Config, Term};
 use too::{
     layout::{Anchor, Anchor2, Axis, LinearLayout},
     math::{vec2, Vec2},
-    App, AppRunner as _, Context, Event, Key, Rgba, Surface, Text,
+    App, AppRunner as _, Context, Event, Key, Rgba, Text,
 };
 
 fn main() -> std::io::Result<()> {
@@ -102,7 +102,7 @@ impl App for Demo {
         }
     }
 
-    fn render(&mut self, surface: &mut Surface, _ctx: Context<'_>) {
+    fn render(&mut self, surface: &mut impl too::Canvas, _ctx: Context<'_>) {
         let mut layout = LinearLayout::new(self.axis)
             .wrap(self.wrap)
             .spacing(self.spacing)

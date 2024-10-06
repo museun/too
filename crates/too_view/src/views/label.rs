@@ -1,9 +1,10 @@
 use std::borrow::Cow;
 
-use too::{shapes::Text, Attribute};
+use too::Attribute;
 
 use crate::{
     geom::{Size, Space},
+    text::Text,
     view::Context,
     DrawCtx, LayoutCtx, NoResponse, Response, UpdateCtx, View, ViewExt,
 };
@@ -89,16 +90,16 @@ impl<T: 'static> View<T> for StaticLabel<T> {
     }
 
     fn layout(&mut self, ctx: LayoutCtx<T>, space: Space) -> Size {
-        use too::shapes::Label as _;
-        self.args.label.size().into()
+        Text::measure(&self.args.label)
     }
 
-    fn draw(&mut self, ctx: DrawCtx<T>) {
-        ctx.surface.draw(
-            Text::new(&self.args.label)
-                .fg(ctx.theme.foreground)
-                .maybe_attribute(self.args.attribute),
-        );
+    fn draw(&mut self, mut ctx: DrawCtx<T>) {
+        Text {
+            data: &self.args.label,
+            fg: ctx.theme.foreground,
+            attribute: self.args.attribute.unwrap_or(Attribute::RESET),
+        }
+        .draw(ctx.rect, ctx.surface.surface_raw());
     }
 }
 
@@ -139,19 +140,18 @@ impl<T: 'static> View<T> for Label<T> {
     }
 
     fn layout(&mut self, ctx: LayoutCtx<T>, space: Space) -> Size {
-        use too::shapes::Label as _;
         let params = (self.args.params)(ctx.state);
-        params.label.size().into()
+        Text::measure(&params.label)
     }
 
-    fn draw(&mut self, ctx: DrawCtx<T>) {
+    fn draw(&mut self, mut ctx: DrawCtx<T>) {
         let params = (self.args.params)(ctx.state);
-        ctx.surface.draw(
-            Text::new(params.label)
-                .fg(ctx.theme.foreground)
-                .maybe_attribute(params.attribute)
-                .maybe_attribute(self.args.attribute),
-        );
+        Text {
+            data: &params.label,
+            fg: ctx.theme.foreground,
+            attribute: self.args.attribute.unwrap_or(Attribute::RESET),
+        }
+        .draw(ctx.rect, ctx.surface.surface_raw());
     }
 }
 

@@ -1,4 +1,4 @@
-use too::{layout::Axis, math::inverse_lerp, shapes::anonymous, Pixel};
+use too::{layout::Axis, math::inverse_lerp, Pixel};
 
 use crate::{
     geom::{Point, Size, Space},
@@ -57,7 +57,7 @@ impl<T: 'static> View<T> for Splitter {
         }
     }
 
-    fn draw(&mut self, ctx: DrawCtx<T>) {
+    fn draw(&mut self, mut ctx: DrawCtx<T>) {
         ctx.debug.push(format!("{:?}", self.pos));
 
         let ch = match self.axis {
@@ -66,8 +66,7 @@ impl<T: 'static> View<T> for Splitter {
         };
 
         let fg = if self.hovered { "#FF0" } else { "#555" };
-        ctx.surface
-            .draw(anonymous(|size| |pos| Some(Pixel::new(ch).fg(fg))));
+        ctx.surface.fill(Pixel::new(ch).fg(fg));
     }
 }
 

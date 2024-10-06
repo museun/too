@@ -262,10 +262,7 @@ impl From<too::math::Rect> for Rectf {
 impl From<Rectf> for too::math::Rect {
     fn from(value: Rectf) -> Self {
         let rect = value.round();
-        Self::from_min_max(
-            too::math::pos2(rect.min.x as _, rect.min.y as _),
-            too::math::pos2(rect.max.x as _, rect.max.y as _),
-        )
+        Self::from_min_max(rect.min.into(), rect.max.into())
     }
 }
 

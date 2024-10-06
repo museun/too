@@ -1,6 +1,6 @@
 use too_crossterm::*;
 
-use too::{App, AppRunner, Context, Event, Rgba, Surface};
+use too::{App, AppRunner, Context, Event, Rgba};
 
 fn main() -> std::io::Result<()> {
     let term = Term::setup(Config::default())?;
@@ -27,7 +27,7 @@ impl App for Test {
         }
     }
 
-    fn render(&mut self, surface: &mut Surface, _ctx: Context) {
+    fn render(&mut self, surface: &mut impl too::Canvas, _ctx: Context) {
         let rect = surface.rect();
 
         let (main, cross) = match self.horz {

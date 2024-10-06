@@ -5,11 +5,9 @@ use std::{
     ops::Deref,
 };
 
-use too::{
-    layout::{Anchor2, LinearLayout},
-    shapes::{Fill, Text},
-    Rgba, SurfaceMut,
-};
+use too::{animation::AnimationManager, math::pos2, Pixel, Rgba, Surface as TooSurface};
+
+mod text;
 
 pub mod geom;
 use geom::{Point, Rectf, Size, Space, Vector};
@@ -27,7 +25,7 @@ use view::Context;
 pub use view::{Args, NoArgs, NoResponse, View, ViewExt};
 
 mod view_node;
-use view_node::ViewNode;
+use view_node::{NodeSlot, ViewNode};
 
 mod app;
 pub use app::{App, AppRunner};
@@ -446,6 +444,12 @@ impl<T: ?Sized> Clone for Style<T> {
 #[derive(Copy, Clone, PartialEq, PartialOrd, Eq, Ord, Hash)]
 pub struct ViewId(thunderdome::Index);
 
+impl From<ViewId> for too::Index<ViewId> {
+    fn from(value: ViewId) -> Self {
+        too::Index::from_raw(value.0.to_bits())
+    }
+}
+
 impl std::fmt::Debug for ViewId {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_tuple("ViewId")
@@ -458,6 +462,43 @@ impl std::fmt::Debug for ViewId {
 mod input;
 use input::Input;
 pub use input::{Event, EventCtx, Handled, Interest};
+
+pub struct AnimateCtx<'a, 'c, T: 'static> {
+    pub current_id: ViewId,
+    pub children: &'a [ViewId],
+    pub state: &'a mut T,
+    pub too_ctx: too::Context<'c>,
+    // TODO this needs the rect (but is it valid here?)
+    nodes: &'a mut thunderdome::Arena<Node<T>>,
+}
+
+impl<'a, 'c, T: 'static> AnimateCtx<'a, 'c, T> {
+    pub fn animate(&mut self, id: ViewId, dt: f32) {
+        let Some(node) = self.nodes.get_mut(id.0) else {
+            return;
+        };
+
+        let Some(mut node) = node.take() else {
+            unreachable!("node: {:?} was missing", id)
+        };
+
+        let ctx = AnimateCtx {
+            current_id: id,
+            children: &node.children,
+            state: self.state,
+            too_ctx: too::Context {
+                overlay: self.too_ctx.overlay,
+                commands: self.too_ctx.commands,
+                size: self.too_ctx.size,
+                animations: self.too_ctx.animations,
+            },
+            nodes: &mut self.nodes,
+        };
+
+        node.view.animate(ctx, dt);
+        self.nodes[id.0].inhabit(node);
+    }
+}
 
 pub struct UpdateCtx<'a, T: 'static> {
     pub current_id: ViewId,
@@ -475,7 +516,7 @@ pub struct LayoutCtx<'a, T: 'static> {
 
     client_rect: Rectf,
     input: &'a mut Input,
-    nodes: &'a mut thunderdome::Arena<Option<ViewNode<T>>>,
+    nodes: &'a mut thunderdome::Arena<Node<T>>,
     stack: &'a mut Vec<ViewId>,
     debug: &'a mut Vec<String>,
 }
@@ -525,13 +566,11 @@ impl<'a, T: 'static> LayoutCtx<'a, T> {
             self.input.keyboard.pop_layer();
         }
 
-        // is it here? (center { widget { another widget }})
-        let rect = Rectf::from(size.clamp(Size::ZERO, self.client_rect.size()));
-        node.rect = rect;
+        node.rect = Rectf::from(size.clamp(Size::ZERO, self.client_rect.size()));
         node.interest = interest;
 
         assert_eq!(Some(child), self.stack.pop());
-        assert!(self.nodes[child.0].replace(node).is_none());
+        self.nodes[child.0].inhabit(node);
 
         size
     }
@@ -547,19 +586,12 @@ impl<'a, T: 'static> LayoutCtx<'a, T> {
 
     pub fn translate_pos(&mut self, child: ViewId, offset: impl Into<Vector>) {
         if let Some(node) = self.nodes.get_mut(child.0) {
-            let Some(node) = node else {
-                unreachable!("node {child:?} is missing")
-            };
-
             node.rect += offset.into();
         }
     }
 
     pub fn translate_size(&mut self, child: ViewId, size: impl Into<Size>) {
         if let Some(node) = self.nodes.get_mut(child.0) {
-            let Some(node) = node else {
-                unreachable!("node {child:?} is missing")
-            };
             node.rect += size.into()
         }
     }
@@ -569,27 +601,74 @@ impl<'a, T: 'static> LayoutCtx<'a, T> {
     }
 }
 
-pub struct DrawCtx<'a, 'c: 't, 't, T: 'static> {
+pub struct Surface<'a> {
+    rect: Rectf,
+    surface: &'a mut TooSurface,
+}
+
+impl<'a> Surface<'a> {
+    pub fn surface_raw(&mut self) -> &mut TooSurface {
+        self.surface
+    }
+
+    pub const fn rect(&self) -> Rectf {
+        self.rect
+    }
+
+    pub fn horizontal_fill(&mut self, min_x: f32, max_x: f32, pixel: impl Into<Pixel>) {
+        let pixel = pixel.into();
+        let (min_x, max_x) = (min_x.round() as i32, max_x.round() as i32);
+        for x in min_x..max_x {
+            self.set((x as f32, 0.0), pixel);
+        }
+    }
+
+    pub fn vertical_fill(&mut self, min_y: f32, max_y: f32, pixel: impl Into<Pixel>) {
+        let pixel = pixel.into();
+        let (min_y, max_y) = (min_y.round() as i32, max_y.round() as i32);
+        for y in min_y..max_y {
+            self.set((0.0, y as f32), pixel);
+        }
+    }
+
+    pub fn fill(&mut self, pixel: impl Into<Pixel>) {
+        let pixel = pixel.into();
+
+        for y in 0..self.rect.height().round() as i32 {
+            for x in 0..self.rect.width().round() as i32 {
+                self.set(pos2(x, y), pixel);
+            }
+        }
+    }
+
+    pub fn set(&mut self, point: impl Into<Point>, pixel: impl Into<Pixel>) {
+        let point = point.into() + self.rect.left_top().to_vector();
+        let pos = point.into();
+        self.surface.set(pos, pixel.into());
+    }
+}
+
+pub struct DrawCtx<'a, 't, T: 'static> {
     pub rect: Rectf,
     pub current_id: ViewId,
     pub children: &'a [ViewId],
-    pub surface: &'t mut SurfaceMut<'c>,
+    pub surface: Surface<'t>,
     pub state: &'a mut T,
     pub theme: &'a Theme,
     pub properties: &'a mut Properties,
+    pub too_ctx: too::Context<'t>,
 
-    nodes: &'a mut thunderdome::Arena<Option<ViewNode<T>>>,
+    nodes: &'a mut thunderdome::Arena<Node<T>>,
     stack: &'a mut Vec<ViewId>,
     debug: &'a mut Vec<String>,
 }
 
-impl<'a, 'c: 't, 't, T: 'static> DrawCtx<'a, 'c, 't, T> {
+impl<'a, 'c: 't, 't, T: 'static> DrawCtx<'a, 't, T> {
     pub fn draw(&mut self, id: ViewId) {
         let Some(node) = self.nodes.get_mut(id.0) else {
             return;
         };
 
-        // this is annoying but I think I solved it
         let Some(mut node) = node.take() else {
             unreachable!("node: {:?} was missing", id)
         };
@@ -600,7 +679,16 @@ impl<'a, 'c: 't, 't, T: 'static> DrawCtx<'a, 'c, 't, T> {
             rect: node.rect,
             current_id: id,
             children: &node.children,
-            surface: &mut self.surface.crop(node.rect.into()),
+            surface: Surface {
+                rect: node.rect,
+                surface: self.surface.surface,
+            },
+            too_ctx: too::Context {
+                overlay: self.too_ctx.overlay,
+                commands: self.too_ctx.commands,
+                size: self.too_ctx.size,
+                animations: self.too_ctx.animations,
+            },
             state: self.state,
             theme: self.theme,
             properties: self.properties,
@@ -611,7 +699,11 @@ impl<'a, 'c: 't, 't, T: 'static> DrawCtx<'a, 'c, 't, T> {
 
         node.view.draw(ctx);
         assert_eq!(Some(id), self.stack.pop());
-        assert!(self.nodes[id.0].replace(node).is_none());
+        self.nodes[id.0].inhabit(node);
+    }
+
+    pub fn animations(&mut self) -> &mut AnimationManager {
+        &mut self.too_ctx.animations
     }
 
     pub fn debug(&mut self, msg: impl ToString) {
@@ -619,10 +711,17 @@ impl<'a, 'c: 't, 't, T: 'static> DrawCtx<'a, 'c, 't, T> {
     }
 }
 
+#[derive(Copy, Clone, Default)]
+enum Toggle {
+    Yes,
+    #[default]
+    No,
+}
+
+pub(crate) type Node<T> = NodeSlot<ViewNode<T>>;
+
 pub struct Ui<T: 'static> {
-    // Option so we can do a take/insert dance
-    // FIXME this is highly annoying
-    nodes: thunderdome::Arena<Option<ViewNode<T>>>,
+    nodes: thunderdome::Arena<Node<T>>,
     root: ViewId,
 
     input: Input,
@@ -638,6 +737,9 @@ pub struct Ui<T: 'static> {
     quit: bool,
 
     debug: Vec<String>,
+
+    toggle_fps: Toggle,
+    toggle_debug: Toggle,
 }
 
 impl<T> std::fmt::Debug for Ui<T> {
@@ -684,6 +786,14 @@ impl<T: 'static> Ui<T> {
         std::mem::replace(&mut self.theme, theme)
     }
 
+    pub fn toggle_fps(&mut self) {
+        self.toggle_fps = Toggle::Yes
+    }
+
+    pub fn toggle_debug(&mut self) {
+        self.toggle_debug = Toggle::Yes
+    }
+
     pub fn current(&self) -> ViewId {
         self.stack.last().copied().unwrap_or(self.root())
     }
@@ -711,7 +821,7 @@ impl<T: 'static> Ui<T> {
     fn new(rect: impl Into<Rectf>, properties: Properties) -> Self {
         let mut nodes = thunderdome::Arena::new();
         Self {
-            root: ViewId(nodes.insert(Some(ViewNode::occupied(views::RootView)))),
+            root: ViewId(nodes.insert(NodeSlot::Occupied(ViewNode::occupied(views::RootView)))),
             nodes,
 
             stack: Vec::new(),
@@ -726,17 +836,26 @@ impl<T: 'static> Ui<T> {
             quit: false,
 
             debug: Vec::new(),
+
+            toggle_debug: Toggle::No,
+            toggle_fps: Toggle::No,
         }
     }
 
-    fn scope(&mut self, state: &mut T, apply: fn(&mut Context<'_, T>), ctx: too::Context) {
+    fn scope(&mut self, state: &mut T, apply: fn(&mut Context<'_, T>), mut ctx: too::Context) {
         self.begin();
-        apply(&mut Context { ui: self, state });
+
+        apply(&mut Context {
+            ui: self,
+            state,
+            animations: ctx.animations_mut(),
+        });
+
         self.end(state);
     }
 
     fn begin(&mut self) {
-        self.nodes[self.root.0].as_mut().unwrap().next = 0;
+        self.nodes[self.root.0].as_mut().next = 0;
         self.input.begin();
     }
 
@@ -750,7 +869,7 @@ impl<T: 'static> Ui<T> {
     }
 
     fn resolve(&mut self) {
-        let Some(root) = &self.nodes[self.root.0] else {
+        let NodeSlot::Occupied(root) = &self.nodes[self.root.0] else {
             unreachable!("root node {:?} was not found", self.root);
         };
 
@@ -761,23 +880,33 @@ impl<T: 'static> Ui<T> {
                 continue;
             };
 
-            let Some(next) = node.as_mut() else {
-                unreachable!("node: {id:?} was missing")
-            };
-
             let offset = pos.to_vector();
-            next.rect += offset;
+            node.rect += offset;
 
-            queue.extend(next.children.iter().map(|&id| (id, next.rect.min)))
+            queue.extend(node.children.iter().map(|&id| (id, node.rect.min)))
         }
     }
 
-    fn tick(&mut self, dt: f32) {
-        // TODO this needs to find the things that want animation
-        // and do it
+    fn animate(&mut self, state: &mut T, dt: f32, too_ctx: too::Context) {
+        let node = &mut self.nodes[self.root.0];
+
+        let Some(mut node) = node.take() else {
+            unreachable!("node: {:?} was missing", self.root)
+        };
+
+        let ctx = AnimateCtx::<T> {
+            current_id: self.root,
+            children: &node.children,
+            state,
+            too_ctx,
+            nodes: &mut self.nodes,
+        };
+
+        node.view.animate(ctx, dt);
+        self.nodes[self.root.0].inhabit(node);
     }
 
-    fn event(&mut self, state: &mut T, event: too::Event) {
+    fn event(&mut self, state: &mut T, event: too::Event, too_ctx: too::Context) {
         if let too::Event::Resize(size) = event {
             self.rect = Rectf::min_size(Point::ZERO, size.into());
         }
@@ -786,6 +915,7 @@ impl<T: 'static> Ui<T> {
             &event, //
             &mut self.nodes,
             state,
+            too_ctx,
             &mut self.debug,
         );
     }
@@ -817,25 +947,36 @@ impl<T: 'static> Ui<T> {
         };
 
         let _ = node.view.layout(ctx, space);
-        assert!(self.nodes[self.root.0].replace(node).is_none());
+        self.nodes[self.root.0].inhabit(node);
     }
 
-    fn render(&mut self, state: &mut T, mut surface: SurfaceMut<'_>) {
-        let Some(node) = self.nodes.get_mut(self.root.0) else {
-            unreachable!("root node should always exist")
-        };
+    fn render(&mut self, state: &mut T, surface: &mut TooSurface, mut too_ctx: too::Context) {
+        let node = &mut self.nodes[self.root.0];
 
         let Some(mut node) = node.take() else {
             unreachable!("node: {:?} was missing", self.root)
         };
 
-        surface.draw(Fill::new(self.theme.background));
+        let mut surface = Surface {
+            rect: surface.rect().into(),
+            surface,
+        };
+
+        surface.fill(self.theme.background);
+
+        let too_ctx_two = too::Context {
+            overlay: too_ctx.overlay,
+            commands: too_ctx.commands,
+            size: too_ctx.size,
+            animations: too_ctx.animations,
+        };
 
         let ctx = DrawCtx::<T> {
-            rect: surface.rect().into(),
+            rect: surface.rect(),
             current_id: self.root,
             children: &node.children,
-            surface: &mut surface,
+            surface,
+            too_ctx: too_ctx_two,
             state,
             theme: &self.theme,
             properties: &mut self.properties,
@@ -844,20 +985,17 @@ impl<T: 'static> Ui<T> {
             debug: &mut self.debug,
         };
         node.view.draw(ctx);
-        assert!(self.nodes[self.root.0].replace(node).is_none());
+        self.nodes[self.root.0].inhabit(node);
 
-        // TODO this could be done with the new `DebugOverlay` in too_runner
-        let mut alloc = LinearLayout::vertical()
-            .anchor(Anchor2::RIGHT_TOP)
-            .wrap(true)
-            .layout(surface.rect());
-
-        for debug in self.debug.drain(..) {
-            let text = Text::new(debug);
-            if let Some(rect) = alloc.allocate(text.size()) {
-                surface.crop(rect).draw(text);
-            }
+        if let Toggle::Yes = std::mem::take(&mut self.toggle_fps) {
+            too_ctx.overlay().fps.toggle();
         }
+
+        if let Toggle::Yes = std::mem::take(&mut self.toggle_debug) {
+            too_ctx.overlay().debug.toggle();
+        }
+
+        too_ctx.overlay().debug.extend(self.debug.drain(..));
     }
 
     fn begin_view<V>(&mut self, state: &mut T, args: V::Args<'_>) -> Response<V::Response>
@@ -880,13 +1018,13 @@ impl<T: 'static> Ui<T> {
 
         let ctx = UpdateCtx {
             current_id: id,
-            children: &self.nodes[id.0].as_ref().unwrap().children,
+            children: &self.nodes[id.0].as_ref().children,
             state,
             debug: &mut self.debug,
         };
 
         let resp = actual_view.update(ctx, args);
-        self.nodes[id.0].as_mut().unwrap().view.inhabit(view);
+        self.nodes[id.0].as_mut().view.inhabit(view);
         Response::new(id, resp, ()) // TODO what should `Response::inner` be?
     }
 
@@ -900,7 +1038,7 @@ impl<T: 'static> Ui<T> {
     }
 
     fn append_view(&mut self, id: ViewId) -> Option<ViewId> {
-        let parent = self.nodes[id.0].as_mut().unwrap();
+        let parent = self.nodes[id.0].as_mut();
         let id = parent.children.get(parent.next).copied()?;
         parent.next += 1;
         Some(id)
@@ -914,10 +1052,12 @@ impl<T: 'static> Ui<T> {
     where
         V: View<T> + 'static,
     {
-        let id = self.nodes.insert(Some(ViewNode::empty(parent)));
+        let id = self
+            .nodes
+            .insert(NodeSlot::Occupied(ViewNode::empty(parent)));
         let id = ViewId(id);
 
-        let parent = self.nodes[parent.0].as_mut().unwrap();
+        let parent = self.nodes[parent.0].as_mut();
         if parent.next < parent.children.len() {
             parent.children[parent.next] = id;
         } else {
@@ -941,9 +1081,7 @@ impl<T: 'static> Ui<T> {
             return self.allocate_view::<V>(args, parent);
         };
 
-        let Some(node) = self.nodes.get_mut(id.0).and_then(<Option<_>>::as_mut) else {
-            unreachable!("node {id:?} must exist")
-        };
+        let node = self.nodes[id.0].as_mut();
 
         let Some(view) = node.view.take() else {
             unreachable!("node {id:?} was not occupied")
@@ -962,10 +1100,15 @@ impl<T: 'static> Ui<T> {
         let mut queue = VecDeque::from_iter([id]);
         while let Some(id) = queue.pop_front() {
             self.removed.push(id);
-            if let Some(node) = self.nodes.remove(id.0).flatten() {
-                queue.extend(node.children);
+            if let Some(node) = self.nodes.remove(id.0).filter(NodeSlot::is_occupied) {
+                queue.extend(&node.children);
                 if let Some(parent) = node.parent {
-                    if let Some(parent) = self.nodes.get_mut(parent.0).and_then(|s| s.as_mut()) {
+                    if let Some(parent) = self
+                        .nodes
+                        .get_mut(parent.0)
+                        .filter(|s| NodeSlot::is_occupied(s))
+                        .map(|s| s.as_mut())
+                    {
                         parent.children.retain(|&child| child != id);
                     }
                 }
@@ -974,7 +1117,7 @@ impl<T: 'static> Ui<T> {
     }
 
     fn cleanup(&mut self, start: ViewId) {
-        let node = self.nodes[start.0].as_mut().unwrap();
+        let node = self.nodes[start.0].as_mut();
         if node.next >= node.children.len() {
             return;
         }
@@ -986,10 +1129,10 @@ impl<T: 'static> Ui<T> {
 
         while let Some(id) = queue.pop_front() {
             self.removed.push(id);
-            let Some(next) = self.nodes.remove(id.0).flatten() else {
+            let Some(next) = self.nodes.remove(id.0).filter(NodeSlot::is_occupied) else {
                 unreachable!("child: {id:?} should exist for {start:?}")
             };
-            queue.extend(next.children);
+            queue.extend(&next.children);
         }
     }
 }

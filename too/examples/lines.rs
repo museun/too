@@ -1,6 +1,6 @@
 use too::{
     math::{pos2, Pos2},
-    App, AppRunner, Context, Event, Rgba, Surface,
+    App, AppRunner, Context, Event, Rgba,
 };
 use too_crossterm::{Config, Term};
 
@@ -36,7 +36,7 @@ impl App for DrawLines {
         }
     }
 
-    fn render(&mut self, surface: &mut Surface, _ctx: Context<'_>) {
+    fn render(&mut self, surface: &mut impl too::Canvas, _ctx: Context<'_>) {
         for line in &self.lines {
             line.draw(surface);
         }
@@ -50,7 +50,7 @@ struct Line {
 }
 
 impl Line {
-    fn draw(&self, surface: &mut Surface) {
+    fn draw(&self, surface: &mut impl too::Canvas) {
         let Pos2 { x: sx, y: sy } = self.start;
         let Pos2 { x: ex, y: ey } = self.end;
 

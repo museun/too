@@ -42,7 +42,7 @@ impl App for Vista {
         self.pos = pos2(x, y as i32)
     }
 
-    fn render(&mut self, surface: &mut too::Surface, _ctx: too::Context<'_>) {
+    fn render(&mut self, surface: &mut impl too::Canvas, _ctx: too::Context<'_>) {
         for y in 0..surface.rect().height() {
             for x in 0..surface.rect().width() {
                 let dx = x as f32 - self.pos.x as f32;

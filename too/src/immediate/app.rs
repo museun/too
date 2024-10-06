@@ -1,4 +1,4 @@
-use crate::{Context, Event, Surface};
+use crate::{Canvas, Context, Event};
 
 /// Trait for defining an application to run
 pub trait App {
@@ -45,5 +45,5 @@ pub trait App {
     /// This provides you with a [`Surface`] that allows you to draw onto
     ///
     /// The draw order are back-to-front. Later draw calls will be drawn over earlier calls
-    fn render(&mut self, surface: &mut Surface, ctx: Context<'_>);
+    fn render(&mut self, surface: &mut impl Canvas, ctx: Context<'_>);
 }

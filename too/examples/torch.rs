@@ -4,7 +4,7 @@ use too_crossterm::{Config, Term};
 
 use too::{
     math::{lerp, pos2, Pos2, Rect, Vec2},
-    App, AppRunner as _, Context, Event, Key, Pixel, Rgba, Surface,
+    App, AppRunner as _, Context, Event, Key, Pixel, Rgba,
 };
 
 fn main() -> std::io::Result<()> {
@@ -56,7 +56,7 @@ impl Demo {
         self.pos = (self.pos + lines).min(self.lines.len())
     }
 
-    fn draw_torch(&self, offset: usize, surface: &mut Surface) {
+    fn draw_torch(&self, offset: usize, surface: &mut impl too::Canvas) {
         const BG: Rgba = Rgba::hex("#F0E68C");
         const SHADOW: Rgba = Rgba::hex("#333333");
 
@@ -85,7 +85,7 @@ impl Demo {
         text.draw(surface);
     }
 
-    fn draw_focus(&self, offset: usize, surface: &mut Surface) {
+    fn draw_focus(&self, offset: usize, surface: &mut impl too::Canvas) {
         const SHADOW: Rgba = Rgba::hex("#AAAAAAAA");
         const BG: Rgba = Rgba::hex("#111111");
 
@@ -155,7 +155,7 @@ impl App for Demo {
         }
     }
 
-    fn render(&mut self, surface: &mut Surface, _ctx: Context<'_>) {
+    fn render(&mut self, surface: &mut impl too::Canvas, _ctx: Context<'_>) {
         let offset = self.lines.len().saturating_sub(self.pos);
         let offset = offset
             .checked_sub(surface.rect().height().saturating_sub_unsigned(1) as _)
@@ -175,7 +175,7 @@ struct TorchText<'a> {
 }
 
 impl<'a> TorchText<'a> {
-    fn draw(&self, surface: &mut Surface) {
+    fn draw(&self, surface: &mut impl too::Canvas) {
         let size = surface.rect().size();
         let mut start = Pos2::ZERO;
         for line in self.demo.lines.iter().skip(self.offset) {

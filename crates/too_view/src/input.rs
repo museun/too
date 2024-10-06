@@ -1,11 +1,10 @@
 use std::collections::{HashMap, HashSet};
 
-use too::{Key, Modifiers, MouseButton};
+use too::{animation::AnimationManager, Key, Modifiers, MouseButton};
 
 use crate::{
     geom::{Point, Rectf, Vector},
-    view_node::ViewNode,
-    ViewId,
+    Node, ViewId,
 };
 
 #[derive(Copy, Clone, PartialEq)]
@@ -139,18 +138,22 @@ impl std::ops::Not for Interest {
     }
 }
 
-pub struct EventCtx<'a, T: 'static> {
+pub struct EventCtx<'a, 'c, T: 'static> {
     pub current_id: ViewId,
     pub children: &'a [ViewId],
     pub state: &'a mut T,
     pub rect: Rectf,
-
+    pub too_ctx: too::Context<'c>,
     debug: &'a mut Vec<String>,
     // layout nodes
     // hovered status
 }
 
-impl<'a, T: 'static> EventCtx<'a, T> {
+impl<'a, 'c, T: 'static> EventCtx<'a, 'c, T> {
+    pub fn animations(&mut self) -> &mut AnimationManager {
+        &mut self.too_ctx.animations
+    }
+
     pub fn debug(&mut self, msg: impl ToString) {
         self.debug.push(msg.to_string());
     }
@@ -228,6 +231,83 @@ pub enum Event {
 }
 
 impl Event {
+    pub fn translate_to_too(&self) -> Option<too::Event> {
+        let ev = match self {
+            &Event::MouseMove(MouseMove { pos, modifiers }) => too::Event::MouseMove {
+                pos: pos.into(),
+                modifiers,
+            },
+            &Event::MouseClick(MouseClick {
+                pos,
+                button,
+                modifiers,
+            }) => too::Event::MouseClick {
+                pos: pos.into(),
+                button,
+                modifiers,
+            },
+            &Event::MouseHeld(MouseHeld {
+                pos,
+                button,
+                modifiers,
+            }) => too::Event::MouseHeld {
+                pos: pos.into(),
+                button,
+                modifiers,
+            },
+            &Event::MouseDrag(MouseDrag {
+                released,
+                origin,
+                pos,
+                delta,
+                button,
+                modifiers,
+            }) => {
+                let pos = pos.into();
+                let origin = origin.into();
+                let delta = delta.into();
+
+                if pos == origin {
+                    too::Event::MouseDragStart {
+                        pos,
+                        button,
+                        modifiers,
+                    }
+                } else if released {
+                    too::Event::MouseDragRelease {
+                        pos,
+                        origin,
+                        button,
+                        modifiers,
+                    }
+                } else {
+                    too::Event::MouseDragHeld {
+                        pos,
+                        origin,
+                        delta,
+                        button,
+                        modifiers,
+                    }
+                }
+            }
+            &Event::MouseScroll(MouseScroll {
+                pos,
+                delta,
+                modifiers,
+            }) => too::Event::MouseScroll {
+                pos: pos.into(),
+                delta: delta.into(),
+                modifiers: modifiers.into(),
+            },
+            &Event::KeyInput(KeyInput { key, modifiers }) => {
+                too::Event::KeyPressed { key, modifiers }
+            }
+            _ => return None,
+        };
+
+        Some(ev)
+    }
+
     pub fn modifiers(&self) -> Option<Modifiers> {
         match self {
             Self::MouseEnter(MouseMove { modifiers, .. })
@@ -456,8 +536,9 @@ impl Input {
     pub fn handle<T: 'static>(
         &mut self,
         event: &too::Event,
-        nodes: &mut thunderdome::Arena<Option<ViewNode<T>>>,
+        nodes: &mut thunderdome::Arena<Node<T>>,
         state: &mut T,
+        too_ctx: too::Context,
         debug: &mut Vec<String>,
     ) -> Handled {
         self.last_event = Some(event.clone());
@@ -470,6 +551,7 @@ impl Input {
                     mouse: &mut self.mouse,
                     intersections: &mut self.intersections,
                     state,
+                    too_ctx,
                     debug,
                 }
             };
@@ -490,12 +572,18 @@ impl Input {
                         break;
                     }
 
-                    let node = nodes[id.0].as_mut().unwrap();
+                    let node = nodes[id.0].as_mut();
                     let ctx = EventCtx {
                         current_id: id,
                         children: &node.children,
                         state,
                         rect: node.rect,
+                        too_ctx: too::Context {
+                            overlay: too_ctx.overlay,
+                            commands: too_ctx.commands,
+                            size: too_ctx.size,
+                            animations: too_ctx.animations,
+                        },
                         debug,
                     };
 
@@ -606,27 +694,34 @@ impl Input {
     }
 }
 
-struct Context<'a, T: 'static> {
-    nodes: &'a mut thunderdome::Arena<Option<ViewNode<T>>>,
+struct Context<'a, 'c, T: 'static> {
+    nodes: &'a mut thunderdome::Arena<Node<T>>,
     mouse: &'a mut Mouse,
     intersections: &'a mut Intersections,
     state: &'a mut T,
     debug: &'a mut Vec<String>,
+    too_ctx: too::Context<'c>,
 }
 
-impl<'a, T: 'static> Context<'a, T> {
+impl<'a, 'c, T: 'static> Context<'a, 'c, T> {
     fn mouse_move(&mut self, event: MouseMove) -> Handled {
         for (&id, interest) in self.mouse.layered.iter() {
             if !interest.is_mouse_move() {
                 continue;
             }
 
-            let node = self.nodes[id.0].as_mut().unwrap();
+            let node = self.nodes[id.0].as_mut();
             let ctx = EventCtx {
                 current_id: id,
                 children: &node.children,
                 state: self.state,
                 rect: node.rect,
+                too_ctx: too::Context {
+                    overlay: self.too_ctx.overlay,
+                    commands: self.too_ctx.commands,
+                    size: self.too_ctx.size,
+                    animations: self.too_ctx.animations,
+                },
                 debug: self.debug,
             };
 
@@ -644,12 +739,18 @@ impl<'a, T: 'static> Context<'a, T> {
             self.intersections.entered.push(hit);
             self.mouse.hovered(hit);
 
-            let node = self.nodes[hit.0].as_mut().unwrap();
+            let node = self.nodes[hit.0].as_mut();
             let ctx = EventCtx {
                 current_id: hit,
                 children: &node.children,
                 state: self.state,
                 rect: node.rect,
+                too_ctx: too::Context {
+                    overlay: self.too_ctx.overlay,
+                    commands: self.too_ctx.commands,
+                    size: self.too_ctx.size,
+                    animations: self.too_ctx.animations,
+                },
                 debug: self.debug,
             };
 
@@ -674,9 +775,7 @@ impl<'a, T: 'static> Context<'a, T> {
                 continue;
             };
 
-            let Some(node) = node.as_mut() else {
-                unreachable!("node {hit:?} is missing")
-            };
+            let node = node.as_mut();
 
             if node.rect.contains(event.pos) {
                 continue;
@@ -689,6 +788,12 @@ impl<'a, T: 'static> Context<'a, T> {
                 children: &node.children,
                 state: self.state,
                 rect: node.rect,
+                too_ctx: too::Context {
+                    overlay: self.too_ctx.overlay,
+                    commands: self.too_ctx.commands,
+                    size: self.too_ctx.size,
+                    animations: self.too_ctx.animations,
+                },
                 debug: self.debug,
             };
 
@@ -716,12 +821,18 @@ impl<'a, T: 'static> Context<'a, T> {
                 continue;
             }
 
-            let node = self.nodes[id.0].as_mut().unwrap();
+            let node = self.nodes[id.0].as_mut();
             let ctx = EventCtx {
                 current_id: *id,
                 children: &node.children,
                 state: self.state,
                 rect: node.rect,
+                too_ctx: too::Context {
+                    overlay: self.too_ctx.overlay,
+                    commands: self.too_ctx.commands,
+                    size: self.too_ctx.size,
+                    animations: self.too_ctx.animations,
+                },
                 debug: self.debug,
             };
 
@@ -743,12 +854,18 @@ impl<'a, T: 'static> Context<'a, T> {
 
     fn mouse_event(&mut self, event: &Event) -> Handled {
         for &id in &self.intersections.hit {
-            let node = self.nodes[id.0].as_mut().unwrap();
+            let node = self.nodes[id.0].as_mut();
             let ctx = EventCtx {
                 current_id: id,
                 children: &node.children,
                 state: self.state,
                 rect: node.rect,
+                too_ctx: too::Context {
+                    overlay: self.too_ctx.overlay,
+                    commands: self.too_ctx.commands,
+                    size: self.too_ctx.size,
+                    animations: self.too_ctx.animations,
+                },
                 debug: self.debug,
             };
 
@@ -764,10 +881,6 @@ impl<'a, T: 'static> Context<'a, T> {
         for (&id, _) in self.mouse.layered.iter() {
             let Some(node) = self.nodes.get(id.0) else {
                 continue;
-            };
-
-            let Some(node) = node else {
-                unreachable!("node {id:?} is missing")
             };
 
             // let mut rect = node.rect;

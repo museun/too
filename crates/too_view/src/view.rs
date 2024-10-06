@@ -1,7 +1,9 @@
+use too::animation::AnimationManager;
+
 use crate::{
     geom::{Size, Space},
     input::{Event, EventCtx, Handled},
-    DrawCtx, Interest, LayoutCtx, Response, Ui, UpdateCtx,
+    AnimateCtx, DrawCtx, Interest, LayoutCtx, Response, Ui, UpdateCtx,
 };
 
 pub trait Args: Clone {}
@@ -27,8 +29,8 @@ pub trait View<T: 'static>: Sized {
         Handled::Bubble
     }
 
-    fn animate(&mut self, state: &mut T, dt: f32) {
-        _ = dt
+    fn animate(&mut self, ctx: AnimateCtx<T>, dt: f32) {
+        self.default_animate(ctx, dt);
     }
 
     fn layout(&mut self, ctx: LayoutCtx<T>, space: Space) -> Size {
@@ -37,6 +39,12 @@ pub trait View<T: 'static>: Sized {
 
     fn draw(&mut self, ctx: DrawCtx<T>) {
         self.default_draw(ctx);
+    }
+
+    fn default_animate(&mut self, mut ctx: AnimateCtx<T>, dt: f32) {
+        for &child in ctx.children {
+            ctx.animate(child, dt);
+        }
     }
 
     fn default_layout(&mut self, mut ctx: LayoutCtx<T>, space: Space) -> Size {
@@ -57,6 +65,7 @@ pub trait View<T: 'static>: Sized {
 pub struct Context<'a, T: 'static> {
     pub ui: &'a mut Ui<T>,
     pub state: &'a mut T,
+    pub animations: &'a mut AnimationManager,
 }
 
 impl<'a, T: 'static> std::ops::Deref for Context<'a, T> {
