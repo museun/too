@@ -151,7 +151,7 @@ pub struct EventCtx<'a, 'c, T: 'static> {
 
 impl<'a, 'c, T: 'static> EventCtx<'a, 'c, T> {
     pub fn animations(&mut self) -> &mut AnimationManager {
-        &mut self.too_ctx.animations
+        self.too_ctx.animations
     }
 
     pub fn debug(&mut self, msg: impl ToString) {
@@ -232,12 +232,12 @@ pub enum Event {
 
 impl Event {
     pub fn translate_to_too(&self) -> Option<too::Event> {
-        let ev = match self {
-            &Event::MouseMove(MouseMove { pos, modifiers }) => too::Event::MouseMove {
+        let ev = match *self {
+            Event::MouseMove(MouseMove { pos, modifiers }) => too::Event::MouseMove {
                 pos: pos.into(),
                 modifiers,
             },
-            &Event::MouseClick(MouseClick {
+            Event::MouseClick(MouseClick {
                 pos,
                 button,
                 modifiers,
@@ -246,7 +246,7 @@ impl Event {
                 button,
                 modifiers,
             },
-            &Event::MouseHeld(MouseHeld {
+            Event::MouseHeld(MouseHeld {
                 pos,
                 button,
                 modifiers,
@@ -255,7 +255,7 @@ impl Event {
                 button,
                 modifiers,
             },
-            &Event::MouseDrag(MouseDrag {
+            Event::MouseDrag(MouseDrag {
                 released,
                 origin,
                 pos,
@@ -290,16 +290,16 @@ impl Event {
                     }
                 }
             }
-            &Event::MouseScroll(MouseScroll {
+            Event::MouseScroll(MouseScroll {
                 pos,
                 delta,
                 modifiers,
             }) => too::Event::MouseScroll {
                 pos: pos.into(),
                 delta: delta.into(),
-                modifiers: modifiers.into(),
+                modifiers,
             },
-            &Event::KeyInput(KeyInput { key, modifiers }) => {
+            Event::KeyInput(KeyInput { key, modifiers }) => {
                 too::Event::KeyPressed { key, modifiers }
             }
             _ => return None,

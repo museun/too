@@ -11,5 +11,4 @@ repository.workspace = true
 [dependencies]
 crossterm = { version = "0.28.1", default-features = false, features = [ "events", "windows" ] }
 flume = { version = "0.11.0", default-features = false }
-
 too.workspace = true

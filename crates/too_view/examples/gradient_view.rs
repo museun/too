@@ -4,14 +4,14 @@ use too::{
     animation::{easing, Animation},
     layout::Align2,
     math::{lerp, pos2},
-    Index, Key, Keybind, Pixel,
+    Index, Keybind, Pixel,
 };
 use too_crossterm::{Config, Term};
 use too_view::{
     geom::Margin,
     views::{
-        align, animate::animate, background, canvas::canvas, column, key_area, margin, slider,
-        static_label, SliderParams,
+        align, animate, background, canvas, column, key_area, margin, slider, static_label,
+        SliderParams,
     },
     App, AppRunner, Properties,
 };
@@ -120,7 +120,7 @@ impl Gradient {
     }
 
     fn handle_key_input(ctx: &mut too_view::view::Context<Self>) {
-        let resp = key_area(ctx, |ctx| Self::draw_gradient(ctx));
+        let resp = key_area(ctx, Self::draw_gradient);
         if resp.is_keybind(Self::PREVIOUS) {
             ctx.pos = (ctx.pos + 1) % Self::LIST.len();
         }
@@ -152,7 +152,7 @@ impl Gradient {
     }
 
     fn draw_controls_container(ctx: &mut too_view::view::Context<Self>) {
-        background("#0003", ctx, |ctx| {
+        background(ctx, "#0003", |ctx| {
             margin((1.0, 0.0), ctx, |ctx| {
                 column(ctx, |ctx| {
                     Self::draw_duration_slider(ctx);
@@ -172,9 +172,9 @@ impl Gradient {
 
     fn draw_info(ctx: &mut too_view::view::Context<Self>) {
         align(Align2::RIGHT_TOP, ctx, |ctx| {
-            background("#000", ctx, |ctx| {
+            background(ctx, "#000", |ctx| {
                 column(ctx, |ctx| {
-                    static_label(ctx, Self::LIST[ctx.pos as usize].0);
+                    static_label(ctx, Self::LIST[ctx.pos].0);
                     static_label(ctx, format!("duration: {:.2?}", ctx.duration))
                 })
             });

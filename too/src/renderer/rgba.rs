@@ -204,6 +204,22 @@ impl Rgba {
         Self::from_float([r * r, g * g, b * b, 1.0])
     }
 
+    pub fn saturate(self, ratio: f32) -> Self {
+        self.to_hsva().saturate(ratio).to_srgb()
+    }
+
+    pub fn desaturate(self, ratio: f32) -> Self {
+        self.to_hsva().desaturate(ratio).to_srgb()
+    }
+
+    pub fn lighten(self, ratio: f32) -> Self {
+        self.to_hsva().lighten(ratio).to_srgb()
+    }
+
+    pub fn darken(self, ratio: f32) -> Self {
+        self.to_hsva().darken(ratio).to_srgb()
+    }
+
     fn to_hsva(self) -> Hsva {
         self.to_linear().to_hsva()
     }
@@ -355,7 +371,6 @@ impl LinearRgba {
         let min = r.min(g).min(b);
         let delta = max - min;
 
-        //
         let hue = if delta == 0.0 {
             0.0
         } else if max == r {
@@ -375,6 +390,30 @@ impl LinearRgba {
 #[derive(Copy, Clone)]
 struct Hsva(f32, f32, f32, f32);
 impl Hsva {
+    fn saturate(mut self, ratio: f32) -> Self {
+        let Hsva(_, s, _, _) = &mut self;
+        *s += (*s - 1.0) * ratio.clamp(0.0, 1.0);
+        self
+    }
+
+    fn desaturate(mut self, ratio: f32) -> Self {
+        let Hsva(_, s, _, _) = &mut self;
+        *s *= ratio.clamp(0.0, 1.0);
+        self
+    }
+
+    fn lighten(mut self, ratio: f32) -> Self {
+        let Hsva(_, _, v, _) = &mut self;
+        *v += (*v - 1.0) * ratio.clamp(0.0, 1.0);
+        self
+    }
+
+    fn darken(mut self, ratio: f32) -> Self {
+        let Hsva(_, _, v, _) = &mut self;
+        *v *= ratio.clamp(0.0, 1.0);
+        self
+    }
+
     fn to_srgb(self) -> Rgba {
         let Self(hue, sat, val, alpha) = self;
         let c = val * sat;

@@ -4,7 +4,7 @@ use crate::{geom::Size, view::Context, Properties, Ui};
 
 pub trait App: Sized + 'static {
     /// [`Context`] derefs into `Self`
-    fn view(ctx: &mut Context<'_, Self>);
+    fn view(ctx: &mut Context<Self>);
 }
 
 pub trait AppRunner: App + Sealed + Sized {
@@ -16,7 +16,7 @@ pub trait AppRunner: App + Sealed + Sized {
         struct Wrapper<T: 'static> {
             ui: Ui<T>,
             app: T,
-            view: fn(&mut Context<'_, T>),
+            view: fn(&mut Context<T>),
         }
 
         let wrapper = Wrapper {

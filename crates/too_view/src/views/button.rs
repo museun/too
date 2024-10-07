@@ -2,16 +2,15 @@ use too::Attribute;
 
 use crate::{
     geom::{Size, Space, Vector},
-    response::UserResponse,
     text::Text,
     view::Context,
-    DrawCtx, Event, EventCtx, Handled, Interest, LayoutCtx, Response, UpdateCtx, View, ViewExt,
+    DrawCtx, Event, EventCtx, Handled, Interest, LayoutCtx, UpdateCtx, View, ViewExt,
 };
 
 use super::{
     background::background,
     label::{label, static_label, Label, LabelArgs, LabelParams},
-    list::{list, ListParams},
+    list::{list, List},
     mouse_area::on_click,
 };
 
@@ -60,16 +59,14 @@ impl<T: 'static> View<T> for Button<T> {
     }
 
     fn update(&mut self, ctx: UpdateCtx<T>, args: Self::Args<'_>) -> Self::Response {
-        let clicked = match self.state {
+        self.params = args;
+        match self.state {
             ButtonState::Clicked => {
                 self.state = ButtonState::Hovered;
                 true
             }
             _ => false,
-        };
-
-        self.params = args;
-        clicked
+        }
     }
 
     fn event(&mut self, ctx: EventCtx<T>, event: &Event) -> Handled {
@@ -127,21 +124,18 @@ impl<T: 'static> View<T> for Button<T> {
     }
 }
 
-pub fn button<T: 'static>(
-    ctx: &mut Context<'_, T>,
-    params: fn(&T) -> ButtonParams<'_>,
-) -> Response<bool> {
+pub fn button<T: 'static>(ctx: &mut Context<T>, params: fn(&T) -> ButtonParams<'_>) -> bool {
     Button::show(params, ctx)
 }
 
 pub fn checkbox<T: 'static>(
-    ctx: &mut Context<'_, T>,
+    ctx: &mut Context<T>,
     value: fn(&mut T) -> &mut bool,
     text: for<'t> fn(&'t T) -> LabelParams<'t>,
-) -> Response<bool> {
+) -> bool {
     let resp = on_click(ctx, move |ctx| {
         // TODO mouse over
-        list(ListParams::horizontal().gap(1.0), ctx, move |ctx| {
+        list(List::horizontal().gap(1.0), ctx, move |ctx| {
             let value = *(value)(ctx.state);
             let element = match value {
                 true => "☒",
@@ -152,18 +146,18 @@ pub fn checkbox<T: 'static>(
         });
     });
 
-    *(value)(ctx) ^= *resp;
+    *(value)(ctx) ^= resp;
     resp
 }
 
 pub fn todo_value<T: 'static>(
-    ctx: &mut Context<'_, T>,
+    ctx: &mut Context<T>,
     value: fn(&mut T) -> &mut bool,
     text: for<'t> fn(&'t T) -> LabelParams<'t>,
-) -> Response<bool> {
+) -> bool {
     let resp = on_click(ctx, move |ctx| {
         // TODO mouse over
-        list(ListParams::horizontal().gap(1.0), ctx, move |ctx| {
+        list(List::horizontal().gap(1.0), ctx, move |ctx| {
             let value = *(value)(ctx.state);
             let attr = value.then(|| Attribute::STRIKEOUT | Attribute::FAINT);
             let args = LabelArgs {
@@ -174,15 +168,15 @@ pub fn todo_value<T: 'static>(
         });
     });
 
-    *(value)(ctx) ^= *resp;
+    *(value)(ctx) ^= resp;
     resp
 }
 
 pub fn selected<T: 'static, R>(
-    ctx: &mut Context<'_, T>,
+    ctx: &mut Context<T>,
     value: fn(&mut T) -> &mut bool,
     show: impl FnOnce(&mut Context<T>) -> R,
-) -> Response<bool, R> {
+) -> bool {
     let resp = on_click(ctx, move |ctx| {
         let value = (value)(ctx.state);
         let bg = if *value {
@@ -190,25 +184,21 @@ pub fn selected<T: 'static, R>(
         } else {
             ctx.ui.theme.outline
         };
-        background(bg, ctx, show)
+        background(ctx, bg, show)
     });
 
-    let id = resp.view_id();
-    let okay = *resp;
-    // TODO why 2 into_inners
-    let inner = resp.into_inner().into_inner();
-    *(value)(ctx) ^= okay;
-    Response::new(id, okay, inner)
+    *(value)(ctx) ^= resp;
+    resp
 }
 
 // TODO this should return a bool if it was selected
 // and not the inner response
 pub fn radio<T: 'static, R, V: PartialEq>(
-    ctx: &mut Context<'_, T>,
+    ctx: &mut Context<T>,
     selected: V,
     value: fn(&mut T) -> &mut V,
-    show: impl FnOnce(&mut Context<'_, T>) -> R,
-) -> UserResponse<R> {
+    show: impl FnOnce(&mut Context<T>) -> R,
+) -> bool {
     let resp = on_click(ctx, |ctx| {
         let val = value(ctx.state);
         let bg = if *val == selected {
@@ -217,12 +207,11 @@ pub fn radio<T: 'static, R, V: PartialEq>(
             ctx.ui.theme.outline
         };
         // margin needs to be here
-        background(bg, ctx, show)
+        background(ctx, bg, show)
     });
 
-    if *resp {
+    if resp {
         *value(ctx.state) = selected;
     }
-
-    resp.into_inner()
+    resp
 }

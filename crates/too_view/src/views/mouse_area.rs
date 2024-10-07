@@ -1,7 +1,7 @@
 use crate::{
     geom::{Point, Vector},
     view::Context,
-    Event, EventCtx, Handled, Interest, Response, UpdateCtx, View, ViewExt,
+    Event, EventCtx, Handled, Interest, UpdateCtx, View, ViewExt,
 };
 
 #[derive(Copy, Clone, Default, Debug, PartialEq)]
@@ -225,34 +225,32 @@ pub fn mouse_area<T: 'static, R>(
     filter: MouseEvent,
     ctx: &mut Context<T>,
     show: impl FnOnce(&mut Context<T>) -> R,
-) -> Response<MouseAreaResponse, R> {
-    MouseArea::show_children(filter, ctx, show)
+) -> MouseAreaResponse {
+    let (resp, _) = MouseArea::show_children(filter, ctx, show);
+    resp
 }
 
 pub fn on_click<T: 'static, R>(
     ctx: &mut Context<T>,
     show: impl FnOnce(&mut Context<T>) -> R,
-) -> Response<bool, R> {
+) -> bool {
     let filter = const { MouseEvent::empty().click() };
-    let resp = mouse_area(filter, ctx, show);
-    resp.map(|resp, inner| (resp.clicked, inner))
+    mouse_area(filter, ctx, show).clicked
 }
 
 pub fn on_drag<T: 'static, R>(
     ctx: &mut Context<T>,
     show: impl FnOnce(&mut Context<T>) -> R,
-) -> Response<Option<Dragged>, R> {
+) -> Option<Dragged> {
     let filter = const { MouseEvent::empty().drag() };
-    let resp = mouse_area(filter, ctx, show);
-    resp.map(|resp, inner| (resp.dragged, inner))
+    mouse_area(filter, ctx, show).dragged
 }
 
 // TODO hscroll
 pub fn on_scroll<T: 'static, R>(
     ctx: &mut Context<T>,
     show: impl FnOnce(&mut Context<T>) -> R,
-) -> Response<Option<f32>, R> {
+) -> Option<f32> {
     let filter = const { MouseEvent::empty().scroll() };
-    let resp = mouse_area(filter, ctx, show);
-    resp.map(|resp, inner| (resp.scrolled, inner))
+    mouse_area(filter, ctx, show).scrolled
 }

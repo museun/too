@@ -1,14 +1,11 @@
 use too::{
     layout::Anchor2,
-    math::{lerp, pos2, Pos2, Rect},
-    Gradient, Keybind, Pixel, Rgba,
+    math::{lerp, pos2},
+    Gradient, Keybind, Pixel,
 };
 use too_crossterm::{Config, Term};
 use too_view::{
-    views::{
-        background, center, column, immediate::immediate, radio, size, slider, static_label,
-        SliderParams,
-    },
+    views::{center, column, immediate, radio, size, slider, static_label, SliderParams},
     AppRunner, Properties,
 };
 
@@ -22,7 +19,7 @@ struct NestedUi {
 }
 
 impl too_view::App for NestedUi {
-    fn view(ctx: &mut too_view::view::Context<'_, Self>) {
+    fn view(ctx: &mut too_view::view::Context<Self>) {
         center(ctx, |ctx| {
             size((50.0, 20.0), ctx, |ctx| {
                 immediate(ctx, |ctx| &mut ctx.im);
@@ -35,7 +32,7 @@ impl too_view::App for NestedUi {
                 SliderParams::new(&mut ctx.im.duration).range(0.1..=5.0)
             });
 
-            for (i, &opt) in LIST.iter().enumerate() {
+            for &opt in LIST {
                 // TODO radio needs to return a bool if selected
                 radio(
                     ctx,

@@ -3,10 +3,10 @@ use std::ops::RangeInclusive;
 use too::Pixel;
 
 use crate::{
-    geom::{Point, Size, Space},
+    geom::{denormalize, normalize, Point, Size, Space},
     view::Context,
     DrawCtx, Elements, Event, EventCtx, FilledProperty, Handled, HeightProperty, Interest, Knob,
-    LayoutCtx, Response, UnfilledProperty, UpdateCtx, View, ViewExt, WidthProperty,
+    LayoutCtx, UnfilledProperty, UpdateCtx, View, ViewExt, WidthProperty,
 };
 
 #[derive(Copy, Clone, Debug, PartialEq)]
@@ -16,73 +16,73 @@ pub struct SliderResponse {
 
 // TODO &mut &f32 could do disable
 pub struct SliderParams<'a> {
-    pub value: &'a mut f32,
-    pub range: RangeInclusive<f32>,
+    pub value: Option<&'a mut f32>,
+    pub min: f32,
+    pub max: f32,
+    pub step: f32,
 }
 
 impl<'a> SliderParams<'a> {
-    pub fn new(value: &'a mut f32) -> Self {
+    pub fn new(value: impl Into<Option<&'a mut f32>>) -> Self {
         Self {
-            value,
-            range: 0.0..=1.0,
+            value: value.into(),
+            min: 0.0,
+            max: 1.0,
+            step: 0.1,
         }
     }
 
     pub const fn range(mut self, range: RangeInclusive<f32>) -> Self {
-        self.range = range;
+        self.min = *range.start();
+        self.max = *range.end();
+        self
+    }
+
+    pub const fn step_by(mut self, step: f32) -> Self {
+        self.step = step;
         self
     }
 }
 
-pub struct Slider<T: 'static = ()> {
-    previous: f32,
-    params: fn(&mut T) -> SliderParams<'_>,
-}
-
-impl WidthProperty for Slider<()> {
+impl WidthProperty for Slider {
     const WIDTH: f32 = 20.0;
 }
-
-impl HeightProperty for Slider<()> {
+impl HeightProperty for Slider {
     const HEIGHT: f32 = 1.0;
 }
-
-impl FilledProperty for Slider<()> {
+impl FilledProperty for Slider {
     const FILLED: char = Elements::THICK_HORIZONTAL_LINE;
 }
-
-impl UnfilledProperty for Slider<()> {
+impl UnfilledProperty for Slider {
     const UNFILLED: char = Elements::THICK_DASH_HORIZONTAL_LINE;
 }
 
-impl<T: 'static> Slider<T> {
-    fn normalize(value: f32, range: &RangeInclusive<f32>) -> f32 {
-        let value = value.clamp(*range.start(), *range.end());
-        (value - range.start()) / (range.end() - range.start())
-    }
-
-    fn denormalize(value: f32, range: &RangeInclusive<f32>) -> f32 {
-        let value = value.clamp(0.0, 1.0);
-        value * (range.end() - range.start()) + range.start()
-    }
+pub struct Slider<T: 'static = (), F = ()> {
+    previous: f32,
+    params: F,
+    _marker: std::marker::PhantomData<T>,
 }
 
-impl<T: 'static> View<T> for Slider<T> {
-    type Args<'a> = fn(&mut T) -> SliderParams<'_>;
+impl<T: 'static, F: for<'a> FnOnce(&'a mut T) -> SliderParams<'a> + Clone> View<T>
+    for Slider<T, F>
+{
+    type Args<'a> = F;
     type Response = SliderResponse;
 
     fn create(args: Self::Args<'_>) -> Self {
         Self {
             params: args,
             previous: 0.0,
+            _marker: std::marker::PhantomData,
         }
     }
 
     fn update(&mut self, ctx: UpdateCtx<T>, args: Self::Args<'_>) -> Self::Response {
         self.params = args;
-        let value = *(self.params)(ctx.state).value;
+        let params = (self.params.clone())(ctx.state);
+
         SliderResponse {
-            changed: value != self.previous,
+            changed: *params.value.expect("valid state") != self.previous,
         }
     }
 
@@ -99,11 +99,12 @@ impl<T: 'static> View<T> for Slider<T> {
         // TODO axis
 
         // we need to round to the next step
-        let params = (self.params)(ctx.state);
-        self.previous = *params.value;
+        let params = (self.params.clone())(ctx.state);
+        let value = params.value.expect("valid state");
+        self.previous = *value;
 
         let p = (ev.pos.x - min) / (max - min);
-        *params.value = Self::denormalize(p, &params.range);
+        *value = denormalize(p, params.min..=params.max);
 
         Handled::Sink
     }
@@ -117,34 +118,38 @@ impl<T: 'static> View<T> for Slider<T> {
     }
 
     fn draw(&mut self, mut ctx: DrawCtx<T>) {
-        let params = (self.params)(ctx.state);
+        let params = (self.params.clone())(ctx.state);
+        let value = match params.value {
+            Some(value) => value,
+            None => return,
+        };
 
         // TODO axis
         let (min, max) = (ctx.rect.left(), ctx.rect.right() - 1.0);
         // we need to round to the next step
-        let x = Self::normalize(*params.value, &params.range);
+        let x = normalize(*value, params.min..=params.max);
         let x = min + (x * (max - min));
 
-        let pixel = Pixel::new(ctx.properties.unfilled::<Slider>()).fg(ctx.theme.outline);
+        let unfilled = ctx.properties.unfilled::<Slider>();
+        let pixel = Pixel::new(unfilled).fg(ctx.theme.outline);
         ctx.surface.fill(pixel);
 
         let track = ctx.properties.filled::<Slider>();
         let pixel = Pixel::new(track).fg(ctx.theme.contrast);
 
         let pos = x - ctx.rect.left();
-        ctx.surface.horizontal_fill(0.0, pos, pixel);
+        ctx.surface.horizontal_fill((0.0, pos), pixel);
 
         let point = Point::new(pos, 0.0);
-        let &knob = ctx.properties.get_or_default::<Knob>();
+        let &Knob(knob) = ctx.properties.get_or_default::<Knob>();
         let pixel = Pixel::new(knob).fg(ctx.theme.primary);
         ctx.surface.set(point, pixel);
     }
 }
 
-// TODO this should return a bool if changed
 pub fn slider<T: 'static>(
     ctx: &mut Context<T>,
-    params: fn(&mut T) -> SliderParams<'_>,
-) -> Response<SliderResponse> {
-    Slider::show(params, ctx)
+    get: impl for<'a> FnOnce(&'a mut T) -> SliderParams<'a> + Clone + 'static,
+) -> SliderResponse {
+    Slider::show(get, ctx)
 }

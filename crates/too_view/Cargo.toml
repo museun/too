@@ -18,3 +18,4 @@ thunderdome = "0.6.1"
 
 [dev-dependencies]
 too_crossterm.workspace = true
+fastrand = "2.1.1"

@@ -3,7 +3,7 @@ use too::{layout::Axis, math::inverse_lerp, Pixel};
 use crate::{
     geom::{Point, Size, Space},
     view::Context,
-    DrawCtx, Event, EventCtx, Handled, Interest, LayoutCtx, Response, UpdateCtx, View, ViewExt,
+    DrawCtx, Event, EventCtx, Handled, Interest, LayoutCtx, UpdateCtx, View, ViewExt,
 };
 
 use super::{
@@ -75,7 +75,7 @@ pub fn vertical_split<T: 'static, L, R>(
     split_ratio: fn(&mut T) -> &mut f32,
     left: impl FnOnce(&mut Context<T>) -> L,
     right: impl FnOnce(&mut Context<T>) -> R,
-) -> Response<(L, R)> {
+) -> (L, R) {
     split(Axis::Vertical, ctx, split_ratio, left, right)
 }
 
@@ -84,7 +84,7 @@ pub fn horizontal_split<T: 'static, L, R>(
     split_ratio: fn(&mut T) -> &mut f32,
     left: impl FnOnce(&mut Context<T>) -> L,
     right: impl FnOnce(&mut Context<T>) -> R,
-) -> Response<(L, R)> {
+) -> (L, R) {
     split(Axis::Horizontal, ctx, split_ratio, left, right)
 }
 
@@ -94,7 +94,7 @@ pub fn split<T: 'static, L, R>(
     split_ratio: fn(&mut T) -> &mut f32,
     left: impl FnOnce(&mut Context<T>) -> L,
     right: impl FnOnce(&mut Context<T>) -> R,
-) -> Response<(L, R)> {
+) -> (L, R) {
     let axis = axis.into();
     let rect = ctx.ui.rect;
 
@@ -107,9 +107,9 @@ pub fn split<T: 'static, L, R>(
     let (main, cross) = (main.size(), cross.size());
 
     let show = |ctx: &mut Context<T>| {
-        let left = size(main, ctx, left).into_inner();
-        let pos = *Splitter::show(axis, ctx);
-        let right = size(cross, ctx, right).into_inner();
+        let left = size(main, ctx, left);
+        let pos = Splitter::show(axis, ctx);
+        let right = size(cross, ctx, right);
 
         let pos = pos.unwrap_or_else(|| rect.center());
         let (x, y, t) = match axis {
@@ -122,10 +122,8 @@ pub fn split<T: 'static, L, R>(
         (left, right)
     };
 
-    let resp = match axis {
+    match axis {
         Axis::Horizontal => row(ctx, show),
         Axis::Vertical => column(ctx, show),
-    };
-
-    resp.map(|_, inner| (inner, ()))
+    }
 }

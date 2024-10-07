@@ -1,4 +1,35 @@
 use core::f32;
+use std::ops::RangeInclusive;
+
+pub fn float_step_exclusive(x: f32, y: f32, by: f32) -> impl Iterator<Item = f32> {
+    let x = x.min(y);
+    let y = y.max(x);
+
+    std::iter::successors(Some(x), move |t| {
+        let x = t + by;
+        (x < y).then_some(x)
+    })
+}
+
+pub fn float_step_inclusive(x: f32, y: f32, by: f32) -> impl Iterator<Item = f32> {
+    let x = x.min(y);
+    let y = y.max(x);
+
+    std::iter::successors(Some(x), move |t| {
+        let x = t + by;
+        (x <= y).then_some(x)
+    })
+}
+
+pub fn normalize(value: f32, range: RangeInclusive<f32>) -> f32 {
+    let value = value.clamp(*range.start(), *range.end());
+    (value - range.start()) / (range.end() - range.start())
+}
+
+pub fn denormalize(value: f32, range: RangeInclusive<f32>) -> f32 {
+    let value = value.clamp(0.0, 1.0);
+    value * (range.end() - range.start()) + range.start()
+}
 
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub struct Margin {
@@ -95,10 +126,16 @@ impl From<Size> for Margin {
     }
 }
 
-#[derive(Copy, Clone, Debug, PartialEq)]
+#[derive(Copy, Clone, PartialEq)]
 pub struct Rectf {
     pub min: Point,
     pub max: Point,
+}
+
+impl std::fmt::Debug for Rectf {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "Rectf(min: {:?}, max: {:?})", self.min, self.max)
+    }
 }
 
 impl Rectf {
@@ -816,10 +853,16 @@ vector_ops!(Mul, MulAssign, mul, mul_assign, *);
 vector_ops!(Div, DivAssign, div, div_assign, /);
 vector_ops!(Rem, RemAssign, rem, rem_assign, %);
 
-#[derive(Copy, Clone, Debug, PartialEq)]
+#[derive(Copy, Clone, PartialEq)]
 pub struct Size {
     pub width: f32,
     pub height: f32,
+}
+
+impl std::fmt::Debug for Size {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "Size({},{})", self.width, self.height)
+    }
 }
 
 impl Size {

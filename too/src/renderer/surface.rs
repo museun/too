@@ -16,6 +16,37 @@ pub trait Canvas: Sized {
     fn rect(&self) -> Rect;
 }
 
+pub struct CroppedSurface<'a> {
+    rect: Rect,
+    surface: &'a mut Surface,
+}
+
+impl<'a> CroppedSurface<'a> {
+    pub fn new(rect: Rect, surface: &'a mut Surface) -> Self {
+        Self { rect, surface }
+    }
+}
+
+impl<'a> Canvas for CroppedSurface<'a> {
+    fn set(&mut self, pos: Pos2, cell: impl Into<Cell>) {
+        self.surface.set(pos + self.rect.left_top(), cell);
+    }
+
+    fn fill(&mut self, rect: Rect, pixel: impl Into<Pixel>) -> &mut Self {
+        self.surface.fill(rect.intersection(self.rect), pixel);
+        self
+    }
+
+    fn text<T: MeasureText>(&mut self, rect: Rect, text: impl Into<Text<T>>) -> &mut Self {
+        self.surface.text(rect.intersection(self.rect), text);
+        self
+    }
+
+    fn rect(&self) -> Rect {
+        self.rect
+    }
+}
+
 impl Canvas for Surface {
     fn set(&mut self, pos: Pos2, cell: impl Into<Cell>) {
         Self::set(self, pos, cell);

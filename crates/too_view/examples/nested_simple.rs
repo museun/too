@@ -7,8 +7,8 @@ use too_crossterm::{Config, Term};
 use too_view::{
     geom::Margin,
     views::{
-        align, background, center, column, immediate::immediate, label, margin, radio, size,
-        slider, static_label, LabelParams, ListParams, SliderParams,
+        align, background, center, column, immediate, label, margin, radio, size, slider,
+        static_label, LabelParams, List, SliderParams,
     },
     AppRunner as _, Properties,
 };
@@ -67,7 +67,7 @@ impl Simple {
             size((ctx.w, ctx.h), ctx, |ctx| immediate(ctx, |ctx| &mut ctx.im));
         });
 
-        align(Align2::RIGHT_CENTER, ctx, |ctx| {
+        align(Align2::LEFT_CENTER, ctx, |ctx| {
             column(ctx, |ctx| {
                 let r = slider(ctx, |ctx| SliderParams::new(&mut ctx.r).range(0.0..=1.0));
                 let g = slider(ctx, |ctx| SliderParams::new(&mut ctx.g).range(0.0..=1.0));
@@ -77,7 +77,7 @@ impl Simple {
                     ctx.im.rgba = Rgba::from_float([ctx.r, ctx.g, ctx.b, 1.0]);
                 }
 
-                background(ctx.im.rgba, ctx, |ctx| {
+                background(ctx, ctx.im.rgba, |ctx| {
                     size((5.0, 3.0), ctx, |ctx| static_label(ctx, "asdf"))
                 });
 
@@ -93,9 +93,9 @@ impl Simple {
 }
 
 impl too_view::App for Simple {
-    fn view(ctx: &mut too_view::view::Context<'_, Self>) {
+    fn view(ctx: &mut too_view::view::Context<Self>) {
         align(Align2::CENTER_TOP, ctx, |ctx| {
-            ListParams::horizontal().gap(3.0).show(ctx, |ctx| {
+            List::horizontal().gap(3.0).show(ctx, |ctx| {
                 for (name, screen) in [("View", Screen::View), ("Immediate", Screen::Immediate)] {
                     radio(
                         ctx,
@@ -123,7 +123,7 @@ struct Demo {
 }
 
 impl too::App for Demo {
-    fn event(&mut self, event: too::Event, ctx: too::Context<'_>) {
+    fn event(&mut self, event: too::Event, _ctx: too::Context<'_>) {
         if let too::Event::MouseMove { pos, .. } = event {
             self.pos = pos;
         }

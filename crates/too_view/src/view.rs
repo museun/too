@@ -3,14 +3,11 @@ use too::animation::AnimationManager;
 use crate::{
     geom::{Size, Space},
     input::{Event, EventCtx, Handled},
-    AnimateCtx, DrawCtx, Interest, LayoutCtx, Response, Ui, UpdateCtx,
+    AnimateCtx, DrawCtx, Interest, LayoutCtx, Ui, UpdateCtx,
 };
 
 pub trait Args: Clone {}
 impl<T: Clone> Args for T {}
-
-pub type NoArgs = ();
-pub type NoResponse = ();
 
 pub trait View<T: 'static>: Sized {
     type Args<'a>: Args;
@@ -62,41 +59,41 @@ pub trait View<T: 'static>: Sized {
     }
 }
 
-pub struct Context<'a, T: 'static> {
+pub struct Context<'a, 'b, T: 'static> {
     pub ui: &'a mut Ui<T>,
-    pub state: &'a mut T,
+    pub state: &'b mut T,
     pub animations: &'a mut AnimationManager,
 }
 
-impl<'a, T: 'static> std::ops::Deref for Context<'a, T> {
+impl<'a, 'b, T: 'static> std::ops::Deref for Context<'a, 'b, T> {
     type Target = T;
     fn deref(&self) -> &Self::Target {
         self.state
     }
 }
 
-impl<'a, T: 'static> std::ops::DerefMut for Context<'a, T> {
+impl<'a, 'b, T: 'static> std::ops::DerefMut for Context<'a, 'b, T> {
     fn deref_mut(&mut self) -> &mut Self::Target {
         self.state
     }
 }
 
 pub trait ViewExt<T: 'static>: View<T> + Sized + 'static {
-    fn show(args: Self::Args<'_>, ctx: &mut Context<'_, T>) -> Response<Self::Response> {
-        let resp = ctx.ui.begin_view::<Self>(ctx.state, args);
-        ctx.ui.end_view(resp.view_id());
+    fn show(args: Self::Args<'_>, ctx: &mut Context<T>) -> Self::Response {
+        let (id, resp) = ctx.ui.begin_view::<Self>(ctx.state, args);
+        ctx.ui.end_view(id);
         resp
     }
 
     fn show_children<R>(
         args: Self::Args<'_>,
-        ctx: &mut Context<'_, T>,
-        show: impl FnOnce(&mut Context<'_, T>) -> R,
-    ) -> Response<Self::Response, R> {
-        let resp = ctx.ui.begin_view::<Self>(ctx.state, args);
-        let output = show(ctx);
-        ctx.ui.end_view(resp.view_id());
-        resp.map_output(output)
+        ctx: &mut Context<T>,
+        show: impl FnOnce(&mut Context<T>) -> R,
+    ) -> (Self::Response, R) {
+        let (id, resp) = ctx.ui.begin_view::<Self>(ctx.state, args);
+        let inner = show(ctx);
+        ctx.ui.end_view(id);
+        (resp, inner)
     }
 }
 

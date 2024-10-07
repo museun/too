@@ -34,8 +34,8 @@ impl App for Demo {
             Animation::new()
                 .repeat(true)
                 .round_trip(true)
-                .with_time(|d| linear(d), Duration::from_secs(2))
-                .with(|d| elastic_in_out(d))
+                .with_time(linear, Duration::from_secs(2))
+                .with(elastic_in_out)
                 .schedule(Duration::from_secs(10))
                 .unwrap(),
             initial_x,

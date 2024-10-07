@@ -1,8 +1,7 @@
 use crate::{
     geom::{Point, Size, Space},
-    response::UserResponse,
     view::Context,
-    LayoutCtx, NoResponse, UpdateCtx, View, ViewExt,
+    LayoutCtx, UpdateCtx, View, ViewExt,
 };
 
 struct Offset<T: 'static> {
@@ -11,7 +10,7 @@ struct Offset<T: 'static> {
 
 impl<T: 'static> View<T> for Offset<T> {
     type Args<'a> = fn(&T) -> Point;
-    type Response = NoResponse;
+    type Response = ();
 
     fn create(args: Self::Args<'_>) -> Self {
         Self { args }
@@ -34,8 +33,9 @@ impl<T: 'static> View<T> for Offset<T> {
 
 pub fn offset<T: 'static, R>(
     pos: fn(&T) -> Point,
-    ctx: &mut Context<'_, T>,
-    show: fn(&mut Context<'_, T>) -> R,
-) -> UserResponse<R> {
-    Offset::show_children(pos, ctx, show)
+    ctx: &mut Context<T>,
+    show: fn(&mut Context<T>) -> R,
+) -> R {
+    let (_, resp) = Offset::show_children(pos, ctx, show);
+    resp
 }

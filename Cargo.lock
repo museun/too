@@ -342,6 +342,7 @@ dependencies = [
 name = "too_view"
 version = "0.1.0"
 dependencies = [
+ "fastrand",
  "thunderdome",
  "too",
  "too_crossterm",

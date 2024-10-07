@@ -10,36 +10,49 @@ use crate::{
     geom::{Size, Space},
     view::Context,
     DrawCtx, Elements, Event, EventCtx, FilledProperty, Handled, HeightProperty, Interest,
-    LayoutCtx, NoResponse, Response, UnfilledProperty, UpdateCtx, View, ViewExt, WidthProperty,
+    LayoutCtx, UnfilledProperty, UpdateCtx, View, ViewExt, WidthProperty,
 };
 
 impl WidthProperty for Toggle {
     const WIDTH: f32 = 4.0;
 }
+
 impl HeightProperty for Toggle {
     const HEIGHT: f32 = 1.0;
 }
+
 impl FilledProperty for Toggle {
     const FILLED: char = Elements::LARGE_RECT;
 }
+
 impl UnfilledProperty for Toggle {
     const UNFILLED: char = Elements::MEDIUM_RECT;
 }
 
+#[derive(Copy, Clone, Debug, PartialEq)]
+pub struct ToggleResponse {
+    pub changed: bool,
+}
+
 pub struct Toggle<T: 'static = ()> {
     args: fn(&mut T) -> &mut bool,
+    last: bool,
 }
 
 impl<T: 'static> View<T> for Toggle<T> {
     type Args<'a> = fn(&mut T) -> &mut bool;
-    type Response = NoResponse;
+    type Response = ToggleResponse;
 
     fn create(args: Self::Args<'_>) -> Self {
-        Self { args }
+        Self { args, last: false }
     }
 
     fn update(&mut self, ctx: UpdateCtx<T>, args: Self::Args<'_>) -> Self::Response {
         self.args = args;
+        let previous = std::mem::replace(&mut self.last, *(self.args)(ctx.state));
+        ToggleResponse {
+            changed: previous != self.last,
+        }
     }
 
     fn interest(&self) -> Interest {
@@ -107,6 +120,7 @@ impl<T: 'static> View<T> for Toggle<T> {
     }
 }
 
-pub fn toggle<T: 'static>(ctx: &mut Context<T>, args: fn(&mut T) -> &mut bool) -> Response {
+// TODO this should take in a closure
+pub fn toggle<T: 'static>(ctx: &mut Context<T>, args: fn(&mut T) -> &mut bool) -> ToggleResponse {
     Toggle::show(args, ctx)
 }

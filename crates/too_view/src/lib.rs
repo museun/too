@@ -1,28 +1,24 @@
 #![cfg_attr(debug_assertions, allow(dead_code, unused_variables,))]
 use std::{
     any::{Any, TypeId},
-    collections::VecDeque,
-    ops::Deref,
+    collections::{HashMap, VecDeque},
 };
 
-use too::{animation::AnimationManager, math::pos2, Pixel, Rgba, Surface as TooSurface};
+use too::{animation::AnimationManager, Pixel, Rgba, Surface as TooSurface};
 
 mod text;
 
 pub mod geom;
-use geom::{Point, Rectf, Size, Space, Vector};
+use geom::{float_step_exclusive, Point, Rectf, Size, Space, Vector};
 
 pub mod views;
-
-mod response;
-pub use response::Response;
 
 mod erased_view;
 use erased_view::{ErasedView, ViewMarker};
 
 pub mod view;
 use view::Context;
-pub use view::{Args, NoArgs, NoResponse, View, ViewExt};
+pub use view::{Args, View, ViewExt};
 
 mod view_node;
 use view_node::{NodeSlot, ViewNode};
@@ -51,174 +47,6 @@ impl Elements {
     pub const THICK_DASH_VERTICAL_LINE: char = '╏';
 }
 
-pub trait Property
-where
-    Self: std::any::Any,
-    Self: Deref<Target = Self::Value>,
-{
-    type Value: 'static;
-
-    fn new(value: Self::Value) -> Self
-    where
-        Self: Sized;
-
-    fn get(&self) -> &Self::Value {
-        self.deref()
-    }
-}
-
-pub trait WidthProperty: 'static + Sized {
-    const WIDTH: f32;
-    fn width(width: f32) -> Width<Self> {
-        <Width<Self>>::new(width)
-    }
-}
-
-pub struct Width<T: WidthProperty> {
-    pub(crate) width: f32,
-    _marker: std::marker::PhantomData<T>,
-}
-
-impl<T: WidthProperty> Default for Width<T> {
-    fn default() -> Self {
-        Self {
-            width: T::WIDTH,
-            _marker: std::marker::PhantomData,
-        }
-    }
-}
-
-impl<T: WidthProperty> Deref for Width<T> {
-    type Target = f32;
-    fn deref(&self) -> &Self::Target {
-        &self.width
-    }
-}
-
-impl<T: WidthProperty> Property for Width<T> {
-    type Value = f32;
-    fn new(value: Self::Value) -> Self {
-        Self {
-            width: value,
-            _marker: std::marker::PhantomData,
-        }
-    }
-}
-
-pub trait HeightProperty: 'static + Sized {
-    const HEIGHT: f32;
-    fn height(height: f32) -> Height<Self> {
-        <Height<Self>>::new(height)
-    }
-}
-
-pub struct Height<T: HeightProperty> {
-    pub(crate) height: f32,
-    _marker: std::marker::PhantomData<T>,
-}
-
-impl<T: HeightProperty> Default for Height<T> {
-    fn default() -> Self {
-        Self {
-            height: T::HEIGHT,
-            _marker: std::marker::PhantomData,
-        }
-    }
-}
-
-impl<T: HeightProperty> Deref for Height<T> {
-    type Target = f32;
-    fn deref(&self) -> &Self::Target {
-        &self.height
-    }
-}
-
-impl<T: HeightProperty> Property for Height<T> {
-    type Value = f32;
-    fn new(value: Self::Value) -> Self {
-        Self {
-            height: value,
-            _marker: std::marker::PhantomData,
-        }
-    }
-}
-
-pub trait FilledProperty: 'static + Sized {
-    const FILLED: char;
-    fn filled(filled: char) -> Filled<Self> {
-        <Filled<Self>>::new(filled)
-    }
-}
-
-pub struct Filled<T: FilledProperty> {
-    pub(crate) char: char,
-    _marker: std::marker::PhantomData<T>,
-}
-
-impl<T: FilledProperty> Default for Filled<T> {
-    fn default() -> Self {
-        Self {
-            char: T::FILLED,
-            _marker: std::marker::PhantomData,
-        }
-    }
-}
-
-impl<T: FilledProperty> Deref for Filled<T> {
-    type Target = char;
-    fn deref(&self) -> &Self::Target {
-        &self.char
-    }
-}
-
-impl<T: FilledProperty> Property for Filled<T> {
-    type Value = char;
-    fn new(value: Self::Value) -> Self {
-        Self {
-            char: value,
-            _marker: std::marker::PhantomData,
-        }
-    }
-}
-
-pub trait UnfilledProperty: 'static + Sized {
-    const UNFILLED: char;
-    fn unfilled(unfilled: char) -> Unfilled<Self> {
-        <Unfilled<Self>>::new(unfilled)
-    }
-}
-
-pub struct Unfilled<T: UnfilledProperty> {
-    pub(crate) char: char,
-    _marker: std::marker::PhantomData<T>,
-}
-
-impl<T: UnfilledProperty> Default for Unfilled<T> {
-    fn default() -> Self {
-        Self {
-            char: T::UNFILLED,
-            _marker: std::marker::PhantomData,
-        }
-    }
-}
-
-impl<T: UnfilledProperty> Deref for Unfilled<T> {
-    type Target = char;
-    fn deref(&self) -> &Self::Target {
-        &self.char
-    }
-}
-
-impl<T: UnfilledProperty> Property for Unfilled<T> {
-    type Value = char;
-    fn new(value: Self::Value) -> Self {
-        Self {
-            char: value,
-            _marker: std::marker::PhantomData,
-        }
-    }
-}
-
 pub struct Knob(char);
 impl Default for Knob {
     fn default() -> Self {
@@ -234,105 +62,189 @@ impl Knob {
     pub const DIAMOND: Self = Self(Elements::DIAMOND);
 }
 
-impl Property for Knob {
-    type Value = char;
-    fn new(value: Self::Value) -> Self {
-        Self(value)
-    }
+pub trait WidthProperty: 'static {
+    const WIDTH: f32;
 }
 
-impl std::ops::Deref for Knob {
-    type Target = char;
-    fn deref(&self) -> &Self::Target {
-        &self.0
-    }
+pub trait HeightProperty: 'static {
+    const HEIGHT: f32;
+}
+
+pub trait FilledProperty: 'static {
+    const FILLED: char;
+}
+
+pub trait UnfilledProperty: 'static {
+    const UNFILLED: char;
 }
 
 #[derive(Default)]
-pub struct Properties(Vec<Box<dyn Any>>);
+pub struct Properties {
+    list: Vec<Box<dyn Any>>,
+    local: HashMap<ViewId, Vec<Box<dyn Any>>>,
+}
 
 impl Properties {
-    pub fn with<P: Property>(mut self, item: P) -> Self {
+    pub fn with<P: 'static>(mut self, item: P) -> Self {
         self.insert(item);
         self
     }
 
-    pub fn with_default<P: Property + Default>(mut self) -> Self {
+    pub fn with_default<P: 'static + Default>(mut self) -> Self {
         self.insert_default::<P>();
         self
     }
+}
 
-    pub fn width<T>(&mut self) -> f32
-    where
-        T: WidthProperty,
-    {
-        *self.get_or_default::<Width<T>>()
+impl Properties {
+    pub fn width<T: WidthProperty>(&mut self) -> f32 {
+        struct Width<T: WidthProperty> {
+            value: f32,
+            _marker: std::marker::PhantomData<T>,
+        }
+        self.get_or_insert_with::<Width<T>>(|| Width {
+            value: T::WIDTH,
+            _marker: std::marker::PhantomData,
+        })
+        .value
     }
 
-    pub fn height<T>(&mut self) -> f32
-    where
-        T: HeightProperty,
-    {
-        *self.get_or_default::<Height<T>>()
+    pub fn height<T: HeightProperty>(&mut self) -> f32 {
+        struct Height<T: HeightProperty> {
+            value: f32,
+            _marker: std::marker::PhantomData<T>,
+        }
+        self.get_or_insert_with::<Height<T>>(|| Height {
+            value: T::HEIGHT,
+            _marker: std::marker::PhantomData,
+        })
+        .value
     }
 
-    pub fn filled<T>(&mut self) -> char
-    where
-        T: FilledProperty,
-    {
-        *self.get_or_default::<Filled<T>>()
+    pub fn filled<T: FilledProperty>(&mut self) -> char {
+        struct Filled<T: FilledProperty> {
+            value: char,
+            _marker: std::marker::PhantomData<T>,
+        }
+        self.get_or_insert_with::<Filled<T>>(|| Filled {
+            value: T::FILLED,
+            _marker: std::marker::PhantomData,
+        })
+        .value
     }
 
-    pub fn unfilled<T>(&mut self) -> char
-    where
-        T: UnfilledProperty,
-    {
-        *self.get_or_default::<Unfilled<T>>()
+    pub fn unfilled<T: UnfilledProperty>(&mut self) -> char {
+        struct Unfilled<T: UnfilledProperty> {
+            value: char,
+            _marker: std::marker::PhantomData<T>,
+        }
+        self.get_or_insert_with::<Unfilled<T>>(|| Unfilled {
+            value: T::UNFILLED,
+            _marker: std::marker::PhantomData,
+        })
+        .value
     }
 
-    pub fn insert<P: Property>(&mut self, item: P) {
-        match self.get_index::<P>() {
-            Some(index) => self.0[index] = Box::new(item),
-            None => self.0.push(Box::new(item)),
+    pub fn flex(&mut self, id: ViewId) -> Option<views::Flex> {
+        self.get_for(id).copied()
+    }
+}
+
+impl Properties {
+    pub fn clear_locals(&mut self) {
+        self.local.clear();
+    }
+
+    pub fn remove_all_for_id(&mut self, id: ViewId) {
+        self.local.remove(&id);
+    }
+
+    pub fn get_for<P: 'static>(&mut self, id: ViewId) -> Option<&P> {
+        self.local
+            .get(&id)?
+            .iter()
+            .find_map(|c| c.downcast_ref::<P>())
+    }
+
+    pub fn get_or_default_for<P: 'static + Default>(&mut self, id: ViewId) -> &P {
+        self.get_or_insert_with_for(P::default, id)
+    }
+
+    pub fn get_or_insert_for<P: 'static>(&mut self, value: P, id: ViewId) -> &P {
+        self.get_or_insert_with_for(|| value, id)
+    }
+
+    pub fn get_or_insert_with_for<P: 'static>(
+        &mut self,
+        value: impl FnOnce() -> P,
+        id: ViewId,
+    ) -> &P {
+        let Some(index) = self.get_index_for::<P>(id) else {
+            let item = value();
+            self.insert(item);
+            return self.local[&id].last().unwrap().downcast_ref::<P>().unwrap();
+        };
+        self.local[&id][index].downcast_ref::<P>().unwrap()
+    }
+
+    pub fn insert_for<P: 'static + std::fmt::Debug>(&mut self, item: P, id: ViewId) {
+        match self.get_index_for::<P>(id) {
+            Some(index) => self.local.entry(id).or_default()[index] = Box::new(item),
+            None => self.local.entry(id).or_default().push(Box::new(item)),
         }
     }
 
-    pub fn insert_default<P: Property + Default>(&mut self) {
+    pub fn insert_default_for<P: 'static + Default + std::fmt::Debug>(&mut self, id: ViewId) {
+        self.insert_for(P::default(), id);
+    }
+
+    fn get_index_for<P: 'static>(&self, id: ViewId) -> Option<usize> {
+        self.local.get(&id)?.iter().position(|item| item.is::<P>())
+    }
+}
+
+impl Properties {
+    pub fn insert<P: 'static>(&mut self, item: P) {
+        match self.get_index::<P>() {
+            Some(index) => self.list[index] = Box::new(item),
+            None => self.list.push(Box::new(item)),
+        }
+    }
+
+    pub fn insert_default<P: 'static + Default>(&mut self) {
         self.insert(P::default());
     }
 
-    pub fn get<P: Property>(&self) -> Option<&P::Value> {
-        self.0
-            .iter()
-            .find_map(|c| c.downcast_ref::<P>().map(P::get))
+    pub fn get<P: 'static>(&self) -> Option<&P> {
+        self.list.iter().find_map(|c| c.downcast_ref::<P>())
     }
 
-    pub fn get_or_default<P: Property + Default>(&mut self) -> &P::Value {
+    pub fn get_or_default<P: 'static + Default>(&mut self) -> &P {
         self.get_or_insert_with(P::default)
     }
 
-    pub fn get_or_insert<P: Property>(&mut self, value: P) -> &P::Value {
+    pub fn get_or_insert<P: 'static>(&mut self, value: P) -> &P {
         self.get_or_insert_with(|| value)
     }
 
-    pub fn get_or_insert_with<P: Property>(&mut self, value: impl FnOnce() -> P) -> &P::Value {
+    pub fn get_or_insert_with<P: 'static>(&mut self, value: impl FnOnce() -> P) -> &P {
         let Some(index) = self.get_index::<P>() else {
             let item = value();
             self.insert(item);
-            return self.0.last().unwrap().downcast_ref::<P>().unwrap().get();
+            return self.list.last().unwrap().downcast_ref::<P>().unwrap();
         };
 
-        self.0[index].downcast_ref::<P>().unwrap().get()
+        self.list[index].downcast_ref::<P>().unwrap()
     }
 
-    pub fn remove<P: Property>(&mut self) -> bool {
-        let len = self.0.len();
-        self.0.retain(|c| !c.is::<P>());
-        len != self.0.len()
+    pub fn remove<P: 'static>(&mut self) -> bool {
+        let len = self.list.len();
+        self.list.retain(|c| !c.is::<P>());
+        len != self.list.len()
     }
 
-    fn get_index<P: Property>(&self) -> Option<usize> {
-        self.0.iter().position(|item| item.is::<P>())
+    fn get_index<P: 'static>(&self) -> Option<usize> {
+        self.list.iter().position(|item| item.is::<P>())
     }
 }
 
@@ -452,10 +364,7 @@ impl From<ViewId> for too::Index<ViewId> {
 
 impl std::fmt::Debug for ViewId {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.debug_tuple("ViewId")
-            .field(&self.0.slot())
-            .field(&self.0.generation())
-            .finish()
+        write!(f, "{}v{}", self.0.slot(), self.0.generation())
     }
 }
 
@@ -492,7 +401,7 @@ impl<'a, 'c, T: 'static> AnimateCtx<'a, 'c, T> {
                 size: self.too_ctx.size,
                 animations: self.too_ctx.animations,
             },
-            nodes: &mut self.nodes,
+            nodes: self.nodes,
         };
 
         node.view.animate(ctx, dt);
@@ -504,7 +413,7 @@ pub struct UpdateCtx<'a, T: 'static> {
     pub current_id: ViewId,
     pub children: &'a [ViewId],
     pub state: &'a mut T,
-
+    pub properties: &'a mut Properties,
     debug: &'a mut Vec<String>,
 }
 
@@ -615,28 +524,28 @@ impl<'a> Surface<'a> {
         self.rect
     }
 
-    pub fn horizontal_fill(&mut self, min_x: f32, max_x: f32, pixel: impl Into<Pixel>) {
+    pub fn horizontal_fill(&mut self, vec: impl Into<Vector>, pixel: impl Into<Pixel>) {
+        let vec = vec.into().round();
         let pixel = pixel.into();
-        let (min_x, max_x) = (min_x.round() as i32, max_x.round() as i32);
-        for x in min_x..max_x {
-            self.set((x as f32, 0.0), pixel);
+        for x in float_step_exclusive(vec.x, vec.y, 1.0) {
+            self.set((x, 0.0), pixel);
         }
     }
 
-    pub fn vertical_fill(&mut self, min_y: f32, max_y: f32, pixel: impl Into<Pixel>) {
+    pub fn vertical_fill(&mut self, vec: impl Into<Vector>, pixel: impl Into<Pixel>) {
+        let vec = vec.into().round();
         let pixel = pixel.into();
-        let (min_y, max_y) = (min_y.round() as i32, max_y.round() as i32);
-        for y in min_y..max_y {
-            self.set((0.0, y as f32), pixel);
+        for y in float_step_exclusive(vec.x, vec.y, 1.0) {
+            self.set((0.0, y), pixel);
         }
     }
 
     pub fn fill(&mut self, pixel: impl Into<Pixel>) {
         let pixel = pixel.into();
-
-        for y in 0..self.rect.height().round() as i32 {
-            for x in 0..self.rect.width().round() as i32 {
-                self.set(pos2(x, y), pixel);
+        let vec = Vector::from((self.rect.width(), self.rect.height())).round();
+        for y in float_step_exclusive(0.0, vec.y, 1.0) {
+            for x in float_step_exclusive(0.0, vec.x, 1.0) {
+                self.set((x, y), pixel);
             }
         }
     }
@@ -703,12 +612,17 @@ impl<'a, 'c: 't, 't, T: 'static> DrawCtx<'a, 't, T> {
     }
 
     pub fn animations(&mut self) -> &mut AnimationManager {
-        &mut self.too_ctx.animations
+        self.too_ctx.animations
     }
 
     pub fn debug(&mut self, msg: impl ToString) {
         self.debug.push(msg.to_string());
     }
+}
+
+enum Either<L, R> {
+    Left(L),
+    Right(R),
 }
 
 #[derive(Copy, Clone, Default)]
@@ -729,10 +643,10 @@ pub struct Ui<T: 'static> {
     stack: Vec<ViewId>,
     removed: Vec<ViewId>,
 
+    light_mode: bool,
     theme: Theme,
     properties: Properties,
 
-    // TODO reuse vecdeque from the BFS
     rect: Rectf,
     quit: bool,
 
@@ -740,6 +654,8 @@ pub struct Ui<T: 'static> {
 
     toggle_fps: Toggle,
     toggle_debug: Toggle,
+    //
+    // TODO reuse vecdeque from the BFS
 }
 
 impl<T> std::fmt::Debug for Ui<T> {
@@ -798,6 +714,10 @@ impl<T: 'static> Ui<T> {
         self.stack.last().copied().unwrap_or(self.root())
     }
 
+    pub fn light_mode(&mut self) -> &mut bool {
+        &mut self.light_mode
+    }
+
     pub fn debug(&mut self, msg: impl ToString) {
         self.debug.push(msg.to_string());
     }
@@ -835,6 +755,8 @@ impl<T: 'static> Ui<T> {
             rect: rect.into(),
             quit: false,
 
+            light_mode: false,
+
             debug: Vec::new(),
 
             toggle_debug: Toggle::No,
@@ -842,7 +764,7 @@ impl<T: 'static> Ui<T> {
         }
     }
 
-    fn scope(&mut self, state: &mut T, apply: fn(&mut Context<'_, T>), mut ctx: too::Context) {
+    fn scope(&mut self, state: &mut T, apply: fn(&mut Context<T>), mut ctx: too::Context) {
         self.begin();
 
         apply(&mut Context {
@@ -869,12 +791,12 @@ impl<T: 'static> Ui<T> {
     }
 
     fn resolve(&mut self) {
-        let NodeSlot::Occupied(root) = &self.nodes[self.root.0] else {
+        let NodeSlot::Occupied(root) = &mut self.nodes[self.root.0] else {
             unreachable!("root node {:?} was not found", self.root);
         };
+        root.rect = self.rect;
 
-        let mut queue = VecDeque::from_iter(root.children.iter().map(|&id| (id, Point::ZERO)));
-
+        let mut queue = VecDeque::from_iter([(self.root, Point::ZERO)]);
         while let Some((id, pos)) = queue.pop_front() {
             let Some(node) = self.nodes.get_mut(id.0) else {
                 continue;
@@ -882,14 +804,12 @@ impl<T: 'static> Ui<T> {
 
             let offset = pos.to_vector();
             node.rect += offset;
-
             queue.extend(node.children.iter().map(|&id| (id, node.rect.min)))
         }
     }
 
     fn animate(&mut self, state: &mut T, dt: f32, too_ctx: too::Context) {
         let node = &mut self.nodes[self.root.0];
-
         let Some(mut node) = node.take() else {
             unreachable!("node: {:?} was missing", self.root)
         };
@@ -942,7 +862,7 @@ impl<T: 'static> Ui<T> {
         };
 
         let space = Space {
-            min: Size::ZERO,
+            min: self.rect.size(),
             max: self.rect.size(),
         };
 
@@ -998,14 +918,13 @@ impl<T: 'static> Ui<T> {
         too_ctx.overlay().debug.extend(self.debug.drain(..));
     }
 
-    fn begin_view<V>(&mut self, state: &mut T, args: V::Args<'_>) -> Response<V::Response>
+    fn begin_view<V>(&mut self, state: &mut T, args: V::Args<'_>) -> (ViewId, V::Response)
     where
         V: View<T> + 'static,
     {
         let parent = self.current();
 
-        // is this clone required?
-        let (id, mut view) = self.update_view::<V>(args.clone(), parent);
+        let (id, mut view) = self.patch_view::<V>(args.clone(), parent);
         self.stack.push(id);
 
         let Some(actual_view) = view.as_any_mut().downcast_mut::<V>() else {
@@ -1020,12 +939,13 @@ impl<T: 'static> Ui<T> {
             current_id: id,
             children: &self.nodes[id.0].as_ref().children,
             state,
+            properties: &mut self.properties,
             debug: &mut self.debug,
         };
 
         let resp = actual_view.update(ctx, args);
         self.nodes[id.0].as_mut().view.inhabit(view);
-        Response::new(id, resp, ()) // TODO what should `Response::inner` be?
+        (id, resp)
     }
 
     fn end_view(&mut self, id: ViewId) {
@@ -1052,10 +972,8 @@ impl<T: 'static> Ui<T> {
     where
         V: View<T> + 'static,
     {
-        let id = self
-            .nodes
-            .insert(NodeSlot::Occupied(ViewNode::empty(parent)));
-        let id = ViewId(id);
+        let node = NodeSlot::Occupied(ViewNode::empty(parent));
+        let id = ViewId(self.nodes.insert(node));
 
         let parent = self.nodes[parent.0].as_mut();
         if parent.next < parent.children.len() {
@@ -1069,7 +987,7 @@ impl<T: 'static> Ui<T> {
         (id, Box::new(ViewMarker::new(view)))
     }
 
-    fn update_view<V>(
+    fn patch_view<V>(
         &mut self,
         args: V::Args<'_>,
         parent: ViewId,
@@ -1100,15 +1018,10 @@ impl<T: 'static> Ui<T> {
         let mut queue = VecDeque::from_iter([id]);
         while let Some(id) = queue.pop_front() {
             self.removed.push(id);
-            if let Some(node) = self.nodes.remove(id.0).filter(NodeSlot::is_occupied) {
+            if let Some(node) = self.nodes.remove(id.0) {
                 queue.extend(&node.children);
                 if let Some(parent) = node.parent {
-                    if let Some(parent) = self
-                        .nodes
-                        .get_mut(parent.0)
-                        .filter(|s| NodeSlot::is_occupied(s))
-                        .map(|s| s.as_mut())
-                    {
+                    if let Some(parent) = self.nodes.get_mut(parent.0).map(|s| s.as_mut()) {
                         parent.children.retain(|&child| child != id);
                     }
                 }

@@ -1,8 +1,6 @@
 use too::{Key, Keybind, Modifiers};
 
-use crate::{
-    view::Context, Event, EventCtx, Handled, Interest, NoArgs, Response, UpdateCtx, View, ViewExt,
-};
+use crate::{view::Context, Event, EventCtx, Handled, Interest, UpdateCtx, View, ViewExt};
 
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub struct KeyAreaResponse {
@@ -37,7 +35,7 @@ struct KeyArea {
 }
 
 impl<T: 'static> View<T> for KeyArea {
-    type Args<'a> = NoArgs;
+    type Args<'a> = ();
     type Response = KeyAreaResponse;
 
     fn create(args: Self::Args<'_>) -> Self {
@@ -68,31 +66,30 @@ impl<T: 'static> View<T> for KeyArea {
 }
 
 pub fn key_area<T: 'static, R>(
-    ctx: &mut Context<'_, T>,
-    show: impl FnOnce(&mut Context<'_, T>) -> R,
-) -> Response<KeyAreaResponse, R> {
-    KeyArea::show_children((), ctx, show)
+    ctx: &mut Context<T>,
+    show: impl FnOnce(&mut Context<T>) -> R,
+) -> KeyAreaResponse {
+    let (resp, _) = KeyArea::show_children((), ctx, show);
+    resp
 }
 
 pub fn hot_key<T: 'static, R>(
     keybind: impl Into<Keybind>,
-    ctx: &mut Context<'_, T>,
-    show: impl FnOnce(&mut Context<'_, T>) -> R,
-) -> Response<bool, R> {
-    let resp = key_area(ctx, show);
-    let pressed = resp.is_keybind(keybind);
-    Response::new(resp.view_id(), pressed, resp.into_inner())
+    ctx: &mut Context<T>,
+    show: impl FnOnce(&mut Context<T>) -> R,
+) -> bool {
+    key_area(ctx, show).is_keybind(keybind)
 }
 
 pub fn key_press<const N: usize, T: 'static, R>(
     keys: [Keybind; N],
-    ctx: &mut Context<'_, T>,
-    show: impl FnOnce(&mut Context<'_, T>) -> R,
-) -> Response<[bool; N], R> {
+    ctx: &mut Context<T>,
+    show: impl FnOnce(&mut Context<T>) -> R,
+) -> [bool; N] {
     let resp = key_area(ctx, show);
     let mut out = [false; N];
     for (key, result) in keys.into_iter().zip(&mut out) {
         *result = resp.is_keybind(key)
     }
-    Response::new(resp.view_id(), out, resp.into_inner())
+    out
 }

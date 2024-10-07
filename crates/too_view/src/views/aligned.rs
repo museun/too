@@ -2,9 +2,8 @@ use too::layout::Align2;
 
 use crate::{
     geom::{Size, Space},
-    response::UserResponse,
     view::Context,
-    LayoutCtx, NoResponse, UpdateCtx, View, ViewExt,
+    LayoutCtx, UpdateCtx, View, ViewExt,
 };
 
 struct Aligned {
@@ -13,14 +12,14 @@ struct Aligned {
 
 impl<T: 'static> View<T> for Aligned {
     type Args<'a> = Align2;
-    type Response = NoResponse;
+    type Response = ();
 
     fn create(args: Self::Args<'_>) -> Self {
         Self { align2: args }
     }
 
     fn update(&mut self, ctx: UpdateCtx<T>, args: Self::Args<'_>) -> Self::Response {
-        self.align2 = args;
+        self.align2 = args
     }
 
     fn layout(&mut self, mut ctx: LayoutCtx<T>, space: Space) -> Size {
@@ -39,17 +38,15 @@ impl<T: 'static> View<T> for Aligned {
     }
 }
 
-pub fn center<T: 'static, R>(
-    ctx: &mut Context<'_, T>,
-    show: impl FnOnce(&mut Context<'_, T>) -> R,
-) -> UserResponse<R> {
+pub fn center<T: 'static, R>(ctx: &mut Context<T>, show: impl FnOnce(&mut Context<T>) -> R) -> R {
     align(Align2::CENTER_CENTER, ctx, show)
 }
 
 pub fn align<T: 'static, R>(
     align: Align2,
-    ctx: &mut Context<'_, T>,
-    show: impl FnOnce(&mut Context<'_, T>) -> R,
-) -> UserResponse<R> {
-    Aligned::show_children(align, ctx, show)
+    ctx: &mut Context<T>,
+    show: impl FnOnce(&mut Context<T>) -> R,
+) -> R {
+    let (_, resp) = Aligned::show_children(align, ctx, show);
+    resp
 }

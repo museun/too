@@ -1,17 +1,18 @@
 use std::borrow::Cow;
 
-use too::Attribute;
+use too::{Attribute, Rgba};
 
 use crate::{
     geom::{Size, Space},
     text::Text,
     view::Context,
-    DrawCtx, LayoutCtx, NoResponse, Response, UpdateCtx, View, ViewExt,
+    DrawCtx, LayoutCtx, UpdateCtx, View, ViewExt,
 };
 
 #[derive(Clone)]
 pub struct LabelParams<'a> {
     pub label: Cow<'a, str>,
+    pub fg: Option<Rgba>,
     pub attribute: Option<Attribute>,
 }
 
@@ -31,8 +32,19 @@ impl<'a> LabelParams<'a> {
     pub fn new(label: impl Into<Cow<'a, str>>) -> Self {
         Self {
             label: label.into(),
+            fg: None,
             attribute: None,
         }
+    }
+
+    pub fn fg(mut self, color: impl Into<Rgba>) -> Self {
+        self.fg = Some(color.into());
+        self
+    }
+
+    pub fn maybe_fg(mut self, color: Option<impl Into<Rgba>>) -> Self {
+        self.fg = color.map(Into::into);
+        self
     }
 
     pub const fn attribute(mut self, attr: Attribute) -> Self {
@@ -76,7 +88,7 @@ struct StaticLabel<T: 'static> {
 
 impl<T: 'static> View<T> for StaticLabel<T> {
     type Args<'a> = LabelParams<'static>;
-    type Response = NoResponse;
+    type Response = ();
 
     fn create(args: Self::Args<'_>) -> Self {
         Self {
@@ -96,18 +108,15 @@ impl<T: 'static> View<T> for StaticLabel<T> {
     fn draw(&mut self, mut ctx: DrawCtx<T>) {
         Text {
             data: &self.args.label,
-            fg: ctx.theme.foreground,
+            fg: self.args.fg.unwrap_or(ctx.theme.foreground),
             attribute: self.args.attribute.unwrap_or(Attribute::RESET),
         }
         .draw(ctx.rect, ctx.surface.surface_raw());
     }
 }
 
-pub fn static_label<T: 'static>(
-    ctx: &mut Context<T>,
-    label: impl Into<LabelParams<'static>>,
-) -> Response {
-    StaticLabel::show(label.into(), ctx)
+pub fn static_label<T: 'static>(ctx: &mut Context<T>, label: impl Into<LabelParams<'static>>) {
+    StaticLabel::show(label.into(), ctx);
 }
 
 pub(crate) struct LabelArgs<T: 'static> {
@@ -129,14 +138,14 @@ pub(crate) struct Label<T: 'static> {
 
 impl<T: 'static> View<T> for Label<T> {
     type Args<'a> = LabelArgs<T>;
-    type Response = NoResponse;
+    type Response = ();
 
     fn create(args: Self::Args<'_>) -> Self {
         Self { args }
     }
 
     fn update(&mut self, ctx: UpdateCtx<T>, args: Self::Args<'_>) -> Self::Response {
-        self.args = args;
+        self.args = args
     }
 
     fn layout(&mut self, ctx: LayoutCtx<T>, space: Space) -> Size {
@@ -155,13 +164,10 @@ impl<T: 'static> View<T> for Label<T> {
     }
 }
 
-pub fn label<T: 'static>(
-    ctx: &mut Context<T>,
-    label: for<'t> fn(&'t T) -> LabelParams<'t>,
-) -> Response {
+pub fn label<T: 'static>(ctx: &mut Context<T>, label: for<'t> fn(&'t T) -> LabelParams<'t>) {
     let args = LabelArgs {
         params: label,
         attribute: None,
     };
-    Label::show(args, ctx)
+    Label::show(args, ctx);
 }

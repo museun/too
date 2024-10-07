@@ -1,8 +1,7 @@
 use crate::{
     geom::{self, Size, Space},
-    response::UserResponse,
     view::Context,
-    LayoutCtx, NoResponse, UpdateCtx, View, ViewExt,
+    LayoutCtx, UpdateCtx, View, ViewExt,
 };
 
 struct Margin {
@@ -11,7 +10,7 @@ struct Margin {
 
 impl<T: 'static> View<T> for Margin {
     type Args<'a> = geom::Margin;
-    type Response = NoResponse;
+    type Response = ();
 
     fn create(args: Self::Args<'_>) -> Self {
         Self { margin: args }
@@ -40,8 +39,9 @@ impl<T: 'static> View<T> for Margin {
 
 pub fn margin<T: 'static, R>(
     margin: impl Into<geom::Margin>,
-    ctx: &mut Context<'_, T>,
-    show: impl FnOnce(&mut Context<'_, T>) -> R,
-) -> UserResponse<R> {
-    Margin::show_children(margin.into(), ctx, show)
+    ctx: &mut Context<T>,
+    show: impl FnOnce(&mut Context<T>) -> R,
+) -> R {
+    let (_, resp) = Margin::show_children(margin.into(), ctx, show);
+    resp
 }
