@@ -8,6 +8,9 @@ use too::{animation::AnimationManager, Pixel, Rgba, Surface as TooSurface};
 
 mod text;
 
+mod debug;
+pub use debug::{debug_flat_tree, debug_flow_tree};
+
 pub mod geom;
 use geom::{float_step_exclusive, Point, Rectf, Size, Space, Vector};
 
@@ -72,6 +75,7 @@ pub trait HeightProperty: 'static {
 
 pub trait FilledProperty: 'static {
     const FILLED: char;
+    const CROSS: char = Self::FILLED;
 }
 
 pub trait UnfilledProperty: 'static {
@@ -133,6 +137,19 @@ impl Properties {
         .value
     }
 
+    // TODO this is a bad name
+    pub fn filled_cross<T: FilledProperty>(&mut self) -> char {
+        struct FilledCross<T: FilledProperty> {
+            value: char,
+            _marker: std::marker::PhantomData<T>,
+        }
+        self.get_or_insert_with::<FilledCross<T>>(|| FilledCross {
+            value: T::CROSS,
+            _marker: std::marker::PhantomData,
+        })
+        .value
+    }
+
     pub fn unfilled<T: UnfilledProperty>(&mut self) -> char {
         struct Unfilled<T: UnfilledProperty> {
             value: char,
@@ -159,7 +176,7 @@ impl Properties {
         self.local.remove(&id);
     }
 
-    pub fn get_for<P: 'static>(&mut self, id: ViewId) -> Option<&P> {
+    pub fn get_for<P: 'static>(&self, id: ViewId) -> Option<&P> {
         self.local
             .get(&id)?
             .iter()

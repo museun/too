@@ -85,6 +85,9 @@ pub use immediate::immediate;
 mod dark_mode;
 pub use dark_mode::toggle_dark_mode;
 
+mod separator;
+pub use separator::{horizontal_separator, vertical_separator, Separator};
+
 // float
 // text input
 // border

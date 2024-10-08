@@ -1,4 +1,4 @@
-use std::marker::PhantomData;
+use std::{borrow::Cow, marker::PhantomData};
 
 use crate::{
     debug_fmt,
@@ -13,7 +13,7 @@ impl<T: 'static> std::fmt::Debug for dyn ErasedView<State = T> {
         f.debug_map()
             .entry(
                 &crate::debug_fmt::str("type"),
-                &crate::debug_fmt::str(&debug_fmt::short_name(self.type_name())),
+                &crate::debug_fmt::str(&self.type_name()),
             )
             .entry(
                 &crate::debug_fmt::str("state"),
@@ -30,7 +30,7 @@ pub trait ErasedView: std::any::Any {
     fn animate(&mut self, ctx: AnimateCtx<Self::State>, dt: f32);
     fn layout(&mut self, ctx: LayoutCtx<Self::State>, space: Space) -> Size;
     fn draw(&mut self, ctx: DrawCtx<Self::State>);
-    fn type_name(&self) -> &'static str;
+    fn type_name(&self) -> Cow<'static, str>;
     fn as_any_mut(&mut self) -> &mut dyn std::any::Any;
 }
 
@@ -72,8 +72,8 @@ impl<T: 'static, V: View<T> + 'static> ErasedView for ViewMarker<T, V> {
         <V as View<T>>::draw(&mut self.view, ctx);
     }
 
-    fn type_name(&self) -> &'static str {
-        std::any::type_name::<V>()
+    fn type_name(&self) -> Cow<'static, str> {
+        V::shortname()
     }
 
     fn as_any_mut(&mut self) -> &mut dyn std::any::Any {

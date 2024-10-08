@@ -51,11 +51,10 @@ impl<T: 'static> View<T> for FlexView {
 
     fn update(&mut self, ctx: UpdateCtx<T>, args: Self::Args<'_>) -> Self::Response {
         ctx.properties.insert_for(self.params, ctx.current_id);
-
         self.params = args;
-        for &child in ctx.children {
-            ctx.properties.insert_for(self.params, child);
-        }
+        // for &child in ctx.children {
+        //     ctx.properties.insert_for(self.params, child);
+        // }
     }
 }
 

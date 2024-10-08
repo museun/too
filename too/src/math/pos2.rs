@@ -50,7 +50,7 @@ pub const fn pos2(x: i32, y: i32) -> Pos2 {
 }
 
 impl std::ops::Add for Pos2 {
-    type Output = Pos2;
+    type Output = Self;
     fn add(self, rhs: Self) -> Self::Output {
         pos2(self.x + rhs.x, self.y + rhs.y)
     }
@@ -69,6 +69,12 @@ impl std::ops::Sub for Pos2 {
     }
 }
 
+impl std::ops::SubAssign for Pos2 {
+    fn sub_assign(&mut self, rhs: Self) {
+        *self = *self - rhs
+    }
+}
+
 impl std::ops::Add<Vec2> for Pos2 {
     type Output = Self;
     fn add(self, rhs: Vec2) -> Self::Output {
@@ -80,5 +86,21 @@ impl std::ops::Sub<Vec2> for Pos2 {
     type Output = Self;
     fn sub(self, rhs: Vec2) -> Self::Output {
         pos2(self.x - rhs.x, self.y - rhs.y)
+    }
+}
+
+impl std::ops::Neg for Pos2 {
+    type Output = Self;
+
+    fn neg(self) -> Self::Output {
+        Self::new(-self.x, -self.y)
+    }
+}
+
+impl std::ops::Mul<i32> for Pos2 {
+    type Output = Self;
+
+    fn mul(self, rhs: i32) -> Self::Output {
+        Self::new(self.x * rhs, self.y * rhs)
     }
 }

@@ -81,20 +81,16 @@ impl<'a> LabelParams<'a> {
     }
 }
 
-struct StaticLabel<T: 'static> {
+struct StaticLabel {
     args: LabelParams<'static>,
-    _marker: std::marker::PhantomData<T>,
 }
 
-impl<T: 'static> View<T> for StaticLabel<T> {
+impl<T: 'static> View<T> for StaticLabel {
     type Args<'a> = LabelParams<'static>;
     type Response = ();
 
     fn create(args: Self::Args<'_>) -> Self {
-        Self {
-            args,
-            _marker: std::marker::PhantomData,
-        }
+        Self { args }
     }
 
     fn update(&mut self, ctx: UpdateCtx<T>, args: Self::Args<'_>) -> Self::Response {

@@ -1,6 +1,9 @@
+use std::{any::type_name, borrow::Cow};
+
 use too::animation::AnimationManager;
 
 use crate::{
+    debug_fmt::short_name,
     geom::{Size, Space},
     input::{Event, EventCtx, Handled},
     AnimateCtx, DrawCtx, Interest, LayoutCtx, Ui, UpdateCtx,
@@ -14,6 +17,14 @@ pub trait View<T: 'static>: Sized {
     type Response;
 
     fn create(args: Self::Args<'_>) -> Self;
+
+    fn shortname() -> Cow<'static, str> {
+        Self::default_short_name()
+    }
+
+    fn default_short_name() -> Cow<'static, str> {
+        short_name(type_name::<Self>()).into()
+    }
 
     fn update(&mut self, ctx: UpdateCtx<T>, args: Self::Args<'_>) -> Self::Response;
 

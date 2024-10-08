@@ -1,4 +1,4 @@
-use std::ops::RangeInclusive;
+use std::{borrow::Cow, ops::RangeInclusive};
 
 use too::Pixel;
 
@@ -75,6 +75,10 @@ impl<T: 'static, F: for<'a> FnOnce(&'a mut T) -> SliderParams<'a> + Clone> View<
             previous: 0.0,
             _marker: std::marker::PhantomData,
         }
+    }
+
+    fn shortname() -> std::borrow::Cow<'static, str> {
+        Cow::from("Slider")
     }
 
     fn update(&mut self, ctx: UpdateCtx<T>, args: Self::Args<'_>) -> Self::Response {
