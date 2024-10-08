@@ -1,4 +1,4 @@
-use std::time::Duration;
+use std::{borrow::Cow, rc::Rc, time::Duration};
 
 use crate::{
     animation::{easing, Animation},
@@ -35,22 +35,39 @@ pub struct ToggleResponse {
     pub changed: bool,
 }
 
-pub struct Toggle<T: 'static = ()> {
-    args: fn(&mut T) -> &mut bool,
+pub struct Toggle<T: 'static = (), F = ()> {
+    args: F,
     last: bool,
+    _marker: std::marker::PhantomData<T>,
 }
 
-impl<T: 'static> View<T> for Toggle<T> {
-    type Args<'a> = fn(&mut T) -> &mut bool;
+impl<T: 'static, F: for<'t> FnOnce(&'t mut T) -> ToggleParams<'t> + Clone> View<T>
+    for Toggle<T, F>
+{
+    type Args<'a> = F;
     type Response = ToggleResponse;
 
     fn create(args: Self::Args<'_>) -> Self {
-        Self { args, last: false }
+        Self {
+            args,
+            last: false,
+            _marker: std::marker::PhantomData,
+        }
+    }
+
+    fn short_name() -> std::borrow::Cow<'static, str> {
+        Cow::from("Toggle")
     }
 
     fn update(&mut self, ctx: UpdateCtx<T>, args: Self::Args<'_>) -> Self::Response {
         self.args = args;
-        let previous = std::mem::replace(&mut self.last, *(self.args)(ctx.state));
+        let value = (self.args.clone())(ctx.state);
+        let bool = match value.flag {
+            ToggleBool::Bool(bool) => *bool,
+            ToggleBool::Shared(shared) => shared.get(),
+        };
+
+        let previous = std::mem::replace(&mut self.last, bool);
         ToggleResponse {
             changed: previous != self.last,
         }
@@ -65,8 +82,14 @@ impl<T: 'static> View<T> for Toggle<T> {
             return Handled::Bubble;
         };
 
-        let selected = (self.args)(ctx.state);
-        *selected = !*selected;
+        let selected = (self.args.clone())(ctx.state);
+        match selected.flag {
+            ToggleBool::Bool(bool) => *bool = !*bool,
+            ToggleBool::Shared(shared) => {
+                let temp = shared.get();
+                shared.set(!temp);
+            }
+        };
 
         let key = ctx.current_id;
         ctx.animations.add(
@@ -91,7 +114,12 @@ impl<T: 'static> View<T> for Toggle<T> {
     }
 
     fn draw(&mut self, mut ctx: DrawCtx<T>) {
-        let selected = *((self.args)(ctx.state));
+        let selected = (self.args.clone())(ctx.state);
+        let selected = match selected.flag {
+            ToggleBool::Bool(bool) => *bool,
+            ToggleBool::Shared(shared) => shared.get(),
+        };
+
         let bg = if selected {
             ctx.theme.success
         } else {
@@ -121,7 +149,33 @@ impl<T: 'static> View<T> for Toggle<T> {
     }
 }
 
+pub struct ToggleParams<'a> {
+    flag: ToggleBool<'a>,
+}
+
+impl<'a> ToggleParams<'a> {
+    pub fn new(bool: &'a mut bool) -> Self {
+        Self {
+            flag: ToggleBool::Bool(bool),
+        }
+    }
+
+    pub fn shared(shared: Rc<std::cell::Cell<bool>>) -> Self {
+        Self {
+            flag: ToggleBool::Shared(shared),
+        }
+    }
+}
+
+enum ToggleBool<'a> {
+    Bool(&'a mut bool),
+    Shared(Rc<std::cell::Cell<bool>>),
+}
+
 // TODO this should take in a closure
-pub fn toggle<T: 'static>(ctx: &mut Context<T>, args: fn(&mut T) -> &mut bool) -> ToggleResponse {
+pub fn toggle<T: 'static>(
+    ctx: &mut Context<T>,
+    args: impl for<'a> FnOnce(&'a mut T) -> ToggleParams<'a> + Clone + 'static,
+) -> ToggleResponse {
     Toggle::show(args, ctx)
 }

@@ -42,7 +42,7 @@ impl<T: 'static> View<T> for Splitter {
         match event {
             Event::MouseEnter(mouse_move) => self.hovered = true,
             Event::MouseLeave(mouse_move) => self.hovered = false,
-            Event::MouseDrag(mouse_drag) => self.pos = Some(mouse_drag.pos),
+            // Event::MouseDrag(mouse_drag) => self.pos = Some(mouse_drag.pos),
             _ => return Handled::Bubble,
         };
 

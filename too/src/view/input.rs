@@ -1,6 +1,8 @@
 use std::collections::{HashMap, HashSet};
 
-use crate::{animation::AnimationManager, overlay::Overlay, Commands, Key, Modifiers, MouseButton};
+use crate::{
+    animation::AnimationManager, overlay::Overlay, Commands, Key, Keybind, Modifiers, MouseButton,
+};
 
 use super::{
     geom::{Point, Rectf, Vector},
@@ -190,11 +192,25 @@ pub struct MouseHeld {
 }
 
 #[derive(Copy, Clone, Debug, PartialEq)]
-pub struct MouseDrag {
-    pub released: bool,
+pub struct MouseDragStart {
     pub origin: Point,
+    pub button: MouseButton,
+    pub modifiers: Modifiers,
+}
+
+#[derive(Copy, Clone, Debug, PartialEq)]
+pub struct MouseDragHeld {
     pub pos: Point,
+    pub origin: Point,
     pub delta: Vector,
+    pub button: MouseButton,
+    pub modifiers: Modifiers,
+}
+
+#[derive(Copy, Clone, Debug, PartialEq)]
+pub struct MouseDragRelease {
+    pub pos: Point,
+    pub origin: Point,
     pub button: MouseButton,
     pub modifiers: Modifiers,
 }
@@ -220,7 +236,9 @@ pub enum Event {
     MouseMove(MouseMove),
     MouseClick(MouseClick),
     MouseHeld(MouseHeld),
-    MouseDrag(MouseDrag),
+    MouseDragStart(MouseDragStart),
+    MouseDragHeld(MouseDragHeld),
+    MouseDragRelease(MouseDragRelease),
     MouseScroll(MouseScroll),
     KeyInput(KeyInput),
     FocusGained,
@@ -228,81 +246,21 @@ pub enum Event {
 }
 
 impl Event {
-    pub fn translate_to_too(&self) -> Option<crate::Event> {
-        let ev = match *self {
-            Event::MouseMove(MouseMove { pos, modifiers }) => crate::Event::MouseMove {
-                pos: pos.into(),
-                modifiers,
-            },
-            Event::MouseClick(MouseClick {
-                pos,
-                button,
-                modifiers,
-            }) => crate::Event::MouseClick {
-                pos: pos.into(),
-                button,
-                modifiers,
-            },
-            Event::MouseHeld(MouseHeld {
-                pos,
-                button,
-                modifiers,
-            }) => crate::Event::MouseHeld {
-                pos: pos.into(),
-                button,
-                modifiers,
-            },
-            Event::MouseDrag(MouseDrag {
-                released,
-                origin,
-                pos,
-                delta,
-                button,
-                modifiers,
-            }) => {
-                let pos = pos.into();
-                let origin = origin.into();
-                let delta = delta.into();
+    pub const fn is_mouse_drag(&self) -> Option<Point> {
+        match self {
+            Self::MouseDragStart(MouseDragStart { origin: pos, .. })
+            | Self::MouseDragHeld(MouseDragHeld { pos, .. })
+            | Self::MouseDragRelease(MouseDragRelease { pos, .. }) => Some(*pos),
+            _ => None,
+        }
+    }
 
-                if pos == origin {
-                    crate::Event::MouseDragStart {
-                        pos,
-                        button,
-                        modifiers,
-                    }
-                } else if released {
-                    crate::Event::MouseDragRelease {
-                        pos,
-                        origin,
-                        button,
-                        modifiers,
-                    }
-                } else {
-                    crate::Event::MouseDragHeld {
-                        pos,
-                        origin,
-                        delta,
-                        button,
-                        modifiers,
-                    }
-                }
-            }
-            Event::MouseScroll(MouseScroll {
-                pos,
-                delta,
-                modifiers,
-            }) => crate::Event::MouseScroll {
-                pos: pos.into(),
-                delta: delta.into(),
-                modifiers,
-            },
-            Event::KeyInput(KeyInput { key, modifiers }) => {
-                crate::Event::KeyPressed { key, modifiers }
-            }
-            _ => return None,
-        };
-
-        Some(ev)
+    pub fn is_keybind(&self, keybind: impl Into<Keybind>) -> bool {
+        if let Self::KeyInput(input) = self {
+            let ev = Keybind::new(input.key, input.modifiers);
+            return ev == keybind.into();
+        }
+        false
     }
 
     pub fn modifiers(&self) -> Option<Modifiers> {
@@ -312,7 +270,9 @@ impl Event {
             | Self::MouseMove(MouseMove { modifiers, .. })
             | Self::MouseClick(MouseClick { modifiers, .. })
             | Self::MouseHeld(MouseHeld { modifiers, .. })
-            | Self::MouseDrag(MouseDrag { modifiers, .. })
+            | Self::MouseDragStart(MouseDragStart { modifiers, .. })
+            | Self::MouseDragHeld(MouseDragHeld { modifiers, .. })
+            | Self::MouseDragRelease(MouseDragRelease { modifiers, .. })
             | Self::MouseScroll(MouseScroll { modifiers, .. })
             | Self::KeyInput(KeyInput { modifiers, .. }) => Some(*modifiers),
             _ => None,
@@ -327,7 +287,9 @@ impl Event {
             | Self::MouseMove(MouseMove { pos, .. })
             | Self::MouseClick(MouseClick { pos, .. })
             | Self::MouseHeld(MouseHeld { pos, .. })
-            | Self::MouseDrag(MouseDrag { pos, .. })
+            | Self::MouseDragStart(MouseDragStart { origin: pos, .. })
+            | Self::MouseDragHeld(MouseDragHeld { pos, .. })
+            | Self::MouseDragRelease(MouseDragRelease { pos, .. })
             | Self::MouseScroll(MouseScroll { pos, .. }) => Some(*pos),
             _ => None,
         }
@@ -344,9 +306,11 @@ struct Intersections {
 #[derive(Debug, Default)]
 pub struct Mouse {
     pub current: Point,
+    // this is never set
     pub previous: Point,
     layered: Layered<Interest>,
     pub mouse_over: HashSet<ViewId>,
+    // this is never used
     pub buttons: HashMap<MouseButton, ButtonState>,
 }
 
@@ -363,7 +327,6 @@ impl Mouse {
         self.layered.current_root()
     }
 
-    // this is never called
     pub fn clear(&mut self) {
         self.layered.clear();
     }
@@ -526,7 +489,7 @@ impl Input {
 
         // TODO focus stuff
         for &id in removed {
-            self.remove(id);
+            self.mouse.mouse_over.remove(&id);
         }
     }
 
@@ -541,6 +504,10 @@ impl Input {
     ) -> Handled {
         self.last_event = Some(event.clone());
         self.modifiers = modifiers_for_event(event).unwrap_or(Modifiers::NONE);
+
+        if let Some(pos) = event.mouse_pos().map(Point::from) {
+            self.mouse.previous = std::mem::replace(&mut self.mouse.current, pos);
+        }
 
         macro_rules! ctx {
             () => {
@@ -618,16 +585,12 @@ impl Input {
 
             E::MouseDragStart { pos, button, .. } => {
                 self.mouse.buttons.insert(button, ButtonState::Held);
-                let pos = pos.into();
-                let event = MouseDrag {
-                    released: false,
-                    origin: pos,
-                    pos,
-                    delta: Vector::ZERO,
+                let event = MouseDragStart {
+                    origin: pos.into(),
                     button,
                     modifiers: self.modifiers,
                 };
-                ctx!().mouse_drag(event)
+                ctx!().mouse_event(&Event::MouseDragStart(event))
             }
 
             E::MouseDragHeld {
@@ -638,16 +601,14 @@ impl Input {
                 ..
             } => {
                 self.mouse.buttons.insert(button, ButtonState::Held);
-                let pos = pos.into();
-                let event = MouseDrag {
-                    released: false,
-                    origin: pos,
-                    pos,
+                let event = MouseDragHeld {
+                    origin: origin.into(),
+                    pos: pos.into(),
                     delta: delta.into(),
                     button,
                     modifiers: self.modifiers,
                 };
-                ctx!().mouse_drag(event)
+                ctx!().mouse_event(&Event::MouseDragHeld(event))
             }
 
             E::MouseDragRelease {
@@ -656,17 +617,15 @@ impl Input {
                 button,
                 ..
             } => {
+                overlay.debug.push(format!("release: {pos:?}, {origin:?}"));
                 self.mouse.buttons.insert(button, ButtonState::Released);
-                let pos = pos.into();
-                let event = MouseDrag {
-                    released: true,
-                    origin: pos,
-                    pos,
-                    delta: Vector::ZERO,
+                let event = MouseDragRelease {
+                    origin: origin.into(),
+                    pos: pos.into(),
                     button,
                     modifiers: self.modifiers,
                 };
-                ctx!().mouse_drag(event)
+                ctx!().mouse_event(&Event::MouseDragRelease(event))
             }
 
             E::MouseScroll { pos, delta, .. } => {
@@ -680,12 +639,6 @@ impl Input {
 
             _ => Handled::Bubble,
         }
-    }
-
-    fn remove(&mut self, id: ViewId) {
-        // self.keyboard.remove(id);
-        // self.mouse.remove(id);
-        self.mouse.mouse_over.remove(&id);
     }
 }
 
@@ -764,7 +717,6 @@ impl<'a, T: 'static> Context<'a, T> {
             };
 
             let node = node.as_mut();
-
             if node.rect.contains(event.pos) {
                 continue;
             }
@@ -822,10 +774,6 @@ impl<'a, T: 'static> Context<'a, T> {
         }
 
         Handled::Bubble
-    }
-
-    fn mouse_drag(&mut self, event: MouseDrag) -> Handled {
-        self.mouse_event(&Event::MouseDrag(event))
     }
 
     fn mouse_scroll(&mut self, event: MouseScroll) -> Handled {

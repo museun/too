@@ -1,4 +1,4 @@
-use crate::{math::Rect, Attribute, Grapheme, Rgba, Surface};
+use crate::{math::Rect, Attribute, Color, Grapheme, Rgba, Surface};
 use unicode_width::UnicodeWidthStr as _;
 
 use super::geom::{Rectf, Size};
@@ -6,6 +6,7 @@ use super::geom::{Rectf, Size};
 pub(crate) struct Text<'a> {
     pub data: &'a str,
     pub fg: Rgba,
+    pub bg: Color,
     pub attribute: Attribute,
 }
 
@@ -20,6 +21,7 @@ impl<'a> Text<'a> {
             Rect::from(rect).left_top(),
             Grapheme::new(self.data)
                 .fg(self.fg)
+                .bg(self.bg)
                 .attribute(self.attribute),
         );
     }

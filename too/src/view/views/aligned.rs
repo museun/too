@@ -42,6 +42,59 @@ pub fn center<T: 'static, R>(ctx: &mut Context<T>, show: impl FnOnce(&mut Contex
     align(Align2::CENTER_CENTER, ctx, show)
 }
 
+pub fn left_top<T: 'static, R>(ctx: &mut Context<T>, show: impl FnOnce(&mut Context<T>) -> R) -> R {
+    align(Align2::LEFT_TOP, ctx, show)
+}
+
+pub fn center_top<T: 'static, R>(
+    ctx: &mut Context<T>,
+    show: impl FnOnce(&mut Context<T>) -> R,
+) -> R {
+    align(Align2::CENTER_TOP, ctx, show)
+}
+
+pub fn right_top<T: 'static, R>(
+    ctx: &mut Context<T>,
+    show: impl FnOnce(&mut Context<T>) -> R,
+) -> R {
+    align(Align2::RIGHT_TOP, ctx, show)
+}
+
+pub fn left_center<T: 'static, R>(
+    ctx: &mut Context<T>,
+    show: impl FnOnce(&mut Context<T>) -> R,
+) -> R {
+    align(Align2::LEFT_CENTER, ctx, show)
+}
+
+pub fn right_center<T: 'static, R>(
+    ctx: &mut Context<T>,
+    show: impl FnOnce(&mut Context<T>) -> R,
+) -> R {
+    align(Align2::RIGHT_CENTER, ctx, show)
+}
+
+pub fn left_bottom<T: 'static, R>(
+    ctx: &mut Context<T>,
+    show: impl FnOnce(&mut Context<T>) -> R,
+) -> R {
+    align(Align2::LEFT_BOTTOM, ctx, show)
+}
+
+pub fn center_bottom<T: 'static, R>(
+    ctx: &mut Context<T>,
+    show: impl FnOnce(&mut Context<T>) -> R,
+) -> R {
+    align(Align2::CENTER_BOTTOM, ctx, show)
+}
+
+pub fn right_bottom<T: 'static, R>(
+    ctx: &mut Context<T>,
+    show: impl FnOnce(&mut Context<T>) -> R,
+) -> R {
+    align(Align2::RIGHT_BOTTOM, ctx, show)
+}
+
 pub fn align<T: 'static, R>(
     align: Align2,
     ctx: &mut Context<T>,

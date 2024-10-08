@@ -48,7 +48,6 @@ impl<T: 'static, V: View<T> + 'static> ErasedView for ViewMarker<T, V> {
         <V as View<T>>::animate(&mut self.view, ctx, dt);
     }
 
-    // we won't have the state here
     fn layout(&mut self, ctx: LayoutCtx<Self::State>, space: Space) -> Size {
         <V as View<T>>::layout(&mut self.view, ctx, space)
     }

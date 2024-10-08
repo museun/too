@@ -125,6 +125,14 @@ pub struct Dragged {
     pub origin: Point,
     pub current: Point,
     pub delta: Vector,
+    pub mode: DragMode,
+}
+
+#[derive(Copy, Clone, Debug, PartialEq)]
+pub enum DragMode {
+    Start,
+    Release,
+    Held,
 }
 
 #[derive(Copy, Clone, Debug, PartialEq)]
@@ -204,11 +212,29 @@ impl<T: 'static> View<T> for MouseArea {
             Event::MouseHeld(ev) if self.filter.is_held() && ev.button.is_primary() => {
                 self.state = MouseState::Held
             }
-            Event::MouseDrag(ev) if self.filter.is_drag() && ev.button.is_primary() => {
+            Event::MouseDragStart(ev) if self.filter.is_drag() && ev.button.is_primary() => {
+                self.dragged = Some(Dragged {
+                    origin: ev.origin,
+                    current: ev.origin,
+                    delta: Vector::ZERO,
+                    mode: DragMode::Start,
+                })
+            }
+
+            Event::MouseDragHeld(ev) if self.filter.is_drag() && ev.button.is_primary() => {
                 self.dragged = Some(Dragged {
                     origin: ev.origin,
                     current: ev.pos,
                     delta: ev.delta,
+                    mode: DragMode::Held,
+                })
+            }
+            Event::MouseDragRelease(ev) if self.filter.is_drag() && ev.button.is_primary() => {
+                self.dragged = Some(Dragged {
+                    origin: ev.origin,
+                    current: ev.pos,
+                    delta: Vector::ZERO,
+                    mode: DragMode::Release,
                 })
             }
 

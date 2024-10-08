@@ -1,4 +1,4 @@
-use crate::Attribute;
+use crate::{view::geom::Margin, Attribute, Color};
 
 use super::super::{
     geom::{Size, Space, Vector},
@@ -9,7 +9,7 @@ use super::super::{
 
 use super::{
     background::background,
-    label::{label, static_label, Label, LabelArgs, LabelParams},
+    label::{label, static_label, LabelParams},
     list::{list, List},
     mouse_area::on_click,
 };
@@ -17,6 +17,7 @@ use super::{
 pub struct ButtonParams<'a> {
     pub label: &'a str,
     pub enabled: bool,
+    pub margin: Margin,
 }
 
 impl<'a> ButtonParams<'a> {
@@ -24,7 +25,13 @@ impl<'a> ButtonParams<'a> {
         Self {
             label,
             enabled: true,
+            margin: Margin::same(0.0),
         }
+    }
+
+    pub fn margin(mut self, margin: impl Into<Margin>) -> Self {
+        self.margin = margin.into();
+        self
     }
 
     pub const fn enabled(mut self, enabled: bool) -> Self {
@@ -92,7 +99,8 @@ impl<T: 'static> View<T> for Button<T> {
 
     fn layout(&mut self, ctx: LayoutCtx<T>, space: Space) -> Size {
         let params = (self.params)(ctx.state);
-        Text::measure(params.label)
+
+        space.fit(Text::measure(params.label) + params.margin.sum()) + Size::new(2.0, 0.0)
     }
 
     fn draw(&mut self, mut ctx: DrawCtx<T>) {
@@ -112,15 +120,16 @@ impl<T: 'static> View<T> for Button<T> {
             _ => ctx.theme.surface,
         };
 
-        let offset = ctx.surface.rect() + Vector::X;
+        let offset = ctx.rect + Vector::X;
         ctx.surface.fill(bg);
 
         Text {
             data: params.label,
             fg,
+            bg: Color::Reuse,
             attribute: Attribute::RESET,
         }
-        .draw(ctx.rect, ctx.surface.surface_raw());
+        .draw(params.margin.shrink_rect(offset), ctx.surface.surface_raw());
     }
 }
 
@@ -153,23 +162,27 @@ pub fn checkbox<T: 'static>(
 pub fn todo_value<T: 'static>(
     ctx: &mut Context<T>,
     value: fn(&mut T) -> &mut bool,
+    // why?
     text: for<'t> fn(&'t T) -> LabelParams<'t>,
 ) -> bool {
-    let resp = on_click(ctx, move |ctx| {
-        // TODO mouse over
-        list(List::horizontal().gap(1.0), ctx, move |ctx| {
-            let value = *(value)(ctx.state);
-            let attr = value.then(|| Attribute::STRIKEOUT | Attribute::FAINT);
-            let args = LabelArgs {
-                params: text,
-                attribute: attr,
-            };
-            Label::show(args, ctx);
-        });
-    });
+    todo!();
+    // let resp = on_click(ctx, move |ctx| {
+    //     // TODO mouse over
+    //     list(List::horizontal().gap(1.0), ctx, move |ctx| {
+    //         let value = *(value)(ctx.state);
+    //         let attr = value.then(|| Attribute::STRIKEOUT | Attribute::FAINT);
 
-    *(value)(ctx) ^= resp;
-    resp
+    //         let args = LabelArgs {
+    //             params: text,
+    //             attribute: attr,
+    //             _marker: std::marker::PhantomData,
+    //         };
+    //         Label::show(args, ctx);
+    //     });
+    // });
+
+    // *(value)(ctx) ^= resp;
+    // resp
 }
 
 pub fn selected<T: 'static, R>(
@@ -191,8 +204,6 @@ pub fn selected<T: 'static, R>(
     resp
 }
 
-// TODO this should return a bool if it was selected
-// and not the inner response
 pub fn radio<T: 'static, R, V: PartialEq>(
     ctx: &mut Context<T>,
     selected: V,
@@ -206,7 +217,8 @@ pub fn radio<T: 'static, R, V: PartialEq>(
         } else {
             ctx.ui.theme.outline
         };
-        // margin needs to be here
+        // TODO margin needs to be here
+        // TODO this shouldn't be here.
         background(ctx, bg, show)
     });
 

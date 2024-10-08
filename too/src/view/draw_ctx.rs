@@ -20,18 +20,36 @@ impl<'a> Surface<'a> {
     }
 
     pub fn horizontal_fill(&mut self, vec: impl Into<Vector>, pixel: impl Into<Pixel>) {
+        self.horizontal_fill_offset(vec, 0.0, pixel);
+    }
+
+    pub fn horizontal_fill_offset(
+        &mut self,
+        vec: impl Into<Vector>,
+        y: f32,
+        pixel: impl Into<Pixel>,
+    ) {
         let vec = vec.into().round();
         let pixel = pixel.into();
         for x in float_step_exclusive(vec.x, vec.y, 1.0) {
-            self.set((x, 0.0), pixel);
+            self.set((x, y), pixel);
         }
     }
 
     pub fn vertical_fill(&mut self, vec: impl Into<Vector>, pixel: impl Into<Pixel>) {
+        self.vertical_fill_offset(vec, 0.0, pixel);
+    }
+
+    pub fn vertical_fill_offset(
+        &mut self,
+        vec: impl Into<Vector>,
+        x: f32,
+        pixel: impl Into<Pixel>,
+    ) {
         let vec = vec.into().round();
         let pixel = pixel.into();
         for y in float_step_exclusive(vec.x, vec.y, 1.0) {
-            self.set((0.0, y), pixel);
+            self.set((x, y), pixel);
         }
     }
 

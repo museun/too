@@ -11,6 +11,18 @@ struct DebugNode<T: 'static> {
     _marker: PhantomData<T>,
 }
 
+impl<T> std::fmt::Debug for DebugNode<T> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("DebugNode")
+            .field("id", &self.id)
+            .field("name", &self.name)
+            .field("rect", &self.rect)
+            .field("properties", &self.properties)
+            .field("children", &self.children)
+            .finish()
+    }
+}
+
 impl<T: 'static> DebugNode<T> {
     fn new(root: ViewId, nodes: &thunderdome::Arena<Node<T>>, properties: &Properties) -> Self {
         fn build<T: 'static>(
@@ -40,7 +52,10 @@ impl<T: 'static> DebugNode<T> {
 
         let mut children = vec![];
         let node = &*nodes[root.0];
-        build(&mut children, node.children[0], nodes, properties);
+
+        for &node in &node.children {
+            build(&mut children, node, nodes, properties);
+        }
 
         let mut props = vec![];
         props.extend(properties.get_for::<Flex>(root).map(|c| format!("{c:#?}")));
@@ -348,7 +363,7 @@ fn render_flow_tree<T: 'static>(node: &DebugNode<T>) -> String {
 fn run<T: App>(mut app: T) -> DebugNode<T> {
     let mut ui = <Ui<T>>::new();
     ui.rect = (80.0, 25.0).into();
-    ui.scope(&mut app);
+    ui.scope(&mut app, []);
     DebugNode::new(ui.root, &ui.nodes, &ui.properties)
 }
 

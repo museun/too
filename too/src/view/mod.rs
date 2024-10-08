@@ -3,11 +3,12 @@ use std::{
     any::TypeId,
     collections::VecDeque,
     marker::PhantomData,
+    rc::Rc,
     time::{Duration, Instant},
 };
 
 use crate::{
-    animation::AnimationManager, overlay::Overlay, Backend, Commands, EventReader,
+    animation::AnimationManager, overlay::Overlay, Backend, Commands, EventReader, MouseButton,
     Surface as TooSurface, TermRenderer,
 };
 
@@ -43,7 +44,10 @@ pub mod debug_fmt;
 
 mod input;
 use input::Input;
-pub use input::{Event, EventCtx, Handled, Interest};
+pub use input::{
+    Event, EventCtx, Handled, Interest, KeyInput, MouseClick, MouseDragHeld, MouseDragRelease,
+    MouseDragStart, MouseHeld, MouseMove, MouseScroll,
+};
 
 mod destroy_ctx;
 pub use destroy_ctx::DestroyCtx;
@@ -90,7 +94,7 @@ pub struct Ui<T: 'static> {
     stack: Vec<ViewId>,
     removed: Vec<ViewId>,
 
-    light_mode: bool,
+    light_mode: Rc<std::cell::Cell<bool>>,
     theme: Theme,
     properties: Properties,
 
@@ -134,8 +138,13 @@ impl<T: 'static> Ui<T> {
             rect: Rectf::ZERO,
             quit: false,
 
-            light_mode: false,
+            light_mode: Rc::new(std::cell::Cell::new(false)),
         }
+    }
+
+    pub fn with_overlay_settings(mut self, settings: impl Fn(&mut Overlay)) -> Self {
+        settings(&mut self.overlay);
+        self
     }
 
     pub fn with_properties(mut self, properties: Properties) -> Self {
@@ -157,6 +166,8 @@ impl<T: 'static> Ui<T> {
         let mut base_target = Duration::from_secs_f32(1.0 / target_ups);
         let mut prev = Instant::now();
 
+        let mut buffered_events = VecDeque::new();
+
         loop {
             let frame_start = Instant::now();
 
@@ -167,10 +178,10 @@ impl<T: 'static> Ui<T> {
                 }
 
                 let start = Instant::now();
-                // TODO coalesce resizes
+                // TODO collapse resizes
                 surface.update(&ev);
 
-                self.event(&mut app, ev);
+                buffered_events.push_back(ev);
                 event_dur += start.elapsed();
 
                 // only spend up to half of the budget on reading events
@@ -201,7 +212,7 @@ impl<T: 'static> Ui<T> {
             }
 
             self.rect = surface.rect().into();
-            self.scope(&mut app);
+            self.scope(&mut app, buffered_events.drain(..)); // update happens here
 
             if term.should_draw() {
                 self.render(&mut app, &mut surface);
@@ -270,12 +281,25 @@ impl<T: 'static> Ui<T> {
         self.stack.last().copied().unwrap_or(self.root())
     }
 
-    pub fn light_mode(&mut self) -> &mut bool {
-        &mut self.light_mode
-    }
-
     pub fn debug(&mut self, msg: impl ToString) {
         self.overlay.debug.push(msg.to_string());
+    }
+
+    pub fn primary_button_state(&self) -> input::ButtonState {
+        self.input
+            .mouse
+            .buttons
+            .get(&MouseButton::Primary)
+            .copied()
+            .unwrap_or(input::ButtonState::Released)
+    }
+
+    pub fn previous_mouse_pos(&self) -> Point {
+        self.input.mouse.previous
+    }
+
+    pub fn current_mouse_pos(&self) -> Point {
+        self.input.mouse.current
     }
 
     // pub fn client_rect(&self) -> Rectf {
@@ -294,10 +318,17 @@ impl<T: 'static> Ui<T> {
 }
 
 impl<T: 'static> Ui<T> {
-    fn scope(&mut self, state: &mut T)
+    fn scope(&mut self, state: &mut T, events: impl IntoIterator<Item = crate::Event>)
     where
         T: App,
     {
+        for event in events {
+            self.event(state, event);
+            self.begin();
+            T::view(&mut Context { ui: self, state });
+            self.end(state);
+        }
+
         self.begin();
         T::view(&mut Context { ui: self, state });
         self.end(state);

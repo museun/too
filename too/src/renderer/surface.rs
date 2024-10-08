@@ -6,62 +6,46 @@ use super::{
 use crate::{
     math::{pos2, rect, Pos2, Rect, Vec2},
     text::MeasureText,
+    view::geom::{Point, Rectf},
     Event, Text,
 };
 
-pub trait Canvas: Sized {
-    fn set(&mut self, pos: Pos2, cell: impl Into<Cell>);
-    fn fill(&mut self, rect: Rect, pixel: impl Into<Pixel>) -> &mut Self;
-    fn text<T: MeasureText>(&mut self, rect: Rect, text: impl Into<Text<T>>) -> &mut Self;
-    fn rect(&self) -> Rect;
-}
-
 pub struct CroppedSurface<'a> {
-    rect: Rect,
+    rect: Rectf,
     surface: &'a mut Surface,
 }
 
 impl<'a> CroppedSurface<'a> {
-    pub fn new(rect: Rect, surface: &'a mut Surface) -> Self {
+    pub fn new(rect: Rectf, surface: &'a mut Surface) -> Self {
         Self { rect, surface }
     }
-}
 
-impl<'a> Canvas for CroppedSurface<'a> {
-    fn set(&mut self, pos: Pos2, cell: impl Into<Cell>) {
-        self.surface.set(pos + self.rect.left_top(), cell);
+    pub fn set(&mut self, pos: impl Into<Point>, cell: impl Into<Cell>) {
+        let pos = pos.into();
+        if !self.rect.contains(pos) {
+            return;
+        }
+        self.surface.set(pos.into(), cell); // + self.rect.left_top()
     }
 
-    fn fill(&mut self, rect: Rect, pixel: impl Into<Pixel>) -> &mut Self {
-        self.surface.fill(rect.intersection(self.rect), pixel);
+    pub fn fill(&mut self, rect: impl Into<Rectf>, pixel: impl Into<Pixel>) -> &mut Self {
+        let rect = rect.into().intersection(self.rect).into();
+        self.surface.fill(rect, pixel);
         self
     }
 
-    fn text<T: MeasureText>(&mut self, rect: Rect, text: impl Into<Text<T>>) -> &mut Self {
-        self.surface.text(rect.intersection(self.rect), text);
+    pub fn text<T: MeasureText>(
+        &mut self,
+        rect: impl Into<Rectf>,
+        text: impl Into<Text<T>>,
+    ) -> &mut Self {
+        let rect = rect.into().intersection(self.rect).into();
+        self.surface.text(rect, text);
         self
     }
 
-    fn rect(&self) -> Rect {
+    pub fn rect(&self) -> Rectf {
         self.rect
-    }
-}
-
-impl Canvas for Surface {
-    fn set(&mut self, pos: Pos2, cell: impl Into<Cell>) {
-        Self::set(self, pos, cell);
-    }
-
-    fn fill(&mut self, rect: Rect, pixel: impl Into<Pixel>) -> &mut Self {
-        Self::fill(self, rect, pixel)
-    }
-
-    fn text<T: MeasureText>(&mut self, rect: Rect, text: impl Into<Text<T>>) -> &mut Self {
-        Self::text(self, rect, text)
-    }
-
-    fn rect(&self) -> Rect {
-        Self::rect(self)
     }
 }
 

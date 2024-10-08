@@ -24,10 +24,16 @@ impl<T: 'static> View<T> for RootView {
 }
 
 mod aligned;
-pub use aligned::{align, center};
+pub use aligned::{
+    align, center, center_bottom, center_top, left_bottom, left_center, left_top, right_bottom,
+    right_center, right_top,
+};
 
 mod background;
 pub use background::{background, fill};
+
+mod border;
+pub use border::{border, frame, Border, BorderTitle};
 
 mod button;
 pub use button::{button, checkbox, radio, selected, todo_value, ButtonParams};
@@ -42,7 +48,7 @@ mod key_area;
 pub use key_area::{hot_key, key_area, key_press, KeyAreaResponse};
 
 mod label;
-pub use label::{label, static_label, LabelParams};
+pub use label::{label, static_label, LabelOptions, LabelParams};
 
 mod list;
 pub use list::{column, list, row, CrossAlign, List, MainSpacing};
@@ -53,9 +59,12 @@ pub use flex::{expand, flex, Flex};
 mod margin;
 pub use margin::margin;
 
+mod event_area;
+pub use event_area::event_area;
+
 mod mouse_area;
 pub use mouse_area::{
-    mouse_area, on_click, on_drag, on_scroll, Dragged, MouseAreaResponse, MouseEvent,
+    mouse_area, on_click, on_drag, on_scroll, DragMode, Dragged, MouseAreaResponse, MouseEvent,
 };
 
 mod offset;
@@ -78,9 +87,6 @@ pub use canvas::canvas;
 
 mod animate;
 pub use animate::animate;
-
-// mod immediate;
-// pub use immediate::immediate;
 
 mod dark_mode;
 pub use dark_mode::toggle_dark_mode;

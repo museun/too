@@ -64,8 +64,10 @@ pub struct Slider<T: 'static = (), F = ()> {
     _marker: std::marker::PhantomData<T>,
 }
 
-impl<T: 'static, F: for<'a> FnOnce(&'a mut T) -> SliderParams<'a> + Clone> View<T>
-    for Slider<T, F>
+impl<T, F> View<T> for Slider<T, F>
+where
+    T: 'static,
+    F: for<'a> FnOnce(&'a mut T) -> SliderParams<'a> + Clone,
 {
     type Args<'a> = F;
     type Response = SliderResponse;
@@ -96,7 +98,7 @@ impl<T: 'static, F: for<'a> FnOnce(&'a mut T) -> SliderParams<'a> + Clone> View<
     }
 
     fn event(&mut self, ctx: EventCtx<T>, event: &Event) -> Handled {
-        let Event::MouseDrag(ev) = event else {
+        let Some(pos) = event.is_mouse_drag() else {
             return Handled::Bubble;
         };
 
@@ -108,7 +110,7 @@ impl<T: 'static, F: for<'a> FnOnce(&'a mut T) -> SliderParams<'a> + Clone> View<
         let value = params.value.expect("valid state");
         self.previous = *value;
 
-        let p = (ev.pos.x - min) / (max - min);
+        let p = (pos.x - min) / (max - min);
         *value = denormalize(p, params.min..=params.max);
 
         Handled::Sink

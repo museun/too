@@ -234,6 +234,14 @@ impl Rectf {
         )
     }
 
+    pub fn intersection(self, other: Self) -> Self {
+        Self::new(self.min.max(other.min), self.max.min(other.max))
+    }
+
+    pub fn union(self, other: Self) -> Self {
+        Self::new(self.min.min(other.min), self.max.max(other.max))
+    }
+
     pub const fn left(self) -> f32 {
         self.min.x
     }
@@ -498,7 +506,7 @@ impl Point {
     }
 
     pub fn distance(self, other: Self) -> f32 {
-        Vector::length(other - self)
+        (other - self).to_vector().length()
     }
 
     pub fn lerp(self, other: Self, t: f32) -> Self {
@@ -551,13 +559,6 @@ impl std::ops::Neg for Point {
     }
 }
 
-impl std::ops::Sub for Point {
-    type Output = Vector;
-    fn sub(self, rhs: Self) -> Self::Output {
-        Vector::new(self.x - rhs.x, self.y - rhs.y)
-    }
-}
-
 impl From<crate::math::Pos2> for Point {
     fn from(value: crate::math::Pos2) -> Self {
         Self::new(value.x as _, value.y as _)
@@ -582,6 +583,19 @@ macro_rules! point_ops {
 
         impl std::ops::$assign<Vector> for Point {
             fn $assign_func(&mut self, rhs: Vector)  {
+                *self = *self $sigil rhs
+            }
+        }
+
+        impl std::ops::$op for Point {
+            type Output = Self;
+            fn $func(self, rhs: Self) -> Self::Output {
+                Self::new(self.x $sigil rhs.x, self.y $sigil rhs.y)
+            }
+        }
+
+        impl std::ops::$assign for Point {
+            fn $assign_func(&mut self, rhs: Self)  {
                 *self = *self $sigil rhs
             }
         }
@@ -991,7 +1005,6 @@ impl std::ops::Neg for Size {
     }
 }
 
-// TODO this is totally from the wrong crate
 impl std::ops::Mul<crate::layout::Align2> for Size {
     type Output = Self;
     fn mul(self, rhs: crate::layout::Align2) -> Self::Output {

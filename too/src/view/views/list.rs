@@ -6,7 +6,7 @@ use super::super::{
     LayoutCtx, UpdateCtx, View, ViewExt,
 };
 
-#[derive(Copy, Clone, Default)]
+#[derive(Copy, Clone, Default, PartialEq)]
 pub enum MainSpacing {
     #[default]
     Start,
@@ -47,7 +47,7 @@ impl MainSpacing {
     }
 }
 
-#[derive(Copy, Clone, Default)]
+#[derive(Copy, Clone, Default, PartialEq)]
 pub enum CrossAlign {
     #[default]
     Start,

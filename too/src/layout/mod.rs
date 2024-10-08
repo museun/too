@@ -44,6 +44,16 @@ impl Axis {
     }
 }
 
+impl std::ops::Neg for Axis {
+    type Output = Self;
+    fn neg(self) -> Self::Output {
+        match self {
+            Self::Horizontal => Self::Vertical,
+            Self::Vertical => Self::Horizontal,
+        }
+    }
+}
+
 mod anchor;
 pub use anchor::{Anchor, Anchor2};
 

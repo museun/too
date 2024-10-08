@@ -27,6 +27,7 @@ impl<T: 'static> View<T> for Canvas<T> {
     }
 
     fn draw(&mut self, mut ctx: DrawCtx<T>) {
+        // TODO this needs to be the parent rect
         let mut surface = CroppedSurface::new(ctx.rect.into(), ctx.surface.surface_raw());
         (self.draw)(ctx.state, &mut surface);
     }
