@@ -1,7 +1,6 @@
 [workspace]
 members = [
     "crates/too_crossterm",
-    "crates/too_view",
     "too"
 ]
 resolver = "2"

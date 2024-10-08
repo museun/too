@@ -11,6 +11,7 @@ readme.workspace = true
 
 [dependencies]
 compact_str = "0.8.0"
+thunderdome = "0.6.1"
 unicode-segmentation.workspace = true
 unicode-width.workspace = true
 

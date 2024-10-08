@@ -15,7 +15,7 @@ pub struct Overlay {
 
 impl Overlay {
     /// A default overlay draw function.
-    pub fn default_draw<T>(_: T, overlay: &mut Overlay, surface: &mut Surface) {
+    pub fn default_draw(overlay: &mut Overlay, surface: &mut Surface) {
         if overlay.fps.show {
             FpsOverlay::default_draw(overlay, surface);
         }

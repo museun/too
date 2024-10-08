@@ -144,7 +144,7 @@ impl Surface {
 }
 
 impl Surface {
-    pub(crate) fn new(size: Vec2) -> Self {
+    pub fn new(size: Vec2) -> Self {
         Self {
             front: vec![Cell::Empty; size.x as usize * size.y as usize],
             back: vec![Cell::Empty; size.x as usize * size.y as usize],
@@ -152,7 +152,7 @@ impl Surface {
         }
     }
 
-    pub(crate) fn resize(&mut self, size: Vec2) {
+    pub fn resize(&mut self, size: Vec2) {
         if self.size == size {
             return;
         }
@@ -164,7 +164,7 @@ impl Surface {
     }
 
     // TODO `force invalidate` (rather than a lazy invalidate)
-    pub(crate) fn render(&mut self, renderer: &mut impl Renderer) -> std::io::Result<()> {
+    pub fn render(&mut self, renderer: &mut impl Renderer) -> std::io::Result<()> {
         let mut state = CursorState::default();
         let mut seen = false;
         let mut wrote_reset = false;

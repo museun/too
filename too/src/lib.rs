@@ -1,11 +1,10 @@
 mod backend;
+use std::collections::VecDeque;
+
 pub use backend::{
     Backend, Command, CurrentScreen, DummyBackend, Event, EventReader, Key, Keybind, Modifiers,
     MouseButton, MouseState, TemporalMouseEvent,
 };
-
-mod immediate;
-pub use immediate::{App, AppRunner};
 
 pub mod ema_window;
 
@@ -19,9 +18,6 @@ pub use renderer::{
     Renderer, Rgba, Surface, TermRenderer,
 };
 
-mod runner;
-pub use runner::{Context, Runner};
-
 pub mod layout;
 
 mod text;
@@ -32,3 +28,20 @@ pub mod animation;
 pub mod index;
 #[doc(inline)]
 pub use index::Index;
+
+pub mod view;
+
+#[derive(Default)]
+pub struct Commands {
+    inner: VecDeque<Command>,
+}
+
+impl Commands {
+    pub fn push(&mut self, cmd: Command) {
+        self.inner.push_back(cmd);
+    }
+
+    pub fn drain(&mut self) -> impl ExactSizeIterator<Item = Command> + '_ {
+        self.inner.drain(..)
+    }
+}

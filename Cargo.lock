@@ -324,6 +324,7 @@ dependencies = [
  "compact_str",
  "fastrand",
  "rayon",
+ "thunderdome",
  "too_crossterm",
  "unicode-segmentation",
  "unicode-width",
@@ -336,18 +337,6 @@ dependencies = [
  "crossterm",
  "flume",
  "too",
-]
-
-[[package]]
-name = "too_view"
-version = "0.1.0"
-dependencies = [
- "fastrand",
- "thunderdome",
- "too",
- "too_crossterm",
- "unicode-segmentation",
- "unicode-width",
 ]
 
 [[package]]
