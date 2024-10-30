@@ -54,7 +54,7 @@ pub trait View: Sized + 'static + std::fmt::Debug {
     }
 
     fn event(&mut self, event: ViewEvent, ctx: EventCtx) -> Handled {
-        Handled::Bubble
+        self.default_event(event, ctx)
     }
 
     fn size(&self, intrinsic: IntrinsicSize, axis: Axis, extent: f32) -> f32 {
@@ -72,6 +72,19 @@ pub trait View: Sized + 'static + std::fmt::Debug {
 
     fn draw(&mut self, render: Render) {
         self.default_draw(render)
+    }
+
+    fn default_event(&mut self, event: ViewEvent, mut ctx: EventCtx) -> Handled {
+        let node = ctx.nodes.get_current();
+        let mut resp = Handled::Bubble;
+        for &child in &node.children {
+            let new = ctx.event(child, event);
+            if new.is_sink() {
+                return new;
+            }
+            resp = new;
+        }
+        resp
     }
 
     fn default_layout(&mut self, mut layout: Layout, space: Space) -> Size {

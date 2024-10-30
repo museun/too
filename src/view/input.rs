@@ -8,7 +8,10 @@ use crate::{
     Event as TooEvent, Key, Modifiers, MouseButton,
 };
 
-use super::state::{Debug, LayoutNodes, ViewId, ViewNode, ViewNodes};
+use super::{
+    state::{Debug, LayoutNodes, ViewId, ViewNodes},
+    view::Erased,
+};
 
 mod interest;
 pub use interest::Interest;
@@ -24,11 +27,11 @@ pub enum Handled {
 }
 
 impl Handled {
-    const fn is_sink(&self) -> bool {
+    pub const fn is_sink(&self) -> bool {
         matches!(self, Self::Sink)
     }
 
-    const fn is_bubble(&self) -> bool {
+    pub const fn is_bubble(&self) -> bool {
         matches!(self, Self::Bubble)
     }
 }
@@ -158,16 +161,19 @@ impl InputState {
             return Handled::Bubble;
         };
 
-        if !view.interest.is_focus_input() {
-            return Handled::Bubble;
-        }
+        // if !view.interest.is_focus_input() {
+        //     return Handled::Bubble;
+        // }
 
-        let mut node = nodes.get_mut(id).unwrap();
-        let event = ViewEvent::KeyInput {
-            key,
-            modifiers: self.modifiers.get(),
-        };
-        self.send_event(nodes, layout, debug, id, &mut node, event)
+        nodes
+            .scoped(id, |node| {
+                let event = ViewEvent::KeyInput {
+                    key,
+                    modifiers: self.modifiers.get(),
+                };
+                self.send_event(nodes, layout, debug, id, node, event)
+            })
+            .unwrap()
     }
 
     fn mouse_moved(
@@ -197,11 +203,9 @@ impl InputState {
                 continue;
             }
 
-            let Some(mut node) = nodes.get_mut(id) else {
-                continue;
-            };
-
-            self.send_event(nodes, layout, debug, id, &mut node, event);
+            nodes.scoped(id, |node| {
+                self.send_event(nodes, layout, debug, id, node, event);
+            });
         }
     }
 
@@ -209,19 +213,23 @@ impl InputState {
         let intersections = &mut *self.intersections.borrow_mut();
 
         for &hit in &intersections.hit {
-            let Some(mut node) = nodes.get_mut(hit) else {
-                continue;
-            };
-
-            if !intersections.entered.contains(&hit) {
-                intersections.entered.push(hit);
-                let ev = ViewEvent::MouseEntered;
-                let resp = self.send_event(nodes, layout, debug, hit, &mut node, ev);
-                if resp.is_sink() {
-                    intersections.sunk.push(hit);
-                    break;
-                }
-            } else if intersections.sunk.contains(&hit) {
+            if !nodes
+                .scoped(hit, |node| {
+                    if !intersections.entered.contains(&hit) {
+                        intersections.entered.push(hit);
+                        let ev = ViewEvent::MouseEntered;
+                        let resp = self.send_event(nodes, layout, debug, hit, node, ev);
+                        if resp.is_sink() {
+                            intersections.sunk.push(hit);
+                            return false;
+                        }
+                    } else if intersections.sunk.contains(&hit) {
+                        return false;
+                    }
+                    true
+                })
+                .unwrap_or(true)
+            {
                 break;
             }
         }
@@ -234,12 +242,10 @@ impl InputState {
         let mut inactive = vec![];
         for &hit in &intersections.entered {
             if !intersections.hit.contains(&hit) {
-                let Some(mut node) = nodes.get_mut(hit) else {
-                    continue;
-                };
-
-                self.send_event(nodes, layout, debug, hit, &mut node, ViewEvent::MouseLeave);
-                inactive.push(hit);
+                nodes.scoped(hit, |node| {
+                    self.send_event(nodes, layout, debug, hit, node, ViewEvent::MouseLeave);
+                    inactive.push(hit);
+                });
             }
         }
 
@@ -284,41 +290,44 @@ impl InputState {
 
         let mut resp = Handled::Bubble;
         for &hit in &intersections.hit {
-            let Some(mut node) = nodes.get_mut(hit) else {
-                continue;
-            };
+            if !nodes
+                .scoped(hit, |node| {
+                    let event = ViewEvent::MouseDrag {
+                        start,
+                        current: mouse.pos,
+                        delta,
+                        inside: true,
+                        modifiers: self.modifiers.get(),
+                        button,
+                    };
 
-            let event = ViewEvent::MouseDrag {
-                start,
-                current: mouse.pos,
-                delta,
-                inside: true,
-                modifiers: self.modifiers.get(),
-                button,
-            };
-
-            let new = self.send_event(nodes, layout, debug, hit, &mut node, event);
-            if new.is_sink() {
-                resp = new;
+                    let new = self.send_event(nodes, layout, debug, hit, node, event);
+                    if new.is_sink() {
+                        resp = new;
+                        return false;
+                    }
+                    true
+                })
+                .unwrap_or(true)
+            {
                 break;
             }
         }
 
         for (id, interest) in layout.interest.iter() {
             if interest.is_mouse_outside() && !intersections.hit.contains(&id) {
-                let Some(mut node) = nodes.get_mut(id) else {
-                    continue;
-                };
-                let event = ViewEvent::MouseDrag {
-                    start,
-                    current: mouse.pos,
-                    delta,
-                    inside: false,
-                    modifiers: self.modifiers.get(),
-                    button,
-                };
+                nodes.scoped(id, |node| {
+                    let event = ViewEvent::MouseDrag {
+                        start,
+                        current: mouse.pos,
+                        delta,
+                        inside: false,
+                        modifiers: self.modifiers.get(),
+                        button,
+                    };
 
-                self.send_event(nodes, layout, debug, id, &mut node, event);
+                    self.send_event(nodes, layout, debug, id, node, event);
+                });
             }
         }
 
@@ -343,55 +352,57 @@ impl InputState {
         let mut resp = Handled::Bubble;
 
         for &hit in &intersections.hit {
-            let Some(mut node) = nodes.get_mut(hit) else {
-                continue;
-            };
+            if !nodes
+                .scoped(hit, |node| {
+                    let event = if state.is_down() {
+                        ViewEvent::MouseHeld {
+                            pos: mouse.pos,
+                            inside: true,
+                            button,
+                            modifiers: self.modifiers.get(),
+                        }
+                    } else {
+                        ViewEvent::MouseClicked {
+                            pos: mouse.pos,
+                            inside: true,
+                            button,
+                            modifiers: self.modifiers.get(),
+                        }
+                    };
 
-            let event = if state.is_down() {
-                ViewEvent::MouseHeld {
-                    pos: mouse.pos,
-                    inside: true,
-                    button,
-                    modifiers: self.modifiers.get(),
-                }
-            } else {
-                ViewEvent::MouseClicked {
-                    pos: mouse.pos,
-                    inside: true,
-                    button,
-                    modifiers: self.modifiers.get(),
-                }
-            };
-
-            let new = self.send_event(nodes, layout, debug, hit, &mut node, event);
-            if new.is_sink() {
-                resp = new;
+                    let new = self.send_event(nodes, layout, debug, hit, node, event);
+                    if new.is_sink() {
+                        resp = new;
+                        return false;
+                    }
+                    true
+                })
+                .unwrap_or(true)
+            {
                 break;
             }
         }
 
         for (id, interest) in layout.interest.iter() {
             if interest.is_mouse_outside() && !intersections.hit.contains(&id) {
-                let Some(mut node) = nodes.get_mut(id) else {
-                    continue;
-                };
-
-                let event = if state.is_down() {
-                    ViewEvent::MouseHeld {
-                        pos: mouse.pos,
-                        inside: false,
-                        button,
-                        modifiers: self.modifiers.get(),
-                    }
-                } else {
-                    ViewEvent::MouseClicked {
-                        pos: mouse.pos,
-                        inside: false,
-                        button,
-                        modifiers: self.modifiers.get(),
-                    }
-                };
-                self.send_event(nodes, layout, debug, id, &mut node, event);
+                nodes.scoped(id, |node| {
+                    let event = if state.is_down() {
+                        ViewEvent::MouseHeld {
+                            pos: mouse.pos,
+                            inside: false,
+                            button,
+                            modifiers: self.modifiers.get(),
+                        }
+                    } else {
+                        ViewEvent::MouseClicked {
+                            pos: mouse.pos,
+                            inside: false,
+                            button,
+                            modifiers: self.modifiers.get(),
+                        }
+                    };
+                    self.send_event(nodes, layout, debug, id, node, event);
+                });
             }
         }
 
@@ -409,16 +420,15 @@ impl InputState {
 
         // this has a weird hit box
         for &hit in &intersections.hit {
-            let Some(mut node) = nodes.get_mut(hit) else {
-                continue;
-            };
-            let event = ViewEvent::MouseScroll {
-                delta,
-                modifiers: self.modifiers.get(),
-            };
-
-            if self
-                .send_event(nodes, layout, debug, hit, &mut node, event)
+            if nodes
+                .scoped(hit, |node| {
+                    let event = ViewEvent::MouseScroll {
+                        delta,
+                        modifiers: self.modifiers.get(),
+                    };
+                    self.send_event(nodes, layout, debug, hit, node, event)
+                })
+                .unwrap_or_default()
                 .is_sink()
             {
                 return Handled::Sink;
@@ -436,25 +446,35 @@ impl InputState {
         }
 
         if let Some(entered) = current {
-            if let Some(mut node) = nodes.get_mut(entered) {
-                self.send_event(
-                    nodes,
-                    layout,
-                    debug,
-                    entered,
-                    &mut node,
-                    ViewEvent::FocusGained,
-                );
-            } else {
+            if nodes
+                .scoped(entered, |node| {
+                    self.send_event(
+                        nodes, //
+                        layout,
+                        debug,
+                        entered,
+                        node,
+                        ViewEvent::FocusGained,
+                    );
+                })
+                .is_none()
+            {
                 self.focus.set(None);
                 current = None;
             }
         }
 
         if let Some(left) = last {
-            if let Some(mut node) = nodes.get_mut(left) {
-                self.send_event(nodes, layout, debug, left, &mut node, ViewEvent::FocusLost);
-            }
+            nodes.scoped(left, |node| {
+                self.send_event(
+                    nodes, //
+                    layout,
+                    debug,
+                    left,
+                    node,
+                    ViewEvent::FocusLost,
+                );
+            });
         }
 
         self.prev_focus.set(current);
@@ -466,7 +486,7 @@ impl InputState {
         layout: &LayoutNodes,
         debug: &Debug,
         id: ViewId,
-        node: &mut ViewNode,
+        node: &mut dyn Erased,
         event: ViewEvent,
     ) -> Handled {
         let ctx = EventCtx {
@@ -476,7 +496,7 @@ impl InputState {
             debug,
         };
         nodes.begin(id);
-        let resp = node.view.get_mut().event(event, ctx);
+        let resp = node.event(event, ctx);
         nodes.end(id);
         resp
     }
@@ -505,6 +525,30 @@ impl InputState {
             }
         }
     }
+
+    fn dispatch(
+        &self,
+        nodes: &ViewNodes,
+        layout: &LayoutNodes,
+        debug: &Debug,
+        id: ViewId,
+        event: ViewEvent,
+    ) -> Handled {
+        let Some(node) = nodes.get(id) else {
+            return Handled::Bubble;
+        };
+
+        nodes.begin(id);
+        let ctx = EventCtx {
+            nodes,
+            layout,
+            input: self,
+            debug,
+        };
+        let resp = node.view.borrow_mut().event(event, ctx);
+        nodes.end(id);
+        resp
+    }
 }
 
 pub struct EventCtx<'a> {
@@ -515,6 +559,11 @@ pub struct EventCtx<'a> {
 }
 
 impl<'a> EventCtx<'a> {
+    pub fn event(&mut self, id: ViewId, event: ViewEvent) -> Handled {
+        self.input
+            .dispatch(self.nodes, self.layout, self.debug, id, event)
+    }
+
     pub fn debug(&self, msg: impl ToString) {
         self.debug.push(msg);
     }

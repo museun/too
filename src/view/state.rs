@@ -418,6 +418,16 @@ impl ViewNodes {
         RefMut::filter_map(nodes, |nodes| nodes.get_mut(id.0)).ok()
     }
 
+    // TODO use this in more places (any place that does `get_mut().unwrap().view.take()`)
+    pub fn scoped<R>(&self, id: ViewId, mut act: impl FnMut(&mut dyn Erased) -> R) -> Option<R> {
+        let nodes = self.nodes.borrow();
+        let node = nodes.get(id.0)?;
+        let mut view = node.view.borrow_mut().take();
+        let resp = act(&mut *view);
+        node.view.borrow_mut().give(view);
+        Some(resp)
+    }
+
     pub fn current(&self) -> ViewId {
         self.stack.borrow().last().copied().unwrap_or(self.root)
     }
