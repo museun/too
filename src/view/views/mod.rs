@@ -26,7 +26,7 @@ mod wrap;
 pub use wrap::{horizontal_wrap, vertical_wrap, Wrap};
 
 mod expander;
-pub use expander::Expander;
+pub use expander::{Expander, Separator};
 
 mod mouse_area;
 pub use mouse_area::{Dragging, MouseArea, MouseAreaResponse};
@@ -40,8 +40,8 @@ pub use constrain::{Constrain, Unconstrained};
 mod progress_bar;
 pub use progress_bar::{progress_bar, ProgressBar};
 
-// mod toggle_switch;
-// pub use toggle_switch::{dark_mode_switch, ToggleResponse, ToggleSwitch};
+mod toggle_switch;
+pub use toggle_switch::{ToggleResponse, ToggleSwitch};
 
 mod border;
 pub use border::{border, frame, Border, BorderView};
@@ -63,9 +63,12 @@ pub use flex::Flex;
 
 pub mod scrollable;
 
-// pub mod drop_down;
+mod text_input;
+pub use text_input::{text_input, TextInput, TextInputResponse};
+
+pub mod drop_down;
+
 // pub mod focus_ring;
-// pub mod text_input;
 
 // pub mod split_view;
 
@@ -73,23 +76,19 @@ pub mod scrollable;
 // drop down
 // split view
 // scrollable
-// text edit
 // link (hyperlink support. OSC 8 https://github.com/Alhadis/OSC8-Adoption/)
 // panel (docking)
 //
-// float (and some sort of modal thing?)
 // stack (? z-index layering)
 //
 // enabled (this will show/hide an view)
 //
 // floating window
-// style (scoped thing for custom styling/properties)
 //
-// key area
+//
 // canvas
 // animate
 //
-// wrap (horizontal, vertical)
 //
 // rgba | hsva | hsla selector
 

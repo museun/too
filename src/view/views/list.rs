@@ -2,10 +2,10 @@ use core::f32;
 
 use crate::{
     layout::Axis,
-    math::{Pos2, Rect},
+    math::Pos2,
     view::{
-        geom::{Size, Space},
-        Builder, Layout, Render, Ui, View,
+        geom::{Flex, Size, Space},
+        Builder, Layout, Ui, View,
     },
 };
 
@@ -124,8 +124,6 @@ pub struct List {
     cross_align: CrossAlign,
     gap: f32,
     state: ListState,
-    rect: Rect,
-    knob_hovered: bool,
 }
 
 impl List {
@@ -145,6 +143,7 @@ impl List {
             let space = Space::new(
                 self.axis.pack(0.0, args.min_minor),
                 self.axis.pack(f32::INFINITY, args.max_minor),
+                // self.axis.pack(args.max_major, args.max_minor),
             );
 
             let size = layout.compute(node.children[i], space);
@@ -194,6 +193,7 @@ impl List {
             }
 
             let major = division * flex.factor();
+
             let space = Space::new(
                 self.axis.pack(major, args.min_minor),
                 self.axis.pack(major, args.max_minor),
@@ -263,8 +263,6 @@ impl View for List {
     fn update(&mut self, args: Self::Args<'_>, ui: &Ui) -> Self::Response {
         *self = Self {
             state: std::mem::take(&mut self.state),
-            rect: self.rect,
-            knob_hovered: self.knob_hovered,
             ..args
         }
     }
@@ -272,6 +270,10 @@ impl View for List {
     fn primary_axis(&self) -> Axis {
         self.axis
     }
+
+    // fn flex(&self) -> Flex {
+    //     Flex::Tight(1.0)
+    // }
 
     // fn event(&mut self, event: ViewEvent, ctx: EventCtx) -> Handled {
     //     let Some(knob) = self.find_knob() else {
@@ -344,8 +346,6 @@ impl View for List {
     // }
 
     fn layout(&mut self, mut layout: Layout, space: Space) -> Size {
-        // let mut space = space.loosen();
-
         let node = layout.nodes.get_current();
         self.state.resize(node.children.len());
 
@@ -405,15 +405,9 @@ impl View for List {
             main = self.state.main_sum();
         }
 
-        self.axis.pack(main, cross)
-    }
+        let size = self.axis.pack(main, cross);
 
-    fn draw(&mut self, mut render: Render) {
-        self.rect = render.rect();
-        let node = render.nodes.get_current();
-        for &child in &node.children {
-            render.draw(child);
-        }
+        size
     }
 }
 
@@ -424,7 +418,5 @@ pub const fn list() -> List {
         cross_align: CrossAlign::Start,
         gap: 0.0,
         state: ListState::new(),
-        rect: Rect::ZERO,
-        knob_hovered: false,
     }
 }

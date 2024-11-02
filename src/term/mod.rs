@@ -103,10 +103,18 @@ impl Default for Config {
     }
 }
 
-struct Output {
+pub struct Output {
     #[cfg(windows)]
     mode: u32,
     out: BufWriter<File>,
+}
+
+impl Output {
+    fn resize(&mut self, hint: usize) {
+        let hint = hint * 13;
+        let fd = self.out.get_ref().try_clone().unwrap();
+        self.out = BufWriter::with_capacity(hint, fd);
+    }
 }
 
 #[cfg(windows)]
@@ -191,8 +199,6 @@ impl Term {
         }
 
         let (tx, events) = flume::unbounded();
-        // let hint = size.x as usize * size.y as usize * 21;
-
         Ok(Self {
             _handle: std::thread::spawn(move || read_event(tx)),
             events,
@@ -202,6 +208,11 @@ impl Term {
             size,
             commands: VecDeque::new(),
         })
+    }
+
+    fn resize(&mut self, size: Vec2) {
+        self.size = size;
+        self.output.resize(size.x as usize * size.y as usize);
     }
 
     pub fn reset() -> std::io::Result<()> {
@@ -293,6 +304,10 @@ impl EventReader for Term {
             Err(flume::TryRecvError::Disconnected) => return Some(Event::Quit),
             _ => return None,
         };
+
+        if let Event::Resize(size) = ev {
+            self.resize(size);
+        }
 
         if ev.is_keybind_pressed(CTRL_C) && self.config.ctrl_c_quits {
             return Some(Event::Quit);

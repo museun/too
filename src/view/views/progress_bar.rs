@@ -2,7 +2,7 @@ use std::ops::RangeInclusive;
 
 use crate::{
     layout::Axis,
-    math::{lerp, normalize},
+    math::{lerp, normalize, Pos2, Vec2},
     view::{
         geom::{Size, Space},
         style::Theme,
@@ -16,6 +16,7 @@ use crate::{
 pub struct ProgressBar {
     value: f32,
     range: RangeInclusive<f32>,
+    axis: Axis,
 }
 
 impl ProgressBar {
@@ -38,8 +39,10 @@ impl ProgressBar {
     pub const UNFILLED_COLOR: Styled<Rgba> =
         Styled::new("too.progress_bar.unfilled.color", Theme::dark().surface);
 
-    pub const WIDTH: Styled<f32> = Styled::new("too.progress_bar.width", 20.0);
-    pub const HEIGHT: Styled<f32> = Styled::new("too.progress_bar.height", 1.0);
+    pub const SIZE: Styled<AxisProperty<f32>> = Styled::new(
+        "too.progress_bar.size", //
+        AxisProperty::new(20.0, 10.0),
+    );
 }
 
 impl ProgressBar {
@@ -47,11 +50,25 @@ impl ProgressBar {
         Self {
             value,
             range: 0.0..=1.0,
+            axis: Axis::Horizontal,
         }
     }
 
     pub const fn range(mut self, range: RangeInclusive<f32>) -> Self {
         self.range = range;
+        self
+    }
+
+    pub const fn horizontal(self) -> Self {
+        self.axis(Axis::Horizontal)
+    }
+
+    pub const fn vertical(self) -> Self {
+        self.axis(Axis::Vertical)
+    }
+
+    pub const fn axis(mut self, axis: Axis) -> Self {
+        self.axis = axis;
         self
     }
 }
@@ -68,36 +85,34 @@ impl View for ProgressBar {
         args
     }
 
-    fn layout(&mut self, layout: Layout, space: Space) -> Size {
-        // TODO axis
-        let w = layout.stylesheet.get_or_default(Self::WIDTH);
-        let h = layout.stylesheet.get_or_default(Self::HEIGHT);
-        space.fit(Size::new(w, h))
+    fn layout(&mut self, mut layout: Layout, space: Space) -> Size {
+        let main = self.axis.main(layout.property(Self::SIZE));
+        let size = self.axis.pack(main, 1.0);
+        space.fit(size)
     }
 
     fn draw(&mut self, mut render: Render) {
         let rect = render.surface.rect();
 
         // TODO axis
-        let axis = Axis::Horizontal;
+        let axis = self.axis;
 
-        let unfilled = render
-            .stylesheet
-            .get_or_default(Self::UNFILLED)
-            .resolve(axis);
-        let bg = render.stylesheet.get_or_default(Self::UNFILLED_COLOR);
+        let unfilled = render.property(Self::UNFILLED).resolve(axis);
+        let bg = render.property(Self::UNFILLED_COLOR);
 
         render.surface.fill_with(Pixel::new(unfilled).fg(bg));
+
         let x = normalize(self.value, self.range.clone());
-        let x = lerp(0.0, rect.width() as f32, x);
 
-        let filled = render.stylesheet.get_or_default(Self::FILLED).resolve(axis);
-        let bg = render.stylesheet.get_or_default(Self::FILLED_COLOR);
+        let extent = axis.main(rect.size());
+        let x = lerp(0.0, extent, x);
 
-        render.surface.fill_up_to_with(
-            (x, render.surface.rect.height() as f32),
-            Pixel::new(filled).fg(bg),
-        );
+        let filled = render.property(Self::FILLED).resolve(axis);
+        let bg = render.property(Self::FILLED_COLOR);
+
+        let pos: Vec2 = axis.pack(x, axis.cross(rect.size()));
+        let pixel = Pixel::new(filled).fg(bg);
+        render.surface.fill_up_to_with(pos, pixel);
     }
 }
 

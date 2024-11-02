@@ -34,9 +34,10 @@ impl View for Aligned {
         let node = layout.nodes.get_current();
         for &child in &node.children {
             let next = layout.compute(child, space);
-
             size = size.max(next);
+            // let pos = size * self.align - next * self.align;
             let pos = size * self.align - next * self.align;
+            // eprintln!("{pos:?} | {next:?}");
             layout.set_position(child, pos);
         }
 

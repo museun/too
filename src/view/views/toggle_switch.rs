@@ -5,9 +5,7 @@ use crate::{
     math::lerp,
     view::{
         geom::{Size, Space},
-        properties::{Elements, Theme},
-        Builder, Event, Handled, Interest, Layout, Render, Response, Ui, Update, View, ViewEvent,
-        ViewId,
+        Builder, Elements, EventCtx, Handled, Interest, Layout, Render, Ui, View, ViewEvent,
     },
     Pixel,
 };
@@ -48,14 +46,14 @@ impl View for ToggleSwitchView {
     type Args<'v> = ToggleSwitch<'v>;
     type Response = ToggleResponse;
 
-    fn create(args: Self::Args<'_>, _: &Ui, _: ViewId) -> Self {
+    fn create(args: Self::Args<'_>) -> Self {
         Self {
             value: *args.value,
             changed: false,
         }
     }
 
-    fn update(&mut self, args: Self::Args<'_>, _: &Ui, _: Update) -> Self::Response {
+    fn update(&mut self, args: Self::Args<'_>, _: &Ui) -> Self::Response {
         let changed = self.changed;
         if std::mem::take(&mut self.changed) {
             *args.value = self.value;
@@ -66,20 +64,16 @@ impl View for ToggleSwitchView {
     }
 
     fn interests(&self) -> Interest {
-        Interest::MOUSE
+        Interest::MOUSE_INSIDE
     }
 
-    fn event(&mut self, event: Event) -> Handled {
-        match event.event {
-            ViewEvent::MouseClick {
-                pos,
-                button,
-                modifiers,
-            } => {
+    fn event(&mut self, event: ViewEvent, ctx: EventCtx) -> Handled {
+        match event {
+            ViewEvent::MouseClicked { pos, .. } => {
                 self.value = !self.value;
                 self.changed = true;
 
-                event.manager.add_once(event.current, || {
+                ctx.animation.add_once(ctx.current(), || {
                     Animation::new()
                         .oneshot(true)
                         .with(easing::sine_in_out)
@@ -88,14 +82,14 @@ impl View for ToggleSwitchView {
                 });
             }
 
-            ViewEvent::MouseDragHeld { delta, .. }
+            ViewEvent::MouseDrag { delta, .. }
                 if (self.value && delta.x.is_negative())
                     || (!self.value && delta.x.is_positive()) =>
             {
                 self.value = !self.value;
                 self.changed = true;
 
-                event.manager.add_once(event.current, || {
+                ctx.animation.add_once(ctx.current(), || {
                     Animation::new()
                         .oneshot(true)
                         .with(easing::sine_in_out)
@@ -120,15 +114,15 @@ impl View for ToggleSwitchView {
         let rect = render.surface.rect();
 
         let selected = self.value;
-        let mut bg = if selected {
+        let bg = if selected {
             render.theme.primary
         } else {
             render.theme.secondary
         };
 
-        if render.is_hovered() {
-            bg = render.theme.accent;
-        }
+        // if render.is_hovered() {
+        //     bg = render.theme.accent;
+        // }
 
         // TODO properties
         // TODO axis
@@ -138,7 +132,7 @@ impl View for ToggleSwitchView {
 
         let w = rect.width() as f32 - 1.0;
 
-        let x = match render.animations.get_mut(render.current) {
+        let x = match render.animation.get_mut(render.nodes.current()) {
             Some(animation) if selected => lerp(0.0, w, *animation.value),
             Some(animation) if !selected => lerp(w, 0.0, *animation.value),
             _ if selected => w,
@@ -151,20 +145,20 @@ impl View for ToggleSwitchView {
     }
 }
 
-pub fn dark_mode_switch(ui: &Ui) -> Response {
-    // TODO get these from the properties
-    const SUN: &str = "☀️";
-    const MOON: &str = "🌙";
+// pub fn dark_mode_switch(ui: &Ui) -> Response {
+//     // TODO get these from the properties
+//     const SUN: &str = "☀️";
+//     const MOON: &str = "🌙";
 
-    let resp = ui.horizontal(|ui| {
-        ui.label(if *ui.dark_mode() { MOON } else { SUN });
-        ui.toggle_switch(&mut ui.dark_mode());
-    });
+//     let resp = ui.horizontal(|ui| {
+//         ui.label(if *ui.dark_mode() { MOON } else { SUN });
+//         ui.toggle_switch(&mut ui.dark_mode());
+//     });
 
-    if *ui.dark_mode() {
-        ui.set_theme(Theme::dark());
-    } else {
-        ui.set_theme(Theme::light())
-    }
-    resp
-}
+//     if *ui.dark_mode() {
+//         ui.set_theme(Theme::dark());
+//     } else {
+//         ui.set_theme(Theme::light())
+//     }
+//     resp
+// }

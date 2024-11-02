@@ -1,10 +1,12 @@
 use crate::{
+    layout::Axis,
     math::{Pos2, Rect, Vec2},
-    Cell, Pixel, Rgba, Surface,
+    AnimationManager, Cell, Pixel, Rgba, Surface,
 };
 
 use super::{
-    state::{Debug, LayoutNodes, RenderNodes, ViewId, ViewNodes},
+    input::InputState,
+    state::{LayoutNodes, RenderNodes, ViewId, ViewNodes},
     style::{Stylesheet, Theme},
     Styled,
 };
@@ -28,7 +30,12 @@ impl<'a> CroppedSurface<'a> {
 
     #[inline]
     pub fn set(&mut self, pos: impl Into<Pos2>, cell: impl Into<Cell>) -> bool {
-        let pos = pos.into() + self.rect.left_top();
+        let offset = self.rect.left_top();
+        if offset.x >= self.rect().right() || offset.y >= self.rect().bottom() {
+            return false;
+        }
+
+        let pos = pos.into() + offset;
         if !self.rect.contains(pos) {
             return false;
         }
@@ -37,7 +44,12 @@ impl<'a> CroppedSurface<'a> {
     }
 
     pub fn patch(&mut self, pos: impl Into<Pos2>, patch: impl FnOnce(&mut Cell)) {
-        let pos = pos.into() + self.rect.left_top();
+        let offset = self.rect.left_top();
+        if offset.x >= self.rect().right() || offset.y >= self.rect().bottom() {
+            return;
+        }
+
+        let pos = pos.into() + offset;
         if !self.rect.contains(pos) {
             return;
         }
@@ -61,6 +73,7 @@ impl<'a> CroppedSurface<'a> {
     #[inline]
     pub fn fill_rect(&mut self, rect: impl Into<Rect>, bg: impl Into<Rgba>) -> &mut Self {
         let rect = rect.into();
+        // TODO ensure these can't overflow
         let rect = rect.translate(self.rect.left_top().to_vec2());
         let rect = rect.intersection(self.rect);
         self.surface.fill(rect, bg.into());
@@ -69,6 +82,7 @@ impl<'a> CroppedSurface<'a> {
 
     pub fn fill_rect_with(&mut self, rect: impl Into<Rect>, pixel: impl Into<Pixel>) -> &mut Self {
         let rect = rect.into();
+        // TODO ensure these can't overflow
         let rect = rect.translate(self.rect.left_top().to_vec2());
         let rect = rect.intersection(self.rect);
         self.surface.fill(rect, pixel.into());
@@ -113,10 +127,11 @@ pub struct Render<'a, 'b> {
     pub nodes: &'a ViewNodes,
     pub layout: &'a LayoutNodes,
     pub render: &'a mut RenderNodes,
+    pub animation: &'a mut AnimationManager,
     pub stylesheet: &'a mut Stylesheet,
     pub theme: &'a Theme,
     pub surface: CroppedSurface<'b>,
-    pub debug: &'a Debug,
+    pub(super) input: &'a InputState,
 }
 
 impl<'a, 'b> Render<'a, 'b> {
@@ -128,9 +143,10 @@ impl<'a, 'b> Render<'a, 'b> {
         self.render.draw(
             self.nodes, //
             self.layout,
+            self.input,
+            self.animation,
             self.stylesheet,
             self.theme,
-            self.debug,
             id,
             surface,
         );
@@ -144,6 +160,10 @@ impl<'a, 'b> Render<'a, 'b> {
         self.property(key)
     }
 
+    pub fn current(&self) -> ViewId {
+        self.nodes.current()
+    }
+
     pub fn rect(&self) -> Rect {
         self.surface.rect()
     }
@@ -152,7 +172,15 @@ impl<'a, 'b> Render<'a, 'b> {
         self.surface.local_rect()
     }
 
-    pub fn debug(&self, msg: impl ToString) {
-        self.debug.push(msg);
+    pub fn is_hovered(&self) -> bool {
+        self.input.is_hovered(self.current())
+    }
+
+    pub fn is_parent_hovered(&self) -> bool {
+        self.input.is_hovered(self.nodes.parent())
+    }
+
+    pub fn parent_axis(&self) -> Axis {
+        self.render.current_axis().unwrap()
     }
 }

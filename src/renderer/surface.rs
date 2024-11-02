@@ -75,12 +75,14 @@ impl Surface {
         }
     }
 
+    #[profiling::function]
     fn set_line(&mut self, line: i32, start: i32, end: i32, pixel: Pixel) {
         let y = Self::pos_to_index(pos2(0, line), self.size.x);
         let (start, end) = (start as usize + y, end as usize + y);
         self.back[start..end].fill(Cell::Pixel(pixel));
     }
 
+    #[profiling::function]
     pub fn clear(&mut self, rect: Rect, color: impl Into<Rgba>) {
         let pixel = Pixel::new(' ').bg(color.into());
         let rect = rect.intersection(self.rect());
@@ -90,6 +92,7 @@ impl Surface {
     }
 
     // PERF we can use 'set_line' if we patch any cells afterward
+    // #[profiling::function]
     pub fn fill(&mut self, rect: Rect, pixel: impl Into<Pixel>) -> &mut Self {
         let pixel = pixel.into();
         let rect = self.rect().intersection(rect);
@@ -102,6 +105,7 @@ impl Surface {
     }
 
     // this can't be a trait method probably
+    #[profiling::function]
     pub fn text<T: MeasureText>(&mut self, rect: Rect, text: impl Into<Text<T>>) -> &mut Self {
         let text: Text<T> = text.into();
         let rect = self.rect().intersection(rect);
@@ -115,6 +119,7 @@ impl Surface {
 }
 
 impl Surface {
+    #[profiling::function]
     pub fn new(size: Vec2) -> Self {
         Self {
             front: vec![Cell::Empty; size.x as usize * size.y as usize],
@@ -123,19 +128,44 @@ impl Surface {
         }
     }
 
-    // PERF this is now the slowest part of it
+    #[profiling::function]
     pub fn resize(&mut self, size: Vec2) {
         if self.size == size {
             return;
         }
 
-        self.front = vec![Cell::Empty; size.x as usize * size.y as usize];
-        self.back = vec![Cell::Pixel(Pixel::DEFAULT); size.x as usize * size.y as usize];
+        let new = size.x as usize * size.y as usize;
+        // self.front = vec![Cell::Empty; new];
+        // self.back = vec![Cell::Pixel(Pixel::DEFAULT); new];
+
+        self.front.resize(new, Cell::Empty);
+        self.front.fill(Cell::Empty);
+
+        self.back.resize(new, Cell::Pixel(Pixel::DEFAULT));
+        self.back.fill(Cell::Pixel(Pixel::DEFAULT));
+
+        // let old = self.size.x as usize * self.size.y as usize;
+        // let diff = old.saturating_sub(new.abs_diff(old));
+
+        // self.front.resize(new, Cell::Empty);
+        // self.back.resize(new, Cell::Pixel(Pixel::DEFAULT));
+
+        // if old != diff {
+        //     self.front[..diff].fill(Cell::Empty);
+        //     self.back[..diff].fill(Cell::Pixel(Pixel::DEFAULT));
+        // }
 
         self.size = size;
     }
 
+    #[profiling::function]
+    pub fn compact(&mut self) {
+        self.front.shrink_to_fit();
+        self.back.shrink_to_fit();
+    }
+
     // TODO `force invalidate` (rather than a lazy invalidate)
+    #[profiling::function]
     pub fn render(&mut self, renderer: &mut impl Renderer) -> std::io::Result<()> {
         let mut state = CursorState::default();
         let mut seen = false;
@@ -214,6 +244,7 @@ impl Surface {
         Ok(())
     }
 
+    #[profiling::function]
     fn diff<'a>(
         front: &'a mut [Cell],
         back: &'a mut [Cell],
@@ -233,6 +264,7 @@ impl Surface {
             })
     }
 
+    #[profiling::function]
     fn reset(buf: &mut [Cell], cell: impl Into<Cell>) {
         let cell = cell.into();
         for x in buf {

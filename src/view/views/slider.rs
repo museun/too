@@ -165,36 +165,23 @@ impl View for SliderView {
     }
 
     fn draw(&mut self, mut render: Render) {
-        let rect = render.surface.rect();
-        // let hovered = render.is_hovered();
-
-        // let pixel = render.properties.filled::<Self>(Axis::Horizontal);
-        // let track = if hovered {
-        //     render.theme.accent
-        // } else {
-        //     render.theme.outline
-        // };
-
-        // TODO axis
-        let axis = self.axis;
-
-        let id = render.nodes.current();
-        let pixel = render.property(Slider::TRACK).resolve(axis);
+        let pixel = render.property(Slider::TRACK).resolve(self.axis);
         let track = render.color(Slider::TRACK_COLOR);
-
         render.surface.fill_with(Pixel::new(pixel).fg(track));
-        let pos = normalize(self.value, self.range.clone());
 
-        let extent = match axis {
-            Axis::Horizontal => rect.width() as f32 - 1.0,
-            Axis::Vertical => rect.height() as f32 - 1.0,
-        };
-
-        let pos = lerp(0.0, extent, pos);
-        let pos: Pos2 = axis.pack(pos, 0.0);
+        let extent: f32 = self.axis.main(render.rect().size());
+        let value = normalize(self.value, self.range.clone());
+        let x = lerp(0.0, extent - 1.0, value);
+        let pos: Pos2 = self.axis.pack(x, 0.0);
 
         let knob = render.property(Slider::KNOB);
         let knob_color = render.color(Slider::KNOB_COLOR);
+
+        let knob_color = if render.is_hovered() {
+            render.theme.secondary
+        } else {
+            knob_color
+        };
 
         render.surface.set(pos, Pixel::new(knob).fg(knob_color));
     }

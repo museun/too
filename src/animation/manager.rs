@@ -1,11 +1,47 @@
 use std::collections::HashMap;
 
+use crate::{
+    hasher::{hash_fnv_1a, DefaultIntHasher},
+    view::ViewId,
+};
+
 use super::Animation;
 
-// #[cfg(not(debug_assertions))]
-// compile_error!("FIXME wrong id type");
-// #[cfg(debug_assertions)]
-type Id = u64;
+#[derive(Copy, Clone, Debug, PartialEq, Eq)]
+pub struct Id {
+    inner: IdInner,
+}
+
+impl Id {
+    pub const fn new(key: &'static str) -> Self {
+        Self {
+            inner: IdInner::User(hash_fnv_1a(key.as_bytes())),
+        }
+    }
+}
+
+impl From<ViewId> for Id {
+    fn from(value: ViewId) -> Self {
+        Self {
+            inner: IdInner::View(value),
+        }
+    }
+}
+
+#[derive(Copy, Clone, Debug, PartialEq, Eq)]
+enum IdInner {
+    User(u64),
+    View(ViewId),
+}
+
+impl std::hash::Hash for Id {
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        match self.inner {
+            IdInner::User(id) => state.write_u64(id),
+            IdInner::View(view_id) => state.write_u64(view_id.0.to_bits()),
+        }
+    }
+}
 
 /// Immutable reference to an animation state
 #[derive(Copy, Clone)]
@@ -25,7 +61,7 @@ pub struct AnimationMut<'a> {
 /// This lets you add, retrieve and remove animations from the system
 #[derive(Default)]
 pub struct AnimationManager {
-    animations: HashMap<Id, (Animation, f32)>,
+    animations: HashMap<Id, (Animation, f32), DefaultIntHasher>,
 }
 
 impl AnimationManager {

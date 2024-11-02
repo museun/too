@@ -1,4 +1,4 @@
-#![cfg_attr(debug_assertions, allow(dead_code, unused_variables,))] // <-- the only one you need
+#![cfg_attr(debug_assertions, allow(dead_code, unused_variables,))]
 use std::collections::VecDeque;
 
 mod backend;

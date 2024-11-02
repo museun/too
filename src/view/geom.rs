@@ -25,6 +25,18 @@ impl Flex {
     }
 }
 
+impl From<i32> for Flex {
+    fn from(value: i32) -> Self {
+        Self::Tight(value as f32)
+    }
+}
+
+impl From<f32> for Flex {
+    fn from(value: f32) -> Self {
+        Self::Tight(value)
+    }
+}
+
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub struct Margin {
     pub left: i32,
@@ -233,11 +245,21 @@ impl Space {
     }
 
     pub fn size(&self) -> Size {
-        match () {
-            _ if self.max.is_finite() => self.max,
-            _ if self.min.is_finite() => self.min,
-            _ => Size::ZERO,
+        let mut size = Size::ZERO;
+
+        if self.max.width.is_finite() {
+            size.width = self.max.width
+        } else if self.min.width.is_finite() {
+            size.width = self.min.width
         }
+
+        if self.max.height.is_finite() {
+            size.height = self.max.height
+        } else if self.min.height.is_finite() {
+            size.height = self.min.height
+        }
+
+        size
     }
 }
 
@@ -403,10 +425,7 @@ impl std::ops::Div<Align2> for Size {
     type Output = Self;
     fn div(self, rhs: Align2) -> Self::Output {
         let (x, y) = rhs.factor();
-        Self {
-            width: self.width / x,
-            height: self.height / y,
-        }
+        Self::new(self.width / x, self.height / y)
     }
 }
 
@@ -414,10 +433,7 @@ impl std::ops::Mul<Align2> for Size {
     type Output = Self;
     fn mul(self, rhs: Align2) -> Self::Output {
         let (x, y) = rhs.factor();
-        Self {
-            width: self.width * x,
-            height: self.height * y,
-        }
+        Self::new(self.width * x, self.height * y)
     }
 }
 

@@ -27,7 +27,7 @@ pub trait ViewExt<'v>: Builder<'v> {
     }
 }
 
-impl<'v, T: Builder<'v>> ViewExt<'v> for T {}
+impl<'v, T> ViewExt<'v> for T where T: Builder<'v> {}
 
 #[allow(unused_variables)]
 pub trait View: Sized + 'static + std::fmt::Debug {

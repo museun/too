@@ -1,5 +1,3 @@
-use std::i32;
-
 use crate::{
     layout::Axis,
     math::{pos2, remap, vec2, Pos2, Rect, Vec2},
@@ -153,25 +151,30 @@ impl ScrollView {
         };
 
         if let (Some(h), Some(v)) = (showing_horizontal, showing_vertical) {
+            const MERGE: char = '┘';
+            const BOTH_SELECTED: char = '┛';
+            const PARTIAL_HORIZONATAL: char = '╸';
+            const PARTIAL_VERTICAL: char = '╹';
+
             let bottom_right = local.right_bottom() - 1;
 
-            let cell = Pixel::new('┘')
+            let cell = Pixel::new(MERGE)
                 .fg(render.theme.outline)
                 .bg(render.theme.surface);
             render.surface.set(bottom_right, cell);
 
             if h == bottom_right {
-                let cell = Pixel::new('╸').fg(render.theme.contrast);
+                let cell = Pixel::new(PARTIAL_HORIZONATAL).fg(render.theme.contrast);
                 render.surface.set(h, cell);
             }
 
             if v == bottom_right {
-                let cell = Pixel::new('╹').fg(render.theme.contrast);
+                let cell = Pixel::new(PARTIAL_VERTICAL).fg(render.theme.contrast);
                 render.surface.set(v, cell);
             }
 
             if h == v {
-                let cell = Pixel::new('┛').fg(render.theme.contrast);
+                let cell = Pixel::new(BOTH_SELECTED).fg(render.theme.contrast);
                 render.surface.set(h, cell);
             }
         }
@@ -205,7 +208,7 @@ impl View for ScrollView {
     }
 
     fn event(&mut self, event: ViewEvent, ctx: EventCtx) -> Handled {
-        let rect = ctx.rect().unwrap_or(Rect::ZERO);
+        let rect = ctx.rect();
         let offset = rect.left_top();
 
         let delta = match event {

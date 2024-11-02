@@ -125,19 +125,6 @@ impl Border {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    #[test]
-    fn border() {
-        let border = Border::ROUNDED.without_top().without_bottom();
-        let margin = border.as_margin();
-        eprintln!("{margin:?}");
-        eprintln!("sum: {:?}", margin.sum());
-        eprintln!("size: {:?}", margin.size());
-    }
-}
-
 impl Default for Border {
     fn default() -> Self {
         Self::THICK
@@ -236,6 +223,7 @@ impl Border {
 
 use super::measure_text;
 
+// TODO 'hoverable' and 'focusable'
 #[derive(Default, Debug, Clone)]
 #[must_use = "a view does nothing unless `show()` or `show_children()` is called"]
 pub struct BorderView {
@@ -297,6 +285,7 @@ impl View for BorderView {
             .map(measure_text)
             .unwrap_or(Size::ZERO);
 
+        // TODO this needs some padding for the title_size
         size.max(title_size) + sum
     }
 

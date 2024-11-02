@@ -1,4 +1,5 @@
 mod surface;
+
 pub use surface::Surface;
 
 mod cell;
@@ -10,7 +11,7 @@ pub use rgba::Rgba;
 mod gradient;
 pub use gradient::Gradient;
 
-use crate::math;
+use crate::math::{self};
 
 /// Abstraction for rendering to a surface.
 pub trait Renderer {

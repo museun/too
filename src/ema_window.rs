@@ -29,7 +29,13 @@ impl<const N: usize> EmaWindow<N> {
     /// This uses an alpha value of 1.0 for 'total' smoothness
     ///
     /// ***NOTE*** the buffer size `N` must be a power of 2
+    ///
+    /// This interpolates between 0.0..=1.0
     pub const fn new() -> Self {
+        assert!(
+            N.is_power_of_two(),
+            "EMA Window must use a power of 2 buffer size"
+        );
         Self {
             alpha: const { 1.0 / N as f32 },
             ema: 0.0,

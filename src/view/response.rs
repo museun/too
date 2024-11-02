@@ -43,3 +43,9 @@ impl<T> std::ops::Deref for Response<T> {
         &self.inner
     }
 }
+
+impl<T> std::ops::DerefMut for Response<T> {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.inner
+    }
+}

@@ -1,5 +1,8 @@
 use crate::{
-    view::{Builder, Render, View},
+    view::{
+        geom::{Size, Space},
+        Builder, Layout, Render, View,
+    },
     Rgba,
 };
 
@@ -32,6 +35,10 @@ impl View for Background {
     fn create(args: Self::Args<'_>) -> Self {
         args
     }
+
+    // fn layout(&mut self, layout: Layout, space: Space) -> Size {
+    //   space.max
+    // }
 
     fn draw(&mut self, mut render: Render) {
         render.surface.fill(self.bg);

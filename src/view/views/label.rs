@@ -5,7 +5,7 @@ use unicode_width::UnicodeWidthStr as _;
 use crate::{
     view::{
         geom::{Size, Space},
-        Builder, Layout, Render, View,
+        Builder, Layout, Render, Styled, Theme, View,
     },
     Attribute, Grapheme, Rgba,
 };

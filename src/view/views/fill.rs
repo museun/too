@@ -9,20 +9,27 @@ use crate::{
 #[derive(Copy, Clone, Debug, PartialEq)]
 #[must_use = "a view does nothing unless `show()` or `show_children()` is called"]
 pub struct Fill {
-    bg: Rgba,
+    bg: Option<Rgba>,
     size: Size,
 }
 
 impl Fill {
     pub fn new(bg: impl Into<Rgba>, size: impl Into<Size>) -> Self {
         Self {
-            bg: bg.into(),
+            bg: Some(bg.into()),
             size: size.into(),
         }
     }
 
     pub fn fill(bg: impl Into<Rgba>) -> Self {
         Self::new(bg, Size::FILL)
+    }
+
+    pub const fn all_space() -> Self {
+        Self {
+            bg: None,
+            size: Size::FILL,
+        }
     }
 }
 
@@ -43,13 +50,12 @@ impl View for Fill {
     }
 
     fn draw(&mut self, mut render: Render) {
-        render.surface.fill(self.bg);
+        if let Some(bg) = self.bg {
+            render.surface.fill(bg);
+        }
     }
 }
 
 pub fn fill(bg: impl Into<Rgba>, size: impl Into<Size>) -> Fill {
-    Fill {
-        bg: bg.into(),
-        size: size.into(),
-    }
+    Fill::new(bg, size)
 }

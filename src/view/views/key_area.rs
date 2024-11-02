@@ -58,14 +58,12 @@ impl KeyAreaResponse {
     }
 
     pub fn key_pressed(&self, key: impl Into<Keybind>) -> bool {
-        let expected = key.into();
-
-        let Some(key) = self.key else {
+        let Some(got) = self.key else {
             return false;
         };
 
-        let got = Keybind::new(key, self.modifiers.unwrap_or_default());
-        got == expected
+        let got = Keybind::new(got, self.modifiers.unwrap_or_default());
+        got == key.into()
     }
 
     pub fn is_shift(&self) -> bool {

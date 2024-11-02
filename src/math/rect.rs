@@ -108,8 +108,7 @@ impl Rect {
     }
 
     pub const fn partial_contains_rect(&self, other: Self) -> bool {
-        self.min.x <= other.max.x && self.max.x >= other.min.x
-            || self.min.y <= other.max.y && other.max.y >= self.min.y
+        self.min.y <= other.max.y || self.min.x <= other.max.x && self.max.x >= other.min.y
     }
 
     pub fn shrink(&self, d: i32) -> Self {

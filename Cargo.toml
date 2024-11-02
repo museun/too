@@ -12,15 +12,20 @@ readme = "README.md"
 [features]
 default = [ "terminal" ]
 terminal = [ "dep:crossterm", "dep:flume" ]
+puffin = [ "profiling/profile-with-puffin", "dep:puffin_http" ]
 
 [dependencies]
 compact_str = "0.8.0"
-unicode-segmentation = { version = "1.12.0", default-features = false }
+unicode-segmentation = "1.12.0"
 unicode-width = { version = "0.2.0", default-features = false }
 thunderdome = "0.6.1"
 
 flume = { version = "0.11.1", default-features = false, optional = true }
 crossterm = { version = "0.28.1", default-features = false, features = [ "events", "windows" ], optional = true }
+
+profiling = "1.0.16"
+puffin_http = { version = "0.16.1", optional = true }
+str_indices = "0.4.4"
 
 [profile.dev.package."unicode-segmentation"]
 opt-level = 3

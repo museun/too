@@ -10,7 +10,7 @@ use crate::{
 use super::{
     geom::Flex,
     helpers::short_name,
-    state::{LayoutNodes, ViewNodes},
+    state::{Debug, LayoutNodes, ViewNodes},
     Interest, State, Ui, ViewId,
 };
 
@@ -467,44 +467,26 @@ fn evaluate<R: 'static>(mut app: impl FnMut(&Ui) -> R) -> (DebugNode, Vec<String
     state.event(&Event::Resize(size));
 
     let mut surface = Surface::new(size);
-    for i in 0..3 {
-        state.build(rect(size), &mut app);
-        state.render(&mut surface);
-    }
+    // for i in 0..1 {
+    state.build(rect(size), &mut app);
+    state.render(&mut surface);
+    // }
 
     let node = DebugNode::from_state(&state);
-    let debug = state.debug.iter().map(|c| c.to_owned()).collect();
+
+    let mut debug = vec![];
+    Debug::for_each(|msg| debug.push(msg.to_owned()));
     (node, debug)
-}
-
-pub fn adj_list<R: 'static>(mut app: impl FnMut(&Ui) -> R) -> String {
-    let mut state = State::new();
-
-    let size = vec2(80, 25);
-
-    state.event(&Event::Resize(size));
-
-    let mut surface = Surface::new(size);
-    for i in 0..3 {
-        state.build(rect(size), &mut app);
-        state.render(&mut surface);
-    }
-
-    format!("{:#?}", state.nodes)
 }
 
 pub fn pretty_tree<R: 'static>(app: impl FnMut(&Ui) -> R) -> TreeOutput {
     let (node, debug) = evaluate(app);
-    TreeOutput {
-        tree: node.pretty_tree(),
-        debug,
-    }
+    let tree = node.pretty_tree();
+    TreeOutput { tree, debug }
 }
 
 pub fn compact_tree<R: 'static>(app: impl FnMut(&Ui) -> R) -> TreeOutput {
     let (node, debug) = evaluate(app);
-    TreeOutput {
-        tree: node.compact_tree(),
-        debug,
-    }
+    let tree = node.compact_tree();
+    TreeOutput { tree, debug }
 }

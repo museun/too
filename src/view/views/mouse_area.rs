@@ -121,12 +121,18 @@ impl View for MouseArea {
 
     fn update(&mut self, _: Self::Args<'_>, _: &Ui) -> Self::Response {
         let state = std::mem::take(&mut self.state);
+        let dragged = if !matches!(state, MouseState::Held) {
+            self.dragged.take()
+        } else {
+            self.dragged
+        };
+
         MouseAreaResponse {
             pos: self.pos,
             clicked: std::mem::take(&mut self.clicked),
             hovered: matches!(state, MouseState::Hovering),
             held: matches!(state, MouseState::Held),
-            dragged: self.dragged,
+            dragged,
             scrolled: std::mem::take(&mut self.scrolled),
             entered: self.entered,
             leave: self.leave,
@@ -134,7 +140,7 @@ impl View for MouseArea {
     }
 
     fn interests(&self) -> Interest {
-        Interest::MOUSE
+        Interest::MOUSE_INSIDE
     }
 
     fn event(&mut self, event: ViewEvent, ctx: EventCtx) -> Handled {
@@ -145,28 +151,24 @@ impl View for MouseArea {
                 self.dragged.take();
             }
 
-            ViewEvent::MouseDrag {
-                start,
-                current,
-                inside,
-                ..
-            } => {
+            ViewEvent::MouseDrag { start, current, .. } => {
                 self.state = MouseState::Held;
+                self.pos = current;
 
-                if !inside {
-                    self.dragged.take();
-                    return Handled::Bubble;
-                }
-
-                let node = ctx.layout.get(ctx.nodes.current()).unwrap();
-
+                let rect = ctx.rect();
                 self.dragged
                     .get_or_insert_with(|| DragState {
                         start,
                         pos: current,
-                        offset: (node.rect.min - current).to_vec2(),
+                        offset: (rect.min - current).to_vec2(),
                     })
                     .pos = current;
+            }
+
+            ViewEvent::MouseClicked { pos, .. } => {
+                self.state = MouseState::Held;
+                self.pos = pos;
+                self.clicked = true
             }
 
             // ViewEvent::MouseButtonChanged {
@@ -184,20 +186,23 @@ impl View for MouseArea {
             // }
             ViewEvent::MouseScroll { delta, .. } => {
                 self.scrolled = Some(delta);
+                self.dragged.take();
             }
 
-            ViewEvent::MouseEntered { .. } => {
+            ViewEvent::MouseEntered => {
                 self.entered = true;
                 self.state = MouseState::Hovering;
+                self.dragged.take();
             }
 
-            ViewEvent::MouseLeave { .. } => {
+            ViewEvent::MouseLeave => {
                 self.leave = true;
                 self.state = MouseState::None;
+                self.dragged.take();
             }
             _ => return Handled::Bubble,
         }
 
-        Handled::Sink
+        Handled::Bubble
     }
 }

@@ -6,7 +6,7 @@ use crate::{
 use super::{
     geom::{Flex, Size, Space},
     input::InputState,
-    state::{Debug, LayoutNodes, ViewId, ViewNodes},
+    state::{LayoutNodes, ViewId, ViewNodes},
     style::Stylesheet,
     Styled,
 };
@@ -16,20 +16,17 @@ pub struct Layout<'a> {
     pub layout: &'a mut LayoutNodes,
     pub input: &'a InputState,
     pub stylesheet: &'a mut Stylesheet,
-    pub debug: &'a Debug,
 }
 
 impl<'a> Layout<'a> {
     #[inline(always)]
     pub fn compute(&mut self, id: ViewId, space: Space) -> Size {
-        self.layout.compute(
-            self.nodes,
-            self.input,
-            self.stylesheet,
-            self.debug,
-            id,
-            space,
-        )
+        self.layout
+            .compute(self.nodes, self.input, self.stylesheet, id, space)
+    }
+
+    pub fn parent_axis(&self) -> Axis {
+        self.layout.current_axis().unwrap()
     }
 
     pub fn flex(&self, id: ViewId) -> Flex {
@@ -65,12 +62,6 @@ impl<'a> Layout<'a> {
 
     pub fn property<T: 'static + Copy>(&mut self, key: Styled<T>) -> T {
         self.stylesheet.get_or_default(key)
-    }
-}
-
-impl<'a> Layout<'a> {
-    pub fn debug(&self, msg: impl ToString) {
-        self.debug.push(msg);
     }
 }
 
