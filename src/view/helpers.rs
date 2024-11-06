@@ -1,7 +1,5 @@
 use std::collections::VecDeque;
 
-use super::ViewId;
-
 pub fn short_name(name: &str) -> String {
     const fn is_special(c: char) -> bool {
         matches!(c, ' ' | '<' | '>' | '(' | ')' | '[' | ']' | ',' | ';')
@@ -104,17 +102,5 @@ impl<T> Queue<T> {
 
     pub fn iter_mut(&mut self) -> impl ExactSizeIterator<Item = &mut T> + '_ {
         self.queue.iter_mut()
-    }
-}
-
-pub struct ArenaDebug<'a, T>(pub &'a thunderdome::Arena<T>);
-
-impl<'a, T: std::fmt::Debug> std::fmt::Debug for ArenaDebug<'a, T> {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let mut map = f.debug_map();
-        for (k, v) in self.0.iter() {
-            map.entry(&ViewId(k), &v);
-        }
-        map.finish()
     }
 }

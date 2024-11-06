@@ -42,7 +42,7 @@ pub fn debug_view(mut app: impl FnMut(&Ui)) -> std::io::Result<()> {
 
 pub fn run<R: 'static>(mut app: impl FnMut(&Ui) -> R) -> std::io::Result<()> {
     use crate::{Backend, EventReader};
-    let mut term = crate::term::Term::setup(crate::term::Config::default())?;
+    let mut term = crate::term::Term::setup(crate::term::Config::default().hook_panics(true))?;
     let mut surface = crate::Surface::new(term.size());
 
     let mut state = State::new();
@@ -54,7 +54,10 @@ pub fn run<R: 'static>(mut app: impl FnMut(&Ui) -> R) -> std::io::Result<()> {
     let mut prev = Instant::now();
 
     'outer: loop {
-        profiling::finish_frame!();
+        #[cfg(feature = "profile")]
+        {
+            profiling::finish_frame!();
+        }
 
         let mut should_render = false;
         let mut last_resize = None;

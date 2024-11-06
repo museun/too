@@ -124,9 +124,10 @@ impl<'a> CroppedSurface<'a> {
 }
 
 pub struct Render<'a, 'b> {
+    pub current: ViewId,
     pub nodes: &'a ViewNodes,
-    pub layout: &'a LayoutNodes,
-    pub render: &'a mut RenderNodes,
+    pub(super) layout: &'a LayoutNodes,
+    pub(super) render: &'a mut RenderNodes,
     pub animation: &'a mut AnimationManager,
     pub stylesheet: &'a mut Stylesheet,
     pub theme: &'a Theme,

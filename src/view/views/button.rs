@@ -67,7 +67,7 @@ impl View for Button {
     }
 
     fn interests(&self) -> Interest {
-        Interest::MOUSE
+        Interest::MOUSE_INSIDE
     }
 
     fn event(&mut self, event: ViewEvent, ctx: EventCtx) -> Handled {

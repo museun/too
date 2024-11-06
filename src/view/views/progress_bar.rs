@@ -2,7 +2,7 @@ use std::ops::RangeInclusive;
 
 use crate::{
     layout::Axis,
-    math::{lerp, normalize, Pos2, Vec2},
+    math::{lerp, normalize, Vec2},
     view::{
         geom::{Size, Space},
         style::Theme,

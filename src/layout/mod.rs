@@ -8,19 +8,6 @@ pub enum Axis {
     Vertical,
 }
 
-#[test]
-fn asdf() {
-    let pos = pos2(10, 5);
-
-    let a = Axis::Horizontal;
-    eprintln!("{a:?} main: {}", a.main::<i32>(pos));
-    eprintln!("{a:?} cross: {}", a.cross::<i32>(pos));
-
-    let a = Axis::Vertical;
-    eprintln!("{a:?} main: {}", a.main::<i32>(pos));
-    eprintln!("{a:?} cross: {}", a.cross::<i32>(pos));
-}
-
 impl Axis {
     pub fn main<T>(&self, value: impl Into<(T, T)>) -> T {
         let (x, y) = value.into();
@@ -75,5 +62,3 @@ pub use linear::{LinearAllocator, LinearLayout};
 
 mod align;
 pub use align::{Align, Align2};
-
-use crate::math::pos2;

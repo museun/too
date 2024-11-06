@@ -16,6 +16,7 @@ pub struct Layout<'a> {
     pub layout: &'a mut LayoutNodes,
     pub input: &'a InputState,
     pub stylesheet: &'a mut Stylesheet,
+    pub current: ViewId,
 }
 
 impl<'a> Layout<'a> {

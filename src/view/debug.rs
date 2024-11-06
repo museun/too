@@ -1,4 +1,5 @@
 use compact_str::CompactString;
+use slotmap::Key;
 use unicode_width::UnicodeWidthStr;
 
 use crate::{
@@ -94,7 +95,7 @@ fn render_compact_tree(node: &DebugNode) -> String {
                 out,
                 "{prefix}{connector}{name}({id:?})",
                 name = node.name,
-                id = node.id,
+                id = node.id.data(),
             );
 
             let prefix = if is_last {
@@ -108,7 +109,7 @@ fn render_compact_tree(node: &DebugNode) -> String {
     }
 
     let mut out = String::new();
-    let _ = writeln!(out, "{name}({id:?})", name = node.name, id = node.id);
+    let _ = writeln!(out, "{name}({id:?})", name = node.name, id = node.id.data());
     print(&node.children, "", &mut out);
     out
 }
@@ -181,7 +182,7 @@ fn render_pretty_tree(node: &DebugNode) -> String {
         fn new(node: &DebugNode, spacing: usize) -> Self {
             let mut labels = vec![
                 Label::Split {
-                    min: format!("{:?}", node.id).into(),
+                    min: format!("{:?}", node.id.data()).into(),
                     max: node.name.clone().into(),
                 },
                 Label::Header,

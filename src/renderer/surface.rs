@@ -8,6 +8,7 @@ use super::{
 use crate::{
     math::{pos2, rect, Pos2, Rect, Vec2},
     text::MeasureText,
+    view::views::Border,
     Event, Text,
 };
 
@@ -75,14 +76,14 @@ impl Surface {
         }
     }
 
-    #[profiling::function]
+    #[cfg_attr(feature = "profile", profiling::function)]
     fn set_line(&mut self, line: i32, start: i32, end: i32, pixel: Pixel) {
         let y = Self::pos_to_index(pos2(0, line), self.size.x);
         let (start, end) = (start as usize + y, end as usize + y);
         self.back[start..end].fill(Cell::Pixel(pixel));
     }
 
-    #[profiling::function]
+    #[cfg_attr(feature = "profile", profiling::function)]
     pub fn clear(&mut self, rect: Rect, color: impl Into<Rgba>) {
         let pixel = Pixel::new(' ').bg(color.into());
         let rect = rect.intersection(self.rect());
@@ -92,7 +93,7 @@ impl Surface {
     }
 
     // PERF we can use 'set_line' if we patch any cells afterward
-    // #[profiling::function]
+    // #[cfg_attr(feature = "profile", profiling::function)]
     pub fn fill(&mut self, rect: Rect, pixel: impl Into<Pixel>) -> &mut Self {
         let pixel = pixel.into();
         let rect = self.rect().intersection(rect);
@@ -105,11 +106,53 @@ impl Surface {
     }
 
     // this can't be a trait method probably
-    #[profiling::function]
+    #[cfg_attr(feature = "profile", profiling::function)]
     pub fn text<T: MeasureText>(&mut self, rect: Rect, text: impl Into<Text<T>>) -> &mut Self {
         let text: Text<T> = text.into();
         let rect = self.rect().intersection(rect);
         text.draw(rect, self);
+        self
+    }
+
+    pub fn border(&mut self, rect: Rect, border: Border, fg: impl Into<Color>) -> &mut Self {
+        let fg = fg.into();
+        let (w, h) = (rect.width() - 1, rect.height() - 1);
+
+        let offset = rect.left_top();
+
+        let pixel = Pixel::new(border.top).fg(fg);
+        for x in 1..=w {
+            // TODO draw_line
+            self.set(pos2(x, 0) + offset, pixel);
+        }
+
+        let pixel = Pixel::new(border.bottom).fg(fg);
+        for x in 1..=w {
+            self.set(pos2(x, h) + offset, pixel);
+        }
+
+        let pixel = Pixel::new(border.left).fg(fg);
+        for y in 1..=h {
+            self.set(pos2(0, y) + offset, pixel);
+        }
+
+        let pixel = Pixel::new(border.right).fg(fg);
+        for y in 1..=h {
+            self.set(pos2(w, y) + offset, pixel);
+        }
+
+        let pixel = Pixel::new(border.left_top).fg(fg);
+        self.set(pos2(0, 0) + offset, pixel);
+
+        let pixel = Pixel::new(border.right_top).fg(fg);
+        self.set(pos2(w, 0) + offset, pixel);
+
+        let pixel = Pixel::new(border.left_bottom).fg(fg);
+        self.set(pos2(0, h) + offset, pixel);
+
+        let pixel = Pixel::new(border.right_bottom).fg(fg);
+        self.set(pos2(w, h) + offset, pixel);
+
         self
     }
 
@@ -119,7 +162,7 @@ impl Surface {
 }
 
 impl Surface {
-    #[profiling::function]
+    #[cfg_attr(feature = "profile", profiling::function)]
     pub fn new(size: Vec2) -> Self {
         Self {
             front: vec![Cell::Empty; size.x as usize * size.y as usize],
@@ -128,7 +171,7 @@ impl Surface {
         }
     }
 
-    #[profiling::function]
+    #[cfg_attr(feature = "profile", profiling::function)]
     pub fn resize(&mut self, size: Vec2) {
         if self.size == size {
             return;
@@ -158,14 +201,14 @@ impl Surface {
         self.size = size;
     }
 
-    #[profiling::function]
+    #[cfg_attr(feature = "profile", profiling::function)]
     pub fn compact(&mut self) {
         self.front.shrink_to_fit();
         self.back.shrink_to_fit();
     }
 
     // TODO `force invalidate` (rather than a lazy invalidate)
-    #[profiling::function]
+    #[cfg_attr(feature = "profile", profiling::function)]
     pub fn render(&mut self, renderer: &mut impl Renderer) -> std::io::Result<()> {
         let mut state = CursorState::default();
         let mut seen = false;
@@ -244,7 +287,7 @@ impl Surface {
         Ok(())
     }
 
-    #[profiling::function]
+    #[cfg_attr(feature = "profile", profiling::function)]
     fn diff<'a>(
         front: &'a mut [Cell],
         back: &'a mut [Cell],
@@ -264,7 +307,7 @@ impl Surface {
             })
     }
 
-    #[profiling::function]
+    #[cfg_attr(feature = "profile", profiling::function)]
     fn reset(buf: &mut [Cell], cell: impl Into<Cell>) {
         let cell = cell.into();
         for x in buf {

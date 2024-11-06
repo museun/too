@@ -1,5 +1,7 @@
 use std::collections::HashMap;
 
+use slotmap::Key;
+
 use crate::{
     hasher::{hash_fnv_1a, DefaultIntHasher},
     view::ViewId,
@@ -38,7 +40,7 @@ impl std::hash::Hash for Id {
     fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
         match self.inner {
             IdInner::User(id) => state.write_u64(id),
-            IdInner::View(view_id) => state.write_u64(view_id.0.to_bits()),
+            IdInner::View(view_id) => state.write_u64(view_id.data().as_ffi()),
         }
     }
 }

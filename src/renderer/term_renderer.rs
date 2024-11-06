@@ -27,7 +27,7 @@ impl<W: Write> Renderer for TermRenderer<W> {
     }
 
     #[inline(always)]
-    #[profiling::function]
+    #[cfg_attr(feature = "profile", profiling::function)]
     fn end(&mut self) -> std::io::Result<()> {
         self.out.write_all(csi!("?2026l"))?;
         self.out.flush()

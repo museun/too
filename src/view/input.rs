@@ -5,7 +5,7 @@ use std::{
 
 use crate::{
     math::{Pos2, Rect, Vec2},
-    view, AnimationManager, Event as TooEvent, Key, Modifiers, MouseButton,
+    AnimationManager, Event as TooEvent, Key, Modifiers, MouseButton,
 };
 
 use super::{
@@ -105,7 +105,7 @@ impl InputState {
         self.focus.set(id);
     }
 
-    #[profiling::function]
+    #[cfg_attr(feature = "profile", profiling::function)]
     pub fn update(
         &self,
         nodes: &ViewNodes,
@@ -173,22 +173,22 @@ impl InputState {
             return Handled::Bubble;
         };
 
-        // if !view.interest.is_focus_input() {
-        //     return Handled::Bubble;
-        // }
+        if !view.interest.is_focus_input() {
+            return Handled::Bubble;
+        }
+
+        let event = ViewEvent::KeyInput {
+            key,
+            modifiers: self.modifiers.get(),
+        };
 
         nodes
             .scoped(id, |node| {
-                let event = ViewEvent::KeyInput {
-                    key,
-                    modifiers: self.modifiers.get(),
-                };
                 self.send_event(nodes, layout, animation, id, node, event)
             })
             .unwrap()
     }
 
-    #[profiling::function]
     fn mouse_moved(
         &self,
         pos: Pos2,
@@ -204,7 +204,6 @@ impl InputState {
         Handled::Bubble
     }
 
-    #[profiling::function]
     fn send_mouse_move(
         &self,
         nodes: &ViewNodes,
@@ -228,7 +227,6 @@ impl InputState {
         }
     }
 
-    #[profiling::function]
     fn send_mouse_enter(
         &self,
         nodes: &ViewNodes,
@@ -260,7 +258,6 @@ impl InputState {
         }
     }
 
-    #[profiling::function]
     fn send_mouse_leave(
         &self,
         nodes: &ViewNodes,
@@ -307,7 +304,6 @@ impl InputState {
         true
     }
 
-    #[profiling::function]
     fn send_mouse_drag(
         &self,
         start: Pos2,
@@ -322,18 +318,18 @@ impl InputState {
 
         let mut resp = Handled::Bubble;
 
+        let event = ViewEvent::MouseDrag {
+            start,
+            current: mouse.pos,
+            delta,
+            inside: true,
+            modifiers: self.modifiers.get(),
+            button,
+        };
+
         for &hit in &intersections.hit {
             if !nodes
                 .scoped(hit, |node| {
-                    let event = ViewEvent::MouseDrag {
-                        start,
-                        current: mouse.pos,
-                        delta,
-                        inside: true,
-                        modifiers: self.modifiers.get(),
-                        button,
-                    };
-
                     let new = self.send_event(nodes, layout, animation, hit, node, event);
                     if new.is_sink() {
                         resp = new;
@@ -347,18 +343,18 @@ impl InputState {
             }
         }
 
+        let event = ViewEvent::MouseDrag {
+            start,
+            current: mouse.pos,
+            delta,
+            inside: false,
+            modifiers: self.modifiers.get(),
+            button,
+        };
+
         for (id, interest) in layout.interest.iter() {
             if interest.is_mouse_outside() && !intersections.hit.contains(&id) {
                 nodes.scoped(id, |node| {
-                    let event = ViewEvent::MouseDrag {
-                        start,
-                        current: mouse.pos,
-                        delta,
-                        inside: false,
-                        modifiers: self.modifiers.get(),
-                        button,
-                    };
-
                     self.send_event(nodes, layout, animation, id, node, event);
                 });
             }
@@ -367,7 +363,6 @@ impl InputState {
         resp
     }
 
-    #[profiling::function]
     fn send_mouse_button_changed(
         &self,
         button: MouseButton,
@@ -385,25 +380,25 @@ impl InputState {
         let intersections = self.intersections.borrow();
         let mut resp = Handled::Bubble;
 
+        let event = if state.is_down() {
+            ViewEvent::MouseHeld {
+                pos: mouse.pos,
+                inside: true,
+                button,
+                modifiers: self.modifiers.get(),
+            }
+        } else {
+            ViewEvent::MouseClicked {
+                pos: mouse.pos,
+                inside: true,
+                button,
+                modifiers: self.modifiers.get(),
+            }
+        };
+
         for &hit in &intersections.hit {
             if !nodes
                 .scoped(hit, |node| {
-                    let event = if state.is_down() {
-                        ViewEvent::MouseHeld {
-                            pos: mouse.pos,
-                            inside: true,
-                            button,
-                            modifiers: self.modifiers.get(),
-                        }
-                    } else {
-                        ViewEvent::MouseClicked {
-                            pos: mouse.pos,
-                            inside: true,
-                            button,
-                            modifiers: self.modifiers.get(),
-                        }
-                    };
-
                     let new = self.send_event(nodes, layout, animation, hit, node, event);
                     if new.is_sink() {
                         resp = new;
@@ -417,24 +412,25 @@ impl InputState {
             }
         }
 
+        let event = if state.is_down() {
+            ViewEvent::MouseHeld {
+                pos: mouse.pos,
+                inside: false,
+                button,
+                modifiers: self.modifiers.get(),
+            }
+        } else {
+            ViewEvent::MouseClicked {
+                pos: mouse.pos,
+                inside: false,
+                button,
+                modifiers: self.modifiers.get(),
+            }
+        };
+
         for (id, interest) in layout.interest.iter() {
             if interest.is_mouse_outside() && !intersections.hit.contains(&id) {
                 nodes.scoped(id, |node| {
-                    let event = if state.is_down() {
-                        ViewEvent::MouseHeld {
-                            pos: mouse.pos,
-                            inside: false,
-                            button,
-                            modifiers: self.modifiers.get(),
-                        }
-                    } else {
-                        ViewEvent::MouseClicked {
-                            pos: mouse.pos,
-                            inside: false,
-                            button,
-                            modifiers: self.modifiers.get(),
-                        }
-                    };
                     self.send_event(nodes, layout, animation, id, node, event);
                 });
             }
@@ -452,14 +448,13 @@ impl InputState {
     ) -> Handled {
         let intersections = self.intersections.borrow();
 
-        // this has a weird hit box
+        let event = ViewEvent::MouseScroll {
+            delta,
+            modifiers: self.modifiers.get(),
+        };
         for &hit in &intersections.hit {
             if nodes
                 .scoped(hit, |node| {
-                    let event = ViewEvent::MouseScroll {
-                        delta,
-                        modifiers: self.modifiers.get(),
-                    };
                     self.send_event(nodes, layout, animation, hit, node, event)
                 })
                 .unwrap_or_default()
@@ -485,16 +480,10 @@ impl InputState {
         }
 
         if let Some(entered) = current {
+            let ev = ViewEvent::FocusGained;
             if nodes
                 .scoped(entered, |node| {
-                    self.send_event(
-                        nodes, //
-                        layout,
-                        animation,
-                        entered,
-                        node,
-                        ViewEvent::FocusGained,
-                    );
+                    self.send_event(nodes, layout, animation, entered, node, ev);
                 })
                 .is_none()
             {
@@ -504,15 +493,9 @@ impl InputState {
         }
 
         if let Some(left) = last {
+            let ev = ViewEvent::FocusLost;
             nodes.scoped(left, |node| {
-                self.send_event(
-                    nodes, //
-                    layout,
-                    animation,
-                    left,
-                    node,
-                    ViewEvent::FocusLost,
-                );
+                self.send_event(nodes, layout, animation, left, node, ev);
             });
         }
 
@@ -529,6 +512,7 @@ impl InputState {
         event: ViewEvent,
     ) -> Handled {
         let ctx = EventCtx {
+            current: id,
             nodes,
             layout,
             animation,
@@ -540,7 +524,6 @@ impl InputState {
         resp
     }
 
-    #[profiling::function]
     fn mouse_hit_test(&self, nodes: &ViewNodes, layout: &LayoutNodes) {
         let mut intersections = self.intersections.borrow_mut();
         intersections.hit.clear();
@@ -548,7 +531,7 @@ impl InputState {
         Self::hit_test(mouse.pos, layout, &mut intersections.hit);
     }
 
-    #[profiling::function]
+    #[cfg_attr(feature = "profile", profiling::function)]
     fn hit_test(pos: Pos2, layout: &LayoutNodes, out: &mut Vec<ViewId>) {
         for (id, _) in layout.interest.iter() {
             let Some(mut node) = layout.get(id) else {
@@ -582,6 +565,7 @@ impl InputState {
 
         nodes.begin(id);
         let ctx = EventCtx {
+            current: id,
             nodes,
             layout,
             animation,
@@ -598,6 +582,7 @@ impl InputState {
 }
 
 pub struct EventCtx<'a> {
+    pub current: ViewId,
     pub nodes: &'a ViewNodes,
     pub layout: &'a LayoutNodes,
     pub input: &'a InputState,
@@ -619,6 +604,6 @@ impl<'a> EventCtx<'a> {
     }
 
     pub fn rect(&self) -> Rect {
-        self.layout.get(self.nodes.current()).unwrap().rect
+        self.layout.rect(self.current).unwrap()
     }
 }

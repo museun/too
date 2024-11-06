@@ -15,8 +15,8 @@ pub mod overlay;
 
 mod renderer;
 pub use renderer::{
-    rgba, Attribute, Cell, Color, DebugRenderer, Gradient, Grapheme, Pixel, Renderer, Rgba,
-    Surface, TermRenderer, Underline,
+    rgba, Attribute, Cell, Color, DebugRenderer, DummyRenderer, Gradient, Grapheme, Pixel,
+    Renderer, Rgba, Surface, TermRenderer, Underline,
 };
 
 pub mod layout;

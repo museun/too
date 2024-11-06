@@ -1,12 +1,11 @@
 use std::{
     any::TypeId,
-    borrow::{Borrow, BorrowMut},
     cell::{Ref, RefCell, RefMut},
     collections::VecDeque,
 };
 
 use compact_str::{CompactString, ToCompactString};
-use thunderdome::Arena;
+use slotmap::{SecondaryMap, SlotMap};
 
 use crate::{
     layout::{Anchor2, Axis, LinearLayout},
@@ -16,7 +15,7 @@ use crate::{
 
 use super::{
     geom::{Size, Space},
-    helpers::{ArenaDebug, Queue},
+    helpers::Queue,
     input::InputState,
     layout::IntrinsicSize,
     style::{Stylesheet, Theme},
@@ -101,7 +100,7 @@ impl State {
     pub fn new() -> Self {
         let nodes = ViewNodes::new();
         let mut layout = LayoutNodes::new();
-        layout.nodes.insert_at(nodes.root.0, LayoutNode::default());
+        layout.nodes.insert(nodes.root, LayoutNode::new(nodes.root));
 
         Self {
             nodes,
@@ -143,7 +142,7 @@ impl State {
         self.animations.update(dt);
     }
 
-    #[profiling::function]
+    #[cfg_attr(feature = "profile", profiling::function)]
     pub fn event(&mut self, event: &crate::Event) {
         if let crate::Event::Resize(size) = event {
             DEBUG.with(|c| c.queue.borrow_mut().resize(size.y as usize))
@@ -155,11 +154,13 @@ impl State {
             .update(&self.nodes, &self.layout, &mut self.animations, event);
     }
 
-    #[profiling::function]
+    #[cfg_attr(feature = "profile", profiling::function)]
     pub fn render(&mut self, surface: &mut Surface) {
         self.frame_count += 1;
         let root = self.root();
-        surface.clear(surface.rect(), self.theme.background);
+
+        let rect = self.layout.rect(root).unwrap();
+        surface.clear(rect, self.theme.background);
 
         self.render.draw_all(
             &self.nodes, //
@@ -168,7 +169,7 @@ impl State {
             &mut self.animations,
             &mut self.stylesheet,
             &self.theme,
-            surface,
+            CroppedSurface::new(rect, surface),
         );
 
         self.stylesheet.reset();
@@ -206,10 +207,10 @@ impl State {
         });
     }
 
-    #[profiling::function]
+    #[cfg_attr(feature = "profile", profiling::function)]
     pub fn build<R: 'static>(&mut self, rect: Rect, mut show: impl FnMut(&Ui) -> R) -> R {
         let root = self.nodes.root;
-        self.layout.nodes[root.0].rect = rect;
+        self.layout.nodes[root].rect = rect;
 
         self.begin();
         let resp = show(&Ui::new(self));
@@ -227,24 +228,30 @@ impl State {
 
     fn begin(&mut self) {
         let root = self.nodes.root;
-        self.nodes.nodes.get_mut()[root.0].next = 0;
+        self.nodes.nodes.get_mut()[root].next = 0;
         self.render.start();
-        self.input
-            .begin(&self.nodes, &self.layout, &mut self.animations);
+        self.input.begin(
+            &self.nodes, //
+            &self.layout,
+            &mut self.animations,
+        );
     }
 
     fn end(&mut self) {
         for id in self.nodes.removed.get_mut().drain(..) {
-            eprintln!("moreving node from layout: {id:?}");
-            self.layout.nodes.remove(id.0);
+            self.layout.nodes.remove(id);
         }
         self.input.end();
         self.layout.interest.clear();
     }
 }
 
+slotmap::new_key_type! {
+    pub struct ViewId;
+}
+
 pub struct ViewNodes {
-    nodes: RefCell<Arena<ViewNode>>,
+    nodes: RefCell<SlotMap<ViewId, ViewNode>>,
     stack: RefCell<Vec<ViewId>>,
     removed: RefCell<Vec<ViewId>>,
     root: ViewId,
@@ -254,14 +261,14 @@ impl std::fmt::Debug for ViewNodes {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("ViewNodes")
             .field("root", &self.root)
-            .field("nodes", &ArenaDebug(&self.nodes.borrow()))
+            // .field("nodes", &ArenaDebug(&self.nodes.borrow()))
             .finish()
     }
 }
 
 impl ViewNodes {
     pub(super) fn new() -> Self {
-        let mut nodes = Arena::new();
+        let mut nodes = SlotMap::with_key();
         let root = nodes.insert(ViewNode {
             parent: None,
             children: Vec::new(),
@@ -273,7 +280,7 @@ impl ViewNodes {
             nodes: RefCell::new(nodes),
             stack: RefCell::default(),
             removed: RefCell::default(),
-            root: ViewId(root),
+            root,
         }
     }
 
@@ -308,32 +315,32 @@ impl ViewNodes {
             return self.allocate_view::<V>(parent, args);
         };
 
-        let type_id = self.nodes.borrow()[id.0].view.borrow().type_id();
+        let type_id = self.nodes.borrow()[id].view.borrow().type_id();
         if type_id != TypeId::of::<V>() {
             self.remove_view(id);
             return self.allocate_view::<V>(parent, args);
         }
 
-        self.nodes.borrow_mut()[id.0].next = 0;
+        self.nodes.borrow_mut()[id].next = 0;
 
-        let mut view = self.nodes.borrow()[id.0].view.borrow_mut().take();
-        let resp = {
-            let Some(view) = view.as_mut_any().downcast_mut::<V>() else {
-                unreachable!(
-                    "type did not match: {} | {}",
-                    view.type_name(),
-                    std::any::type_name::<V>()
-                );
-            };
-            view.update(args, ui)
-        };
+        let resp = self
+            .scoped(id, |node| {
+                let Some(view) = node.as_mut_any().downcast_mut::<V>() else {
+                    unreachable!(
+                        "type did not match: {} | {}",
+                        node.type_name(),
+                        std::any::type_name::<V>()
+                    );
+                };
+                view.update(args, ui)
+            })
+            .unwrap();
 
-        self.nodes.borrow()[id.0].view.borrow_mut().give(view);
         (id, resp)
     }
 
     fn append_view(&self, parent: ViewId) -> Option<ViewId> {
-        let parent = &mut self.nodes.borrow_mut()[parent.0];
+        let parent = &mut self.nodes.borrow_mut()[parent];
         let id = parent.children.get(parent.next).copied()?;
         parent.next += 1;
         Some(id)
@@ -347,9 +354,7 @@ impl ViewNodes {
             view: RefCell::new(Slot::new(V::create(args))),
         });
 
-        let id = ViewId(id);
-
-        let parent = &mut self.nodes.borrow_mut()[parent.0];
+        let parent = &mut self.nodes.borrow_mut()[parent];
         if parent.next < parent.children.len() {
             parent.children[parent.next] = id;
         } else {
@@ -368,7 +373,7 @@ impl ViewNodes {
 
         while let Some(id) = queue.pop_front() {
             removed.push(id);
-            let Some(node) = nodes.remove(id.0) else {
+            let Some(node) = nodes.remove(id) else {
                 continue;
             };
 
@@ -376,7 +381,7 @@ impl ViewNodes {
             let Some(parent) = node.parent else {
                 continue;
             };
-            let Some(parent) = nodes.get_mut(parent.0) else {
+            let Some(parent) = nodes.get_mut(parent) else {
                 continue;
             };
             let len = parent.children.len();
@@ -402,14 +407,14 @@ impl ViewNodes {
         // why doesn't NLL drop this borrow at the 'return'?
         {
             let nodes = self.nodes.borrow();
-            let node = &nodes[start.0];
+            let node = &nodes[start];
             if node.next >= node.children.len() {
                 return;
             }
         }
 
         let mut nodes = self.nodes.borrow_mut();
-        let node = &mut nodes[start.0];
+        let node = &mut nodes[start];
 
         let children = &node.children[node.next..];
         let mut queue = VecDeque::from_iter(children.iter().copied());
@@ -418,7 +423,7 @@ impl ViewNodes {
         let mut removed = self.removed.borrow_mut();
         while let Some(id) = queue.pop_front() {
             removed.push(id);
-            let Some(next) = nodes.remove(id.0) else {
+            let Some(next) = nodes.remove(id) else {
                 unreachable!("child {id:?} should exist for {start:?}");
             };
             queue.extend(&next.children);
@@ -431,19 +436,18 @@ impl ViewNodes {
 
     pub fn get(&self, id: ViewId) -> Option<Ref<'_, ViewNode>> {
         let nodes = self.nodes.borrow();
-        Ref::filter_map(nodes, |nodes| nodes.get(id.0)).ok()
+        Ref::filter_map(nodes, |nodes| nodes.get(id)).ok()
     }
 
     pub fn get_mut(&self, id: ViewId) -> Option<RefMut<'_, ViewNode>> {
         let nodes = self.nodes.borrow_mut();
-        RefMut::filter_map(nodes, |nodes| nodes.get_mut(id.0)).ok()
+        RefMut::filter_map(nodes, |nodes| nodes.get_mut(id)).ok()
     }
 
-    // TODO use this in more places (any place that does `get_mut().unwrap().view.take()`)
     // TODO this should push the id to the stack and pop it off
-    pub fn scoped<R>(&self, id: ViewId, mut act: impl FnMut(&mut dyn Erased) -> R) -> Option<R> {
+    pub fn scoped<R>(&self, id: ViewId, act: impl FnOnce(&mut dyn Erased) -> R) -> Option<R> {
         let nodes = self.nodes.borrow();
-        let node = nodes.get(id.0)?;
+        let node = nodes.get(id)?;
         let mut view = node.view.borrow_mut().take();
         let resp = act(&mut *view);
         node.view.borrow_mut().give(view);
@@ -466,41 +470,28 @@ impl ViewNodes {
     pub fn get_current(&self) -> Ref<'_, ViewNode> {
         let index = self.current();
         let nodes = self.nodes.borrow();
-        Ref::map(nodes, |nodes| &nodes[index.0])
+        Ref::map(nodes, |nodes| &nodes[index])
     }
 }
 
 #[derive(Default)]
 pub struct RenderNodes {
-    clip_stack: Vec<Rect>,
     axis_stack: Vec<Axis>,
 }
 
 impl RenderNodes {
     const fn new() -> Self {
         Self {
-            clip_stack: Vec::new(),
             axis_stack: Vec::new(),
         }
     }
 
     fn start(&mut self) {
-        self.clip_stack.clear();
+        self.axis_stack.clear();
     }
 
-    fn push_clip(&mut self, mut rect: Rect) {
-        if let Some(prev) = self.clip_stack.last() {
-            rect = rect.union(*prev)
-        }
-        self.clip_stack.push(rect);
-    }
-
-    fn pop_clip(&mut self) {
-        assert!(self.clip_stack.pop().is_some())
-    }
-
-    #[profiling::function]
-    pub fn draw_all(
+    #[cfg_attr(feature = "profile", profiling::function)]
+    fn draw_all(
         &mut self,
         nodes: &ViewNodes,
         layout: &LayoutNodes,
@@ -508,13 +499,8 @@ impl RenderNodes {
         animation: &mut AnimationManager,
         stylesheet: &mut Stylesheet,
         theme: &Theme,
-        surface: &mut Surface,
+        surface: CroppedSurface,
     ) {
-        let surface = CroppedSurface {
-            rect: surface.rect(),
-            surface,
-        };
-
         self.draw(
             nodes,
             layout,
@@ -527,11 +513,11 @@ impl RenderNodes {
         );
     }
 
-    pub fn current_axis(&self) -> Option<Axis> {
+    pub(super) fn current_axis(&self) -> Option<Axis> {
         self.axis_stack.iter().nth_back(1).copied()
     }
 
-    pub fn draw(
+    pub(super) fn draw(
         &mut self,
         nodes: &ViewNodes,
         layout: &LayoutNodes,
@@ -542,7 +528,7 @@ impl RenderNodes {
         id: ViewId,
         surface: CroppedSurface,
     ) {
-        let Some(node) = layout.nodes.get(id.0) else {
+        let Some(node) = layout.nodes.get(id) else {
             return;
         };
 
@@ -556,7 +542,7 @@ impl RenderNodes {
         //     .and_then(|node| node.parent)
         //     .filter(|&c| c != nodes.root)
         // {
-        // if let Some(parent) = layout.nodes.get(pid.0) {
+        // if let Some(parent) = layout.nodes.get(pid) {
         //     if !parent.rect.contains_rect_inclusive(rect) {
         //         return;
         //     }
@@ -564,17 +550,13 @@ impl RenderNodes {
         // }
 
         if let Some(parent) = node.clipped_by {
-            let Some(parent) = layout.nodes.get(parent.0) else {
+            let Some(parent) = layout.nodes.get(parent) else {
                 return;
             };
             if !rect.partial_contains_rect(parent.rect) {
                 return;
             }
             rect = parent.rect.intersection(rect);
-        }
-
-        if node.clipping_enabled {
-            self.push_clip(node.rect);
         }
 
         nodes.begin(id);
@@ -588,6 +570,7 @@ impl RenderNodes {
                     surface: surface.surface,
                 };
                 let render = Render {
+                    current: id,
                     nodes,
                     layout,
                     animation,
@@ -604,10 +587,6 @@ impl RenderNodes {
 
         stylesheet.swap(id);
         nodes.end(id);
-
-        if node.clipping_enabled {
-            self.pop_clip()
-        }
     }
 }
 
@@ -644,7 +623,6 @@ impl MouseInterest {
         assert!(self.stack.pop().is_some());
     }
 
-    #[profiling::function]
     fn insert(&mut self, id: ViewId, interest: Interest) {
         self.stack
             .last()
@@ -653,7 +631,6 @@ impl MouseInterest {
             .push((id, interest));
     }
 
-    #[profiling::function]
     pub fn iter(&self) -> impl Iterator<Item = (ViewId, Interest)> + '_ {
         self.layers
             .iter()
@@ -664,7 +641,7 @@ impl MouseInterest {
 
 #[derive(Default)]
 pub struct LayoutNodes {
-    nodes: Arena<LayoutNode>,
+    nodes: SecondaryMap<ViewId, LayoutNode>,
     clip_stack: Vec<ViewId>,
     axis_stack: Vec<Axis>,
     pub interest: MouseInterest,
@@ -673,7 +650,7 @@ pub struct LayoutNodes {
 impl std::fmt::Debug for LayoutNodes {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("LayoutNodes")
-            .field("nodes", &ArenaDebug(&self.nodes))
+            // .field("nodes", &ArenaDebug(&self.nodes))
             .finish()
     }
 }
@@ -684,11 +661,15 @@ impl LayoutNodes {
     }
 
     pub fn get(&self, id: ViewId) -> Option<&LayoutNode> {
-        self.nodes.get(id.0)
+        self.nodes.get(id)
+    }
+
+    pub fn rect(&self, id: ViewId) -> Option<Rect> {
+        self.get(id).map(|c| c.rect)
     }
 
     #[inline(always)]
-    pub fn compute(
+    pub(in crate::view) fn compute(
         &mut self,
         nodes: &ViewNodes,
         input: &InputState,
@@ -699,7 +680,7 @@ impl LayoutNodes {
         nodes.begin(id);
         stylesheet.swap(id);
 
-        self.nodes.insert_at(id.0, LayoutNode::default());
+        self.nodes.insert(id, LayoutNode::new(id));
         let (size, interest) = nodes
             .scoped(id, |node| {
                 let axis = node.primary_axis();
@@ -710,6 +691,7 @@ impl LayoutNodes {
                     layout: self,
                     input,
                     stylesheet,
+                    current: id,
                 };
                 let size = node.layout(layout, space);
                 self.axis_stack.pop();
@@ -736,7 +718,7 @@ impl LayoutNodes {
         };
 
         {
-            let layout = &mut self.nodes[id.0];
+            let layout = &mut self.nodes[id];
             layout.clipping_enabled = clipping_enabled;
             layout.new_layer = new_layer;
             layout.clipped_by = clipped_by;
@@ -780,30 +762,30 @@ impl LayoutNodes {
     }
 
     pub fn set_position(&mut self, id: ViewId, pos: impl Into<Pos2>) {
-        if let Some(node) = self.nodes.get_mut(id.0) {
+        if let Some(node) = self.nodes.get_mut(id) {
             let offset = pos.into().to_vec2();
             node.rect = node.rect.translate(offset);
         }
     }
 
     pub fn set_size(&mut self, id: ViewId, size: impl Into<Vec2>) {
-        if let Some(node) = self.nodes.get_mut(id.0) {
+        if let Some(node) = self.nodes.get_mut(id) {
             node.rect.set_size(size);
         }
     }
 }
 
 impl LayoutNodes {
-    const fn new() -> Self {
+    fn new() -> Self {
         Self {
-            nodes: Arena::new(),
+            nodes: SecondaryMap::new(),
             clip_stack: Vec::new(),
             axis_stack: Vec::new(),
             interest: MouseInterest::new(),
         }
     }
 
-    #[profiling::function]
+    #[cfg_attr(feature = "profile", profiling::function)]
     fn compute_all(
         &mut self,
         nodes: &ViewNodes,
@@ -816,11 +798,11 @@ impl LayoutNodes {
         self.resolve(nodes, rect);
     }
 
-    #[profiling::function]
+    #[cfg_attr(feature = "profile", profiling::function)]
     fn resolve(&mut self, nodes: &ViewNodes, rect: Rect) {
         let mut queue = VecDeque::from_iter([(nodes.root(), rect.left_top())]);
         while let Some((id, pos)) = queue.pop_front() {
-            let Some(layout) = self.nodes.get_mut(id.0) else {
+            let Some(layout) = self.nodes.get_mut(id) else {
                 continue;
             };
 
@@ -839,28 +821,39 @@ impl LayoutNodes {
     }
 }
 
-#[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
-pub struct ViewId(pub(crate) thunderdome::Index);
+// impl std::hash::Hash for ViewId {
+//     fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+//         state.write_u64(self.0.to_bits());
+//     }
+// }
 
-impl std::hash::Hash for ViewId {
-    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
-        state.write_u64(self.0.to_bits());
-    }
-}
-
-impl std::fmt::Debug for ViewId {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}v{}", self.0.slot(), self.0.generation())
-    }
-}
+// impl std::fmt::Debug for ViewId {
+//     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+//         write!(f, "{}v{}", self.0.slot(), self.0.generation())
+//     }
+// }
 
 #[derive(Default)]
 pub struct LayoutNode {
+    pub id: ViewId,
     pub rect: Rect,
-    pub clipping_enabled: bool,
     pub new_layer: bool,
+    pub clipping_enabled: bool,
     pub clipped_by: Option<ViewId>,
     pub interest: Interest,
+}
+
+impl LayoutNode {
+    pub const fn new(id: ViewId) -> Self {
+        Self {
+            id,
+            rect: Rect::ZERO,
+            new_layer: false,
+            clipping_enabled: false,
+            clipped_by: None,
+            interest: Interest::NONE,
+        }
+    }
 }
 
 impl std::fmt::Debug for LayoutNode {

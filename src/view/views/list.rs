@@ -4,7 +4,7 @@ use crate::{
     layout::Axis,
     math::Pos2,
     view::{
-        geom::{Flex, Size, Space},
+        geom::{Size, Space},
         Builder, Layout, Ui, View,
     },
 };
@@ -405,9 +405,7 @@ impl View for List {
             main = self.state.main_sum();
         }
 
-        let size = self.axis.pack(main, cross);
-
-        size
+        self.axis.pack(main, cross)
     }
 }
 

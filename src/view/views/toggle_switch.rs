@@ -132,7 +132,7 @@ impl View for ToggleSwitchView {
 
         let w = rect.width() as f32 - 1.0;
 
-        let x = match render.animation.get_mut(render.nodes.current()) {
+        let x = match render.animation.get_mut(render.current) {
             Some(animation) if selected => lerp(0.0, w, *animation.value),
             Some(animation) if !selected => lerp(w, 0.0, *animation.value),
             _ if selected => w,

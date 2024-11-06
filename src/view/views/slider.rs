@@ -140,19 +140,14 @@ impl View for SliderView {
             _ => return Handled::Bubble,
         };
 
-        let node = ctx.layout.get(ctx.nodes.current()).unwrap();
+        let rect = ctx.rect();
 
-        let (start, end) = match self.axis {
-            Axis::Horizontal => (node.rect.left() as f32, node.rect.right() as f32 - 1.0),
-            Axis::Vertical => (node.rect.top() as f32, node.rect.bottom() as f32 - 1.0),
-        };
-
+        let start = self.axis.main(rect.left_top());
+        let end = self.axis.main(rect.right_bottom() - 1);
         let pos = self.axis.main(pos);
 
-        self.value = denormalize(
-            inverse_lerp(start, end, pos).unwrap_or(0.0),
-            self.range.clone(),
-        );
+        let value = inverse_lerp(start, end, pos).unwrap_or(0.0);
+        self.value = denormalize(value, self.range.clone());
 
         self.changed = true;
         Handled::Sink

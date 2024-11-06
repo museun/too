@@ -289,6 +289,7 @@ impl View for BorderView {
         size.max(title_size) + sum
     }
 
+    // TODO refactor this out so its on Border, so a Surface can draw a border natively
     fn draw(&mut self, mut render: Render) {
         let rect = render.surface.rect();
         let (w, h) = (rect.width() - 1, rect.height() - 1);

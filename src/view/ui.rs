@@ -52,11 +52,6 @@ impl<'a> Ui<'a> {
         B: Builder<'v>,
         R: 'static,
     {
-        // FIXME when we implement `UpdateFlags` we can have a `NoSpace` flag
-        // that can be checked here and return early
-        // (with Response<<B::View as View>::Response>::default())
-        // but we'd need some 'null' id that won't ever do anything when its used
-        // for that, we can just give out the root id. it can't be used any way
         let (id, resp) = self.nodes.begin_view::<B::View>(args, self);
         let inner = show(self);
         self.nodes.end_view(id);
