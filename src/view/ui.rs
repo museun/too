@@ -78,7 +78,7 @@ impl<'a> Ui<'a> {
     }
 
     pub fn cursor_pos(&self) -> Pos2 {
-        self.input.cursor_pos()
+        self.input.mouse_pos()
     }
 
     pub fn palette(&self) -> Ref<'_, Palette> {

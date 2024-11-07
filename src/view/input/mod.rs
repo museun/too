@@ -93,7 +93,7 @@ impl InputState {
         }
     }
 
-    pub fn cursor_pos(&self) -> Pos2 {
+    pub fn mouse_pos(&self) -> Pos2 {
         self.mouse.borrow().pos
     }
 
@@ -600,7 +600,7 @@ impl<'a> EventCtx<'a> {
     }
 
     pub fn cursor_pos(&self) -> Pos2 {
-        self.input.cursor_pos()
+        self.input.mouse_pos()
     }
 
     pub fn current(&self) -> ViewId {

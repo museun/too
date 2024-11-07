@@ -149,6 +149,10 @@ impl<'a, 'b> Render<'a, 'b> {
         self.nodes.current()
     }
 
+    pub fn mouse_pos(&self) -> Pos2 {
+        self.input.mouse_pos()
+    }
+
     pub fn rect(&self) -> Rect {
         self.surface.rect()
     }

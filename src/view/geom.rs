@@ -451,6 +451,18 @@ impl std::ops::Sub for Size {
     }
 }
 
+impl std::ops::AddAssign for Size {
+    fn add_assign(&mut self, rhs: Self) {
+        *self = *self + rhs
+    }
+}
+
+impl std::ops::SubAssign for Size {
+    fn sub_assign(&mut self, rhs: Self) {
+        *self = *self - rhs
+    }
+}
+
 impl std::ops::Add<Margin> for Size {
     type Output = Self;
     fn add(self, rhs: Margin) -> Self::Output {

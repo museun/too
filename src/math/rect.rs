@@ -127,6 +127,7 @@ impl Rect {
         Self::from_min_max(self.min - d, self.max + d)
     }
 
+    #[track_caller]
     pub fn translate(&self, vec: Vec2) -> Self {
         Self::from_min_size(self.min + vec, self.size())
     }

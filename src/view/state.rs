@@ -177,7 +177,7 @@ impl State {
 
             let mut layout = LinearLayout::vertical()
                 .wrap(false)
-                .anchor(Anchor2::RIGHT_TOP)
+                .anchor(Anchor2::LEFT_TOP)
                 .layout(surface.rect());
 
             match c.mode.get() {
@@ -793,6 +793,7 @@ impl LayoutNodes {
             }
 
             let offset = pos.to_vec2();
+            eprintln!("resolve offset: {offset:?}");
             layout.rect = layout.rect.translate(offset);
             queue.extend(node.children.iter().map(|&id| (id, layout.rect.min)))
         }

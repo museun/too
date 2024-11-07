@@ -103,6 +103,7 @@ impl std::ops::SubAssign<i32> for Pos2 {
 
 impl std::ops::Add<Vec2> for Pos2 {
     type Output = Self;
+    #[track_caller]
     fn add(self, rhs: Vec2) -> Self::Output {
         pos2(self.x + rhs.x, self.y + rhs.y)
     }
