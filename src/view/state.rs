@@ -793,7 +793,6 @@ impl LayoutNodes {
             }
 
             let offset = pos.to_vec2();
-            eprintln!("resolve offset: {offset:?}");
             layout.rect = layout.rect.translate(offset);
             queue.extend(node.children.iter().map(|&id| (id, layout.rect.min)))
         }
