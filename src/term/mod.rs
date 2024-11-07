@@ -28,7 +28,6 @@ use crate::{
 /// |[`ctrl_c_quits`](Self::ctrl_c_quits)|true|
 /// |[`ctrl_z_switches`](Self::ctrl_z_switches)|false|
 /// |[`use_alt_screen`](Self::use_alt_screen)|true|
-/// |[`enable_line_wrap`](Self::enable_line_wrap)|false|
 /// |[`hook_panics`](Self::hook_panics)|false|
 ///
 /// # When using [`too`](https://crates.io/too)

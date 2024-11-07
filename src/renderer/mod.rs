@@ -11,6 +11,9 @@ pub use rgba::Rgba;
 mod gradient;
 pub use gradient::Gradient;
 
+mod border;
+pub use border::Border;
+
 use crate::math::{self};
 
 /// Abstraction for rendering to a surface.
@@ -40,13 +43,13 @@ pub trait Renderer {
     }
 }
 
-mod term_renderer;
-pub use term_renderer::TermRenderer;
+mod term;
+pub use term::TermRenderer;
 
-mod debug_renderer;
-pub use debug_renderer::DebugRenderer;
+mod debug;
+pub use debug::DebugRenderer;
 
-mod dummy_renderer;
-pub use dummy_renderer::DummyRenderer;
+mod dummy;
+pub use dummy::DummyRenderer;
 
 // TODO TestRenderer

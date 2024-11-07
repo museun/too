@@ -14,6 +14,11 @@ impl<L, R> Response<(L, R)> {
     pub fn flatten_right(self) -> Response<R> {
         self.map(|(_, r)| r)
     }
+
+    pub fn split(self) -> (Response<L>, Response<R>) {
+        let (left, right) = self.inner;
+        (Response::new(self.id, left), Response::new(self.id, right))
+    }
 }
 
 impl<T> Response<T> {

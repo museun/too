@@ -5,32 +5,67 @@ use unicode_width::UnicodeWidthStr as _;
 use crate::{
     view::{
         geom::{Size, Space},
-        Builder, Layout, Render, View,
+        style::StyleKind,
+        Builder, Layout, Palette, Render, View,
     },
     Attribute, Grapheme, Rgba,
 };
 
 use super::measure_text;
 
-pub fn label(label: impl ToCompactString) -> Label {
-    Label {
-        label: label.to_compact_string(),
-        attr: None,
-        fg: None,
+#[derive(Copy, Clone, Debug, PartialEq)]
+pub struct LabelStyle {
+    pub foreground: Rgba,
+}
+
+impl LabelStyle {
+    pub const fn default(palette: &Palette) -> LabelStyle {
+        LabelStyle {
+            foreground: palette.foreground,
+        }
+    }
+
+    pub const fn info(palette: &Palette) -> LabelStyle {
+        LabelStyle {
+            foreground: palette.info,
+        }
+    }
+
+    pub const fn warning(palette: &Palette) -> LabelStyle {
+        LabelStyle {
+            foreground: palette.warning,
+        }
+    }
+
+    pub const fn danger(palette: &Palette) -> LabelStyle {
+        LabelStyle {
+            foreground: palette.danger,
+        }
     }
 }
 
-#[derive(Debug, Clone)]
-#[must_use = "a view does nothing unless `show()` or `show_children()` is called"]
-pub struct Label {
-    label: CompactString,
-    attr: Option<Attribute>,
-    fg: Option<Rgba>,
+pub type LabelClass = fn(&Palette) -> LabelStyle;
+
+pub fn label(label: impl ToCompactString) -> Label {
+    Label::new(label)
 }
 
 impl Label {
-    pub fn fg(mut self, fg: impl Into<Rgba>) -> Self {
-        self.fg = Some(fg.into());
+    pub fn new(label: impl ToCompactString) -> Self {
+        Label {
+            label: label.to_compact_string(),
+            class: StyleKind::Deferred(LabelStyle::default),
+            attribute: None,
+        }
+    }
+
+    pub const fn class(mut self, class: LabelClass) -> Self {
+        self.class = StyleKind::Deferred(class);
+        self
+    }
+
+    pub const fn style(mut self, style: LabelStyle) -> Self {
+        self.class = StyleKind::Direct(style);
         self
     }
 
@@ -59,12 +94,20 @@ impl Label {
     }
 
     pub fn attribute(mut self, attribute: Attribute) -> Self {
-        match &mut self.attr {
+        match &mut self.attribute {
             Some(old) => *old |= attribute,
             this @ None => *this = Some(attribute),
         }
         self
     }
+}
+
+#[must_use = "a view does nothing unless `show()` or `show_children()` is called"]
+#[derive(Debug)]
+pub struct Label {
+    label: CompactString,
+    class: StyleKind<LabelClass, LabelStyle>,
+    attribute: Option<Attribute>,
 }
 
 impl<'v> Builder<'v> for Label {
@@ -85,11 +128,15 @@ impl View for Label {
     }
 
     fn draw(&mut self, mut render: Render) {
+        let style = match self.class {
+            StyleKind::Deferred(class) => (class)(render.palette),
+            StyleKind::Direct(style) => style,
+        };
+
         let mut start = 0;
-        let fg = self.fg.unwrap_or(render.theme.foreground);
         for grapheme in self.label.graphemes(true) {
-            let mut cell = Grapheme::new(grapheme).fg(fg);
-            if let Some(attr) = self.attr {
+            let mut cell = Grapheme::new(grapheme).fg(style.foreground);
+            if let Some(attr) = self.attribute {
                 cell = cell.attribute(attr);
             }
             render.surface.set((start, 0), cell);

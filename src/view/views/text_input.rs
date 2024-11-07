@@ -12,16 +12,50 @@ use crate::{
     math::pos2,
     view::{
         geom::{Size, Space},
-        Builder, EventCtx, Handled, Interest, Layout, Render, Ui, View, ViewEvent,
+        style::StyleKind,
+        Builder, EventCtx, Handled, Interest, Layout, Palette, Render, Ui, View, ViewEvent,
     },
-    Attribute, Grapheme, Key, Pixel,
+    Attribute, Grapheme, Key, Pixel, Rgba,
 };
 
+pub type TextInputClass = fn(&Palette, bool) -> TextInputStyle;
+
+#[derive(Copy, Clone, Debug)]
+pub struct TextInputStyle {
+    pub background: Rgba,
+    pub placeholder: Rgba,
+    pub text_attribute: Attribute,
+    pub placeholder_attribute: Attribute,
+    pub foreground: Rgba,
+    pub disabled_foreground: Rgba,
+    pub disabled_background: Rgba,
+    pub cursor: Rgba,
+    pub selection: Rgba,
+}
+
+impl TextInputStyle {
+    pub fn default(palette: &Palette, focused: bool) -> Self {
+        Self {
+            background: palette.surface,
+            placeholder: palette.secondary,
+            text_attribute: Attribute::RESET,
+            placeholder_attribute: Attribute::ITALIC,
+            foreground: palette.foreground,
+            disabled_foreground: palette.outline,
+            disabled_background: palette.surface,
+            cursor: palette.primary,
+            selection: palette.secondary,
+        }
+    }
+}
+
 // TODO multi-line
+#[must_use = "a view does nothing unless `show()` or `show_children()` is called"]
 pub struct TextInput<'a> {
     enabled: bool,
     placeholder: Option<&'a str>,
     initial: Option<&'a str>,
+    class: StyleKind<TextInputClass, TextInputStyle>,
 }
 
 impl<'a> TextInput<'a> {
@@ -37,6 +71,16 @@ impl<'a> TextInput<'a> {
 
     pub fn initial(mut self, text: &'a str) -> Self {
         self.initial = Some(text);
+        self
+    }
+
+    pub const fn class(mut self, class: TextInputClass) -> Self {
+        self.class = StyleKind::deferred(class);
+        self
+    }
+
+    pub const fn style(mut self, style: TextInputStyle) -> Self {
+        self.class = StyleKind::direct(style);
         self
     }
 }
@@ -83,6 +127,7 @@ impl TextInputResponse {
 pub struct InputView {
     state: InputState,
     enabled: bool,
+    class: StyleKind<TextInputClass, TextInputStyle>,
 }
 
 impl View for InputView {
@@ -104,11 +149,13 @@ impl View for InputView {
                 inner: Rc::new(RefCell::new(input)),
             },
             enabled: args.enabled,
+            class: args.class,
         }
     }
 
     fn update(&mut self, args: Self::Args<'_>, ui: &Ui) -> Self::Response {
         self.enabled = args.enabled;
+        self.class = args.class;
 
         let mut resp = TextInputResponse {
             state: Rc::clone(&self.state.inner),
@@ -252,30 +299,39 @@ impl View for InputView {
     }
 
     fn draw(&mut self, mut render: Render) {
-        render.surface.fill(render.theme.surface);
+        let style = match self.class {
+            StyleKind::Deferred(style) => (style)(render.palette, render.is_focused()),
+            StyleKind::Direct(style) => style,
+        };
+
+        render.surface.fill(if self.enabled {
+            style.background
+        } else {
+            style.disabled_background
+        });
 
         let state = self.state.inner.borrow();
         if state.buf.is_empty() {
-            Self::draw_placeholder(self.enabled, &state, &mut render);
+            Self::draw_placeholder(self.enabled, &style, &state, &mut render);
             return;
         }
 
-        Self::draw_text(self.enabled, &state, &mut render);
+        Self::draw_text(self.enabled, &style, &state, &mut render);
     }
 }
 
 impl InputView {
-    fn draw_placeholder(enabled: bool, state: &Inner, render: &mut Render) {
+    fn draw_placeholder(enabled: bool, style: &TextInputStyle, state: &Inner, render: &mut Render) {
         let Some(placeholder) = state.placeholder.as_deref().filter(|c| !c.is_empty()) else {
-            Self::draw_cursors(0, state, render);
+            Self::draw_cursors(0, style, state, render);
             return;
         };
 
         let rect = render.rect();
         let fg = if enabled {
-            render.theme.secondary
+            style.placeholder
         } else {
-            render.theme.outline
+            style.disabled_foreground
         };
 
         let w = rect.width();
@@ -285,25 +341,29 @@ impl InputView {
             if (w - start - grapheme.width() as i32) <= 0 {
                 render.surface.set(
                     pos2(start, 0),
-                    Pixel::new(TRUNCATION).fg(fg).attribute(Attribute::ITALIC),
+                    Pixel::new(TRUNCATION)
+                        .fg(fg)
+                        .attribute(style.placeholder_attribute),
                 );
                 break;
             }
-            let cell = Grapheme::new(grapheme).fg(fg).attribute(Attribute::ITALIC);
+            let cell = Grapheme::new(grapheme)
+                .fg(fg)
+                .attribute(style.placeholder_attribute);
             render.surface.set(pos2(start, 0), cell);
             start += grapheme.len() as i32;
         }
 
-        Self::draw_cursors(0, state, render);
+        Self::draw_cursors(0, style, state, render);
     }
 
-    fn draw_text(enabled: bool, state: &Inner, render: &mut Render) {
+    fn draw_text(enabled: bool, style: &TextInputStyle, state: &Inner, render: &mut Render) {
         let rect = render.rect();
 
         let fg = if enabled {
-            render.theme.foreground
+            style.foreground
         } else {
-            render.theme.outline
+            style.disabled_foreground
         };
 
         let (offset, start, end) = Self::fit_cursor(
@@ -315,20 +375,19 @@ impl InputView {
 
         let mut x = offset;
         for grapheme in state.buf[start..end].graphemes(true) {
-            let cell = Grapheme::new(grapheme).fg(fg);
+            let cell = Grapheme::new(grapheme)
+                .fg(fg)
+                .attribute(style.text_attribute);
             render.surface.set(pos2(x, 0), cell);
             x += grapheme.width() as i32;
         }
 
-        Self::draw_cursors(offset, state, render);
+        Self::draw_cursors(offset, style, state, render);
     }
 
-    fn draw_cursors(offset: i32, state: &Inner, render: &mut Render) {
-        let fg = render.theme.primary;
-
+    fn draw_cursors(offset: i32, style: &TextInputStyle, state: &Inner, render: &mut Render) {
         if state.buf.is_empty() {
-            // TODO use the actual colors for this
-            let cell = Pixel::new(' ').bg(fg.darken(0.4));
+            let cell = Pixel::new(' ').bg(style.cursor);
             render.surface.set(pos2(0, 0), cell);
             return;
         }
@@ -340,18 +399,15 @@ impl InputView {
         if state.has_selection() {
             for x in selection.min(cursor)..selection.max(cursor) {
                 render.surface.patch(pos2(x, 0), |cell| {
-                    // TODO use the actual colors for this
-                    cell.set_bg(fg.darken(0.1));
+                    cell.set_bg(style.selection);
                 });
             }
             render.surface.patch(pos2(selection, 0), |cell| {
-                // TODO use the actual colors for this
-                cell.set_bg(fg.darken(0.4));
+                cell.set_bg(style.cursor);
             });
         } else {
             render.surface.patch(pos2(cursor, 0), |cell| {
-                // TODO use the actual colors for this
-                cell.set_bg(fg.darken(0.4));
+                cell.set_bg(style.cursor);
             });
         }
     }
@@ -673,10 +729,11 @@ impl WordSep {
     }
 }
 
-pub const fn text_input<'a>() -> TextInput<'a> {
+pub fn text_input<'a>() -> TextInput<'a> {
     TextInput {
         enabled: true,
         placeholder: None,
         initial: None,
+        class: StyleKind::deferred(TextInputStyle::default),
     }
 }

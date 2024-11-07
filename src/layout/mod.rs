@@ -42,6 +42,14 @@ impl Axis {
             Self::Vertical => (y, x),
         }
     }
+
+    pub const fn is_vertical(&self) -> bool {
+        matches!(self, Self::Vertical)
+    }
+
+    pub const fn is_horizontal(&self) -> bool {
+        matches!(self, Self::Horizontal)
+    }
 }
 
 impl std::ops::Neg for Axis {

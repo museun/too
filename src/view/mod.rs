@@ -17,7 +17,7 @@ mod input;
 pub use input::{EventCtx, Handled, Interest, ViewEvent};
 
 mod view;
-pub use view::{Builder, View, ViewExt};
+pub use view::{Adhoc, Builder, View, ViewExt};
 
 mod ui;
 pub use ui::Ui;
@@ -29,7 +29,7 @@ mod render;
 pub use render::{CroppedSurface, Render};
 
 mod style;
-pub use style::{AxisProperty, Elements, Knob, Styled, Stylesheet, Theme};
+pub use style::{Elements, Knob, Palette};
 
 pub fn debug_view(mut app: impl FnMut(&Ui)) -> std::io::Result<()> {
     let s = debug::pretty_tree(|ui| app(ui));
@@ -46,7 +46,7 @@ pub fn run<R: 'static>(mut app: impl FnMut(&Ui) -> R) -> std::io::Result<()> {
     let mut surface = crate::Surface::new(term.size());
 
     let mut state = State::new();
-    state.set_debug_mode(DebugMode::Off);
+    state.set_debug_mode(DebugMode::PerFrame);
 
     let target = Duration::from_secs_f32(1.0 / 60.0);
     let max_budget = target / 2;

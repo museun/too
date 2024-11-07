@@ -107,6 +107,15 @@ impl Rgba {
         Self(pack(rh, rl), pack(gh, gl), pack(bh, bl), pack(ah, al))
     }
 
+    pub fn is_dark(&self) -> bool {
+        let Hsva(_h, _s, v, _a) = self.to_hsva();
+        v < 0.6
+    }
+
+    pub fn is_light(&self) -> bool {
+        !self.is_dark()
+    }
+
     #[must_use]
     pub const fn to_opaque(mut self) -> Self {
         self.3 = 255;
@@ -121,7 +130,7 @@ impl Rgba {
 
     #[must_use]
     pub fn to_transparent(mut self, alpha: f32) -> Self {
-        self.3 = (alpha * 255.0) as u8;
+        self.3 = (alpha.clamp(0.0, 1.0) * 255.0) as u8;
         self
     }
 

@@ -2,13 +2,12 @@ use unicode_segmentation::UnicodeSegmentation;
 
 use super::{
     cell::{Attribute, Cell, Color},
-    Pixel, Renderer, Rgba,
+    Border, Pixel, Renderer, Rgba,
 };
 
 use crate::{
     math::{pos2, rect, Pos2, Rect, Vec2},
     text::MeasureText,
-    view::views::Border,
     Event, Text,
 };
 

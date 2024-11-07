@@ -7,15 +7,11 @@ pub use backend::{
     MouseButton,
 };
 
-pub mod ema_window;
-
 pub mod math;
-
-pub mod overlay;
 
 mod renderer;
 pub use renderer::{
-    rgba, Attribute, Cell, Color, DebugRenderer, DummyRenderer, Gradient, Grapheme, Pixel,
+    rgba, Attribute, Border, Cell, Color, DebugRenderer, DummyRenderer, Gradient, Grapheme, Pixel,
     Renderer, Rgba, Surface, TermRenderer, Underline,
 };
 
@@ -26,10 +22,6 @@ pub use text::{Justification, MeasureText, Text};
 
 pub mod animation;
 pub use animation::AnimationManager;
-
-pub mod index;
-#[doc(inline)]
-pub use index::Index;
 
 pub mod view;
 

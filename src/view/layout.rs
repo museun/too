@@ -7,23 +7,18 @@ use super::{
     geom::{Flex, Size, Space},
     input::InputState,
     state::{LayoutNodes, ViewId, ViewNodes},
-    style::Stylesheet,
-    Styled,
 };
 
 pub struct Layout<'a> {
     pub nodes: &'a ViewNodes,
     pub layout: &'a mut LayoutNodes,
     pub input: &'a InputState,
-    pub stylesheet: &'a mut Stylesheet,
     pub current: ViewId,
 }
 
 impl<'a> Layout<'a> {
-    #[inline(always)]
     pub fn compute(&mut self, id: ViewId, space: Space) -> Size {
-        self.layout
-            .compute(self.nodes, self.input, self.stylesheet, id, space)
+        self.layout.compute(self.nodes, self.input, id, space)
     }
 
     pub fn parent_axis(&self) -> Axis {
@@ -59,10 +54,6 @@ impl<'a> Layout<'a> {
 
     pub fn set_size(&mut self, id: ViewId, size: impl Into<Vec2>) {
         self.layout.set_size(id, size)
-    }
-
-    pub fn property<T: 'static + Copy>(&mut self, key: Styled<T>) -> T {
-        self.stylesheet.get_or_default(key)
     }
 }
 

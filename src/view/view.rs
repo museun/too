@@ -2,9 +2,25 @@ use crate::layout::Axis;
 
 use super::{
     geom::{Flex, Size, Space},
+    input::{EventCtx, Handled, Interest, ViewEvent},
     layout::IntrinsicSize,
-    EventCtx, Handled, Interest, Layout, Render, Response, Ui, ViewEvent,
+    Layout, Render, Response, Ui,
 };
+
+pub trait Adhoc<'v>: Sized {
+    type Output: 'static;
+    fn show(self, ui: &Ui) -> Self::Output;
+}
+
+impl<'v, T> Adhoc<'v> for T
+where
+    T: Builder<'v>,
+{
+    type Output = Response<<T::View as View>::Response>;
+    fn show(self, ui: &Ui) -> Self::Output {
+        <T as ViewExt>::show(self, ui)
+    }
+}
 
 pub trait Builder<'v>: Sized {
     type View: View<Args<'v> = Self>;

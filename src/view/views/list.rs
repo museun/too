@@ -81,7 +81,7 @@ impl CrossAlign {
 #[derive(Debug, Default)]
 struct ListState {
     flex: f32,
-    main: Vec<f32>, // this is all we need. start at 'pos' and take until we've reached the rect extent
+    main: Vec<f32>,
     cross: Vec<f32>,
 }
 

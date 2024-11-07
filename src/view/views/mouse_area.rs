@@ -206,3 +206,7 @@ impl View for MouseArea {
         Handled::Bubble
     }
 }
+
+pub fn mouse_area() -> MouseArea {
+    MouseArea::default()
+}

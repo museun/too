@@ -3,7 +3,7 @@ use crate::{
     Key, Keybind, Modifiers,
 };
 
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub struct KeyArea {
     key: Option<Key>,
     modifiers: Option<Modifiers>,

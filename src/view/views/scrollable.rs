@@ -3,7 +3,8 @@ use crate::{
     math::{pos2, remap, vec2, Pos2, Rect, Vec2},
     view::{
         geom::{Size, Space},
-        Builder, Elements, EventCtx, Handled, Interest, Layout, Render, Ui, View, ViewEvent,
+        Builder, Elements, EventCtx, Handled, Interest, Layout, Palette, Render, Ui, View,
+        ViewEvent,
     },
     Key, Pixel,
 };
@@ -116,8 +117,8 @@ impl ScrollView {
             );
             let pixel = Elements::DASH_HORIZONTAL_LINE;
             let pixel = Pixel::new(pixel)
-                .fg(render.theme.outline)
-                .bg(render.theme.surface);
+                .fg(Palette::current().outline)
+                .bg(Palette::current().surface);
             render.surface.fill_rect_with(rect, pixel);
 
             let pixel = if self.x_hovered {
@@ -125,7 +126,7 @@ impl ScrollView {
             } else {
                 Elements::THICK_HORIZONTAL_LINE
             };
-            let pixel = Pixel::new(pixel).fg(render.theme.contrast);
+            let pixel = Pixel::new(pixel).fg(Palette::current().contrast);
             render.surface.set(pos, pixel);
         }
 
@@ -137,8 +138,8 @@ impl ScrollView {
             );
             let pixel = Elements::DASH_VERTICAL_LINE;
             let pixel = Pixel::new(pixel)
-                .fg(render.theme.outline)
-                .bg(render.theme.surface);
+                .fg(Palette::current().outline)
+                .bg(Palette::current().surface);
             render.surface.fill_rect_with(rect, pixel);
 
             let pixel = if self.y_hovered {
@@ -146,7 +147,7 @@ impl ScrollView {
             } else {
                 Elements::THICK_VERTICAL_LINE
             };
-            let pixel = Pixel::new(pixel).fg(render.theme.contrast);
+            let pixel = Pixel::new(pixel).fg(Palette::current().contrast);
             render.surface.set(pos, pixel);
         };
 
@@ -159,22 +160,22 @@ impl ScrollView {
             let bottom_right = local.right_bottom() - 1;
 
             let cell = Pixel::new(MERGE)
-                .fg(render.theme.outline)
-                .bg(render.theme.surface);
+                .fg(Palette::current().outline)
+                .bg(Palette::current().surface);
             render.surface.set(bottom_right, cell);
 
             if h == bottom_right {
-                let cell = Pixel::new(PARTIAL_HORIZONATAL).fg(render.theme.contrast);
+                let cell = Pixel::new(PARTIAL_HORIZONATAL).fg(Palette::current().contrast);
                 render.surface.set(h, cell);
             }
 
             if v == bottom_right {
-                let cell = Pixel::new(PARTIAL_VERTICAL).fg(render.theme.contrast);
+                let cell = Pixel::new(PARTIAL_VERTICAL).fg(Palette::current().contrast);
                 render.surface.set(v, cell);
             }
 
             if h == v {
-                let cell = Pixel::new(BOTH_SELECTED).fg(render.theme.contrast);
+                let cell = Pixel::new(BOTH_SELECTED).fg(Palette::current().contrast);
                 render.surface.set(h, cell);
             }
         }

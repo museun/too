@@ -18,7 +18,7 @@ use super::{
     helpers::Queue,
     input::InputState,
     layout::IntrinsicSize,
-    style::{Stylesheet, Theme},
+    style::Palette,
     ui::Ui,
     view::Erased,
     CroppedSurface, Interest, Layout, Render, View,
@@ -85,8 +85,7 @@ pub struct State {
     pub(in crate::view) render: RenderNodes,
     pub(in crate::view) input: InputState,
     pub(in crate::view) animations: AnimationManager,
-    pub(in crate::view) theme: Theme,
-    pub(in crate::view) stylesheet: Stylesheet,
+    pub(in crate::view) palette: RefCell<Palette>,
     pub(in crate::view) frame_count: u64,
 }
 
@@ -108,8 +107,7 @@ impl State {
             render: RenderNodes::new(),
             input: InputState::default(),
             animations: AnimationManager::new(),
-            theme: Theme::dark(),
-            stylesheet: Stylesheet::default(),
+            palette: RefCell::new(Palette::dark()),
             frame_count: 0,
         }
     }
@@ -160,19 +158,16 @@ impl State {
         let root = self.root();
 
         let rect = self.layout.rect(root).unwrap();
-        surface.clear(rect, self.theme.background);
+        surface.clear(rect, self.palette.get_mut().background);
 
         self.render.draw_all(
             &self.nodes, //
             &self.layout,
             &self.input,
+            &self.palette.borrow(),
             &mut self.animations,
-            &mut self.stylesheet,
-            &self.theme,
             CroppedSurface::new(rect, surface),
         );
-
-        self.stylesheet.reset();
 
         DEBUG.with(|c| {
             let mut debug = c.queue.borrow_mut();
@@ -219,7 +214,6 @@ impl State {
         self.layout.compute_all(
             &self.nodes, //
             &self.input,
-            &mut self.stylesheet,
             rect,
         );
 
@@ -496,18 +490,16 @@ impl RenderNodes {
         nodes: &ViewNodes,
         layout: &LayoutNodes,
         input: &InputState,
+        palette: &Palette,
         animation: &mut AnimationManager,
-        stylesheet: &mut Stylesheet,
-        theme: &Theme,
         surface: CroppedSurface,
     ) {
         self.draw(
             nodes,
             layout,
             input,
+            palette,
             animation,
-            stylesheet,
-            theme,
             nodes.root(),
             surface,
         );
@@ -522,9 +514,8 @@ impl RenderNodes {
         nodes: &ViewNodes,
         layout: &LayoutNodes,
         input: &InputState,
+        palette: &Palette,
         animation: &mut AnimationManager,
-        stylesheet: &mut Stylesheet,
-        theme: &Theme,
         id: ViewId,
         surface: CroppedSurface,
     ) {
@@ -560,7 +551,6 @@ impl RenderNodes {
         }
 
         nodes.begin(id);
-        stylesheet.swap(id);
 
         nodes
             .scoped(id, |node| {
@@ -573,10 +563,9 @@ impl RenderNodes {
                     current: id,
                     nodes,
                     layout,
+                    palette,
                     animation,
                     surface,
-                    stylesheet,
-                    theme,
                     input,
                     render: self,
                 };
@@ -585,7 +574,6 @@ impl RenderNodes {
             })
             .unwrap();
 
-        stylesheet.swap(id);
         nodes.end(id);
     }
 }
@@ -673,12 +661,10 @@ impl LayoutNodes {
         &mut self,
         nodes: &ViewNodes,
         input: &InputState,
-        stylesheet: &mut Stylesheet,
         id: ViewId,
         space: Space,
     ) -> Size {
         nodes.begin(id);
-        stylesheet.swap(id);
 
         self.nodes.insert(id, LayoutNode::new(id));
         let (size, interest) = nodes
@@ -690,7 +676,6 @@ impl LayoutNodes {
                     nodes,
                     layout: self,
                     input,
-                    stylesheet,
                     current: id,
                 };
                 let size = node.layout(layout, space);
@@ -730,7 +715,6 @@ impl LayoutNodes {
             self.clip_stack.pop();
         }
 
-        stylesheet.swap(id);
         nodes.end(id);
 
         size
@@ -786,15 +770,9 @@ impl LayoutNodes {
     }
 
     #[cfg_attr(feature = "profile", profiling::function)]
-    fn compute_all(
-        &mut self,
-        nodes: &ViewNodes,
-        input: &InputState,
-        stylesheet: &mut Stylesheet,
-        rect: Rect,
-    ) {
+    fn compute_all(&mut self, nodes: &ViewNodes, input: &InputState, rect: Rect) {
         let space = Space::from_size(rect.size().into()).loosen();
-        self.compute(nodes, input, stylesheet, nodes.root(), space);
+        self.compute(nodes, input, nodes.root(), space);
         self.resolve(nodes, rect);
     }
 

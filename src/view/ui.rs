@@ -1,7 +1,10 @@
+use std::cell::{Ref, RefCell};
+
 use crate::{
     layout::Align2,
     math::{Pos2, Rect},
-    Rgba,
+    view::views::shorthands::todo_value,
+    Border, Rgba,
 };
 use compact_str::ToCompactString;
 
@@ -9,31 +12,36 @@ use super::{
     geom::{Flex, Margin},
     input::InputState,
     state::{LayoutNodes, ViewNodes},
-    style::{Styled, Stylesheet, Theme},
+    view::Adhoc,
     views::{
-        self, Border, ButtonResponse, Constrain, Dragging, MouseArea, MouseAreaResponse,
-        TextInputResponse, ToggleResponse, Unconstrained,
+        self, button, checkbox::checkbox, radio::radio, selected::selected, shorthands,
+        TextInputResponse, ToggleResponse,
     },
-    Builder, Response, State, View, ViewId,
+    Builder, Palette, Response, State, View, ViewId,
 };
 
 pub struct Ui<'a> {
     pub(in crate::view) nodes: &'a ViewNodes,
     pub(in crate::view) layout: &'a LayoutNodes,
     pub(in crate::view) input: &'a InputState,
-    pub(in crate::view) theme: &'a Theme,
-    pub(in crate::view) stylesheet: &'a Stylesheet,
+    pub(in crate::view) palette: &'a RefCell<Palette>,
 }
 
 impl<'a> Ui<'a> {
-    pub const fn new(state: &'a State) -> Self {
+    pub fn new(state: &'a mut State) -> Self {
         Self {
             nodes: &state.nodes,
             layout: &state.layout,
             input: &state.input,
-            theme: &state.theme,
-            stylesheet: &state.stylesheet,
+            palette: &state.palette,
         }
+    }
+
+    pub fn adhoc<'v, A>(&self, view: A) -> A::Output
+    where
+        A: Adhoc<'v>,
+    {
+        view.show(self)
     }
 
     pub fn show<'v, B>(&self, args: B) -> Response<<B::View as View>::Response>
@@ -73,26 +81,16 @@ impl<'a> Ui<'a> {
         self.input.cursor_pos()
     }
 
+    pub fn palette(&self) -> Ref<'_, Palette> {
+        self.palette.borrow()
+    }
+
+    pub fn set_palette(&self, palette: Palette) {
+        *self.palette.borrow_mut() = palette
+    }
+
     pub fn set_focus(&self, id: impl Into<Option<ViewId>>) {
         self.input.set_focus(id.into());
-    }
-
-    pub fn reset<T>(&self, key: Styled<T>)
-    where
-        T: 'static + Copy,
-    {
-        self.set(key, key.default());
-    }
-
-    pub fn set<T>(&self, key: Styled<T>, value: T)
-    where
-        T: 'static + Copy,
-    {
-        self.stylesheet.replace(self.current(), key, value);
-    }
-
-    pub const fn theme(&self) -> &Theme {
-        self.theme
     }
 
     pub fn scope<R>(&self, show: impl FnOnce(&Ui) -> R) -> Response<R>
@@ -135,6 +133,16 @@ impl<'a> Ui<'a> {
 }
 
 impl<'a> Ui<'a> {
+    pub fn is_hovered(&self) -> bool {
+        self.input.is_hovered(self.nodes.current())
+    }
+
+    pub fn is_parent_hovered(&self) -> bool {
+        self.input.is_hovered(self.nodes.parent())
+    }
+}
+
+impl<'a> Ui<'a> {
     pub fn center<R>(&self, show: impl FnOnce(&Ui) -> R) -> Response<R>
     where
         R: 'static,
@@ -146,7 +154,7 @@ impl<'a> Ui<'a> {
     where
         R: 'static,
     {
-        self.show_children(views::aligned(align), show)
+        self.show_children(shorthands::aligned(align), show)
             .flatten_right()
     }
 
@@ -174,7 +182,11 @@ impl<'a> Ui<'a> {
             .flatten_right()
     }
 
-    pub fn constrain<R>(&self, constrain: Constrain, show: impl FnOnce(&Ui) -> R) -> Response<R>
+    pub fn constrain<R>(
+        &self,
+        constrain: views::Constrain,
+        show: impl FnOnce(&Ui) -> R,
+    ) -> Response<R>
     where
         R: 'static,
     {
@@ -183,7 +195,7 @@ impl<'a> Ui<'a> {
 
     pub fn unconstrained<R>(
         &self,
-        unconstrained: Unconstrained,
+        unconstrained: views::Unconstrained,
         show: impl FnOnce(&Ui) -> R,
     ) -> Response<R>
     where
@@ -192,26 +204,39 @@ impl<'a> Ui<'a> {
         self.show_children(unconstrained, show).flatten_right()
     }
 
-    pub fn draggable<R>(&self, show: impl FnOnce(&Ui) -> R) -> Response<(Option<Dragging>, R)>
+    pub fn draggable<R>(
+        &self,
+        show: impl FnOnce(&Ui) -> R,
+    ) -> Response<(Option<views::Dragging>, R)>
     where
         R: 'static,
     {
         self.mouse_area(show).map(|(m, r)| (m.dragged(), r))
     }
 
-    pub fn mouse_area<R>(&self, show: impl FnOnce(&Ui) -> R) -> Response<(MouseAreaResponse, R)>
+    pub fn mouse_area<R>(
+        &self,
+        show: impl FnOnce(&Ui) -> R,
+    ) -> Response<(views::MouseAreaResponse, R)>
     where
         R: 'static,
     {
-        self.show_children(MouseArea::default(), show)
+        self.show_children(shorthands::mouse_area(), show)
     }
 
-    pub fn progress_bar(&self, value: f32) -> Response {
-        self.show(views::progress_bar(value))
+    pub fn key_area<R>(&self, show: impl FnOnce(&Ui) -> R) -> Response<(views::KeyAreaResponse, R)>
+    where
+        R: 'static,
+    {
+        self.show_children(shorthands::key_area(), show)
+    }
+
+    pub fn progress(&self, value: f32) -> Response {
+        self.show(shorthands::progress(value))
     }
 
     pub fn text_input(&self, focus: bool) -> Response<TextInputResponse> {
-        let resp = self.show(views::text_input());
+        let resp = self.show(shorthands::text_input());
         if focus {
             self.set_focus(resp.id());
         }
@@ -219,103 +244,38 @@ impl<'a> Ui<'a> {
     }
 
     pub fn slider(&self, value: &mut f32) -> Response {
-        self.show(views::slider(value))
+        self.show(shorthands::slider(value))
     }
 
     pub fn toggle_switch(&self, value: &mut bool) -> Response<ToggleResponse> {
-        self.show(views::ToggleSwitch::new(value))
+        self.show(shorthands::toggle_switch(value))
     }
 
-    pub fn button(&self, label: &str) -> Response<ButtonResponse> {
-        self.show(views::button(label).margin((1, 0)))
+    pub fn button(&self, label: &str) -> Response<button::Response> {
+        self.show(shorthands::button(label).margin((1, 0)))
     }
 
     pub fn checkbox(&self, value: &mut bool, label: &str) -> Response<bool> {
-        // TODO properties
-        let resp = self
-            .mouse_area(|ui| {
-                let fg = if ui.input.is_hovered(ui.nodes.current()) {
-                    ui.theme().accent
-                } else {
-                    ui.theme.foreground
-                };
-                ui.horizontal(|ui| {
-                    let marker = if *value { "✅" } else { "🔘" };
-                    ui.label(marker);
-                    ui.show(views::label(label).fg(fg));
-                });
-            })
-            .flatten_left();
-
-        *value ^= resp.clicked();
-        resp.map(|c| c.clicked())
+        self.adhoc(checkbox(value, label))
     }
 
     pub fn todo_value(&self, value: &mut bool, label: &str) -> Response<bool> {
-        // TODO properties
-        let resp = self
-            .mouse_area(|ui| {
-                let fg = if ui.input.is_hovered(ui.nodes.current()) {
-                    ui.theme().accent
-                } else {
-                    ui.theme.foreground
-                };
-                ui.horizontal(|ui| {
-                    let mut label = views::label(format!(" {label} ")).fg(fg);
-                    if *value {
-                        label = label.strikeout().faint()
-                    }
-                    ui.show(label);
-                });
-            })
-            .flatten_left();
-
-        *value ^= resp.clicked();
-        resp.map(|c| c.clicked())
+        self.adhoc(todo_value(value, label))
     }
 
     pub fn selected(&self, value: &mut bool, label: &str) -> Response<bool> {
-        let resp = self
-            .mouse_area(|ui| {
-                let hovered = self.input.is_hovered(ui.nodes.current());
-                let fill = match (hovered, *value) {
-                    (false, true) => ui.theme().primary,
-                    (false, ..) => ui.theme().surface,
-                    _ => ui.theme().secondary.darken(0.3),
-                };
-                ui.background(fill, |ui| ui.label(label));
-            })
-            .flatten_left();
-
-        *value ^= resp.clicked();
-        resp.map(|c| c.clicked())
+        self.adhoc(selected(value, label))
     }
 
     pub fn radio<V>(&self, value: V, existing: &mut V, label: &str) -> Response<bool>
     where
         V: PartialEq,
     {
-        // TODO properties
-        let resp = self
-            .mouse_area(|ui| {
-                let hovered = self.input.is_hovered(ui.nodes.current());
-                let fill = match (hovered, *existing == value) {
-                    (false, true) => ui.theme().primary,
-                    (false, ..) => ui.theme().surface,
-                    _ => ui.theme().secondary.darken(0.3),
-                };
-                ui.background(fill, |ui| ui.label(label));
-            })
-            .flatten_left();
-
-        if resp.clicked() {
-            *existing = value;
-        }
-        resp.map(|c| c.clicked())
+        self.adhoc(radio(value, existing, label))
     }
 
     pub fn label(&self, data: impl ToCompactString) -> Response {
-        self.show(views::label(data))
+        self.show(shorthands::label(data))
     }
 
     pub fn expand<R>(&self, show: impl FnOnce(&Ui) -> R) -> Response<R>
@@ -338,7 +298,7 @@ impl<'a> Ui<'a> {
     where
         R: 'static,
     {
-        self.show_children(views::vertical_wrap(), show)
+        self.show_children(shorthands::vertical_wrap(), show)
             .flatten_right()
     }
 
@@ -346,7 +306,7 @@ impl<'a> Ui<'a> {
     where
         R: 'static,
     {
-        self.show_children(views::horizontal_wrap().row_gap(1), show)
+        self.show_children(shorthands::horizontal_wrap().row_gap(1), show)
             .flatten_right()
     }
 
@@ -363,7 +323,7 @@ impl<'a> Ui<'a> {
     where
         R: 'static,
     {
-        self.show_children(views::list().vertical(), show)
+        self.show_children(shorthands::list().vertical(), show)
             .flatten_right()
     }
 
@@ -371,7 +331,7 @@ impl<'a> Ui<'a> {
     where
         R: 'static,
     {
-        self.show_children(views::list().horizontal().gap(1), show)
+        self.show_children(shorthands::list().horizontal().gap(1), show)
             .flatten_right()
     }
 
@@ -379,7 +339,7 @@ impl<'a> Ui<'a> {
     where
         R: 'static,
     {
-        self.show_children(views::border().style(border), show)
+        self.show_children(shorthands::border(border), show)
             .flatten_right()
     }
 
@@ -392,7 +352,7 @@ impl<'a> Ui<'a> {
     where
         R: 'static,
     {
-        self.show_children(views::border().style(border).title(title), show)
+        self.show_children(shorthands::frame(border, title), show)
             .flatten_right()
     }
 
@@ -402,34 +362,6 @@ impl<'a> Ui<'a> {
         title: &str,
         show: impl FnOnce(&Ui) -> R,
     ) -> Response<Option<R>> {
-        self.vertical(|ui| {
-            // TODO properties
-            let resp = ui.mouse_area(|ui| {
-                let border = if *state {
-                    Border::DOUBLE
-                } else {
-                    Border::ROUNDED
-                };
-
-                if *state {
-                    let inner =
-                        ui.show_children(views::frame(format!("▼ {title}")).style(border), show);
-                    return Some(inner);
-                }
-
-                ui.border(border, |ui| {
-                    ui.horizontal(|ui| {
-                        ui.label('▶');
-                        ui.label(title);
-                    });
-                });
-                None
-            });
-            *state ^= resp.0.clicked();
-            resp.flatten_right()
-        })
-        // FIXME this is something else
-        .into_inner()
-        .map(|c| c.map(|c| c.flatten_right().into_inner()))
+        self.adhoc(shorthands::collapsible(state, title, show))
     }
 }

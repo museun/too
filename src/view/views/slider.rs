@@ -6,11 +6,79 @@ use crate::{
     math::{denormalize, inverse_lerp, lerp, normalize, Pos2},
     view::{
         geom::{Size, Space},
-        style::{AxisProperty, Styled, Theme},
+        style::{Palette, StyleKind},
         Builder, Elements, EventCtx, Handled, Interest, Knob, Layout, Render, Ui, View, ViewEvent,
     },
     Pixel, Rgba,
 };
+
+pub type SliderClass = fn(&Palette, Axis) -> SliderStyle;
+
+#[derive(Copy, Clone, Debug, PartialEq)]
+pub struct SliderStyle {
+    pub track_color: Rgba,
+    pub knob_color: Rgba,
+    pub track_hovered: Option<Rgba>,
+    pub knob_hovered: Option<Rgba>,
+    pub knob: char,
+    pub track: char,
+}
+
+impl SliderStyle {
+    pub fn default(palette: &Palette, axis: Axis) -> Self {
+        Self {
+            track_color: palette.outline,
+            knob_color: palette.primary,
+            track_hovered: None,
+            knob_hovered: None,
+            knob: axis.main((Knob::MEDIUM, Knob::LARGE)),
+            track: axis.main((
+                Elements::THICK_HORIZONTAL_LINE,
+                Elements::THICK_VERTICAL_LINE,
+            )),
+        }
+    }
+
+    pub fn small_rounded(palette: &Palette, axis: Axis) -> Self {
+        Self {
+            knob: Knob::ROUND,
+            track: axis.main((Elements::HORIZONTAL_LINE, Elements::VERTICAL_LINE)),
+            ..Self::default(palette, axis)
+        }
+    }
+
+    pub fn small_diamond(palette: &Palette, axis: Axis) -> Self {
+        Self {
+            knob: Knob::DIAMOND,
+            track: axis.main((Elements::HORIZONTAL_LINE, Elements::VERTICAL_LINE)),
+            ..Self::default(palette, axis)
+        }
+    }
+
+    pub fn small_square(palette: &Palette, axis: Axis) -> Self {
+        Self {
+            knob: Knob::SMALL,
+            track: axis.main((Elements::HORIZONTAL_LINE, Elements::VERTICAL_LINE)),
+            ..Self::default(palette, axis)
+        }
+    }
+
+    pub fn large(palette: &Palette, axis: Axis) -> Self {
+        Self {
+            knob: Knob::LARGE,
+            track: Elements::MEDIUM_RECT,
+            ..Self::default(palette, axis)
+        }
+    }
+
+    pub fn large_filled(palette: &Palette, axis: Axis) -> Self {
+        Self {
+            knob: Knob::LARGE,
+            track: Elements::LARGE_RECT,
+            ..Self::default(palette, axis)
+        }
+    }
+}
 
 pub fn slider(value: &mut f32) -> Slider {
     Slider {
@@ -18,6 +86,7 @@ pub fn slider(value: &mut f32) -> Slider {
         range: 0.0..=1.0,
         clickable: true,
         axis: Axis::Horizontal,
+        class: StyleKind::Deferred(SliderStyle::small_rounded),
     }
 }
 
@@ -28,6 +97,7 @@ pub struct Slider<'v> {
     range: RangeInclusive<f32>,
     clickable: bool,
     axis: Axis,
+    class: StyleKind<SliderClass, SliderStyle>,
 }
 
 impl<'v> Slider<'v> {
@@ -53,34 +123,16 @@ impl<'v> Slider<'v> {
     pub const fn vertical(self) -> Self {
         self.axis(Axis::Vertical)
     }
-}
 
-impl<'v> Slider<'v> {
-    pub const TRACK: Styled<AxisProperty<char>> = Styled::new(
-        "too.slider.track",
-        AxisProperty::new(
-            Elements::THICK_HORIZONTAL_LINE,
-            Elements::THICK_VERTICAL_LINE,
-        ),
-    );
-    pub const TRACK_COLOR: Styled<Rgba> = Styled::new(
-        "too.slider.track.color", //
-        Theme::SURFACE.default(),
-    );
+    pub const fn class(mut self, class: SliderClass) -> Self {
+        self.class = StyleKind::Deferred(class);
+        self
+    }
 
-    pub const KNOB: Styled<char> = Styled::new(
-        "too.slider.knob", //
-        Knob::ROUND,
-    );
-    pub const KNOB_COLOR: Styled<Rgba> = Styled::new(
-        "too.slider.knob.color", //
-        Theme::PRIMARY.default(),
-    );
-
-    pub const SIZE: Styled<AxisProperty<f32>> = Styled::new(
-        "too.slider.size", //
-        AxisProperty::new(20.0, 10.0),
-    );
+    pub const fn style(mut self, style: SliderStyle) -> Self {
+        self.class = StyleKind::Direct(style);
+        self
+    }
 }
 
 impl<'v> Builder<'v> for Slider<'v> {
@@ -94,6 +146,7 @@ pub struct SliderView {
     range: RangeInclusive<f32>,
     clickable: bool,
     axis: Axis,
+    class: StyleKind<SliderClass, SliderStyle>,
 }
 
 impl View for SliderView {
@@ -107,6 +160,7 @@ impl View for SliderView {
             range: args.range.clone(),
             clickable: args.clickable,
             axis: args.axis,
+            class: args.class,
         }
     }
 
@@ -114,6 +168,7 @@ impl View for SliderView {
         self.range = args.range.clone();
         self.clickable = args.clickable;
         self.axis = args.axis;
+        self.class = args.class;
 
         if std::mem::take(&mut self.changed) {
             *args.value = self.value;
@@ -153,31 +208,41 @@ impl View for SliderView {
         Handled::Sink
     }
 
-    fn layout(&mut self, mut layout: Layout, space: Space) -> Size {
-        let main = self.axis.main(layout.property(Slider::SIZE));
+    fn layout(&mut self, layout: Layout, space: Space) -> Size {
+        let main = self.axis.main((20.0, 1.0));
         let size = self.axis.pack(main, 1.0);
         space.fit(size)
     }
 
     fn draw(&mut self, mut render: Render) {
-        let pixel = render.property(Slider::TRACK).resolve(self.axis);
-        let track = render.color(Slider::TRACK_COLOR);
-        render.surface.fill_with(Pixel::new(pixel).fg(track));
+        let style = match self.class {
+            StyleKind::Deferred(style) => (style)(render.palette, self.axis),
+            StyleKind::Direct(style) => style,
+        };
+
+        let track_color = if render.is_hovered() {
+            style.track_hovered.unwrap_or(style.track_color)
+        } else {
+            style.track_color
+        };
+
+        render
+            .surface
+            .fill_with(Pixel::new(style.track).fg(track_color));
 
         let extent: f32 = self.axis.main(render.rect().size());
         let value = normalize(self.value, self.range.clone());
         let x = lerp(0.0, extent - 1.0, value);
         let pos: Pos2 = self.axis.pack(x, 0.0);
 
-        let knob = render.property(Slider::KNOB);
-        let knob_color = render.color(Slider::KNOB_COLOR);
-
         let knob_color = if render.is_hovered() {
-            render.theme.secondary
+            style.knob_hovered.unwrap_or(style.knob_color)
         } else {
-            knob_color
+            style.knob_color
         };
 
-        render.surface.set(pos, Pixel::new(knob).fg(knob_color));
+        render
+            .surface
+            .set(pos, Pixel::new(style.knob).fg(knob_color));
     }
 }

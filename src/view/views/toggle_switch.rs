@@ -2,13 +2,90 @@ use std::time::Duration;
 
 use crate::{
     animation::{easing, Animation},
-    math::lerp,
+    layout::Axis,
+    math::{lerp, Pos2},
     view::{
         geom::{Size, Space},
-        Builder, Elements, EventCtx, Handled, Interest, Layout, Render, Ui, View, ViewEvent,
+        style::StyleKind,
+        Builder, Elements, EventCtx, Handled, Interest, Knob, Layout, Palette, Render, Ui, View,
+        ViewEvent,
     },
-    Pixel,
+    Pixel, Rgba,
 };
+
+#[derive(Debug, Copy, Clone)]
+pub struct ToggleStyle {
+    pub track: char,
+    pub track_color: Rgba,
+    pub track_hovered: Option<Rgba>,
+
+    pub on_knob: char,
+    pub on_knob_color: Rgba,
+
+    pub off_knob: char,
+    pub off_knob_color: Rgba,
+
+    pub on_knob_hovered: Option<Rgba>,
+    pub off_knob_hovered: Option<Rgba>,
+}
+
+impl ToggleStyle {
+    pub fn default(palette: &Palette, axis: Axis, toggled: bool) -> Self {
+        Self {
+            track: axis.main((Elements::MEDIUM_RECT, Elements::LARGE_RECT)),
+            track_color: palette.outline,
+            track_hovered: None,
+            on_knob: Knob::LARGE,
+            on_knob_color: palette.primary,
+            off_knob: Knob::LARGE,
+            off_knob_color: palette.secondary,
+            on_knob_hovered: None,
+            off_knob_hovered: None,
+        }
+    }
+
+    pub fn large(palette: &Palette, axis: Axis, toggled: bool) -> Self {
+        Self::default(palette, axis, toggled)
+    }
+
+    pub fn small_rounded(palette: &Palette, axis: Axis, toggled: bool) -> Self {
+        Self {
+            track: axis.main((
+                Elements::THICK_HORIZONTAL_LINE,
+                Elements::THICK_VERTICAL_LINE,
+            )),
+            on_knob: Knob::ROUND,
+            off_knob: Knob::ROUND,
+            ..Self::default(palette, axis, toggled)
+        }
+    }
+
+    pub fn small_diamond(palette: &Palette, axis: Axis, toggled: bool) -> Self {
+        Self {
+            track: axis.main((
+                Elements::THICK_HORIZONTAL_LINE,
+                Elements::THICK_VERTICAL_LINE,
+            )),
+            on_knob: Knob::DIAMOND,
+            off_knob: Knob::DIAMOND,
+            ..Self::default(palette, axis, toggled)
+        }
+    }
+
+    pub fn small_square(palette: &Palette, axis: Axis, toggled: bool) -> Self {
+        Self {
+            track: axis.main((
+                Elements::THICK_HORIZONTAL_LINE,
+                Elements::THICK_VERTICAL_LINE,
+            )),
+            on_knob: Knob::MEDIUM,
+            off_knob: Knob::MEDIUM,
+            ..Self::default(palette, axis, toggled)
+        }
+    }
+}
+
+pub type ToggleClass = fn(&Palette, Axis, bool) -> ToggleStyle;
 
 #[derive(Copy, Clone, Debug, PartialEq, Default)]
 pub struct ToggleResponse {
@@ -24,11 +101,42 @@ impl ToggleResponse {
 #[must_use = "a view does nothing unless `show()` or `show_children()` is called"]
 pub struct ToggleSwitch<'a> {
     value: &'a mut bool,
+    axis: Axis,
+    class: StyleKind<ToggleClass, ToggleStyle>,
 }
 
 impl<'a> ToggleSwitch<'a> {
     pub fn new(value: &'a mut bool) -> Self {
-        Self { value }
+        Self {
+            value,
+            axis: Axis::Horizontal,
+            class: StyleKind::deferred(ToggleStyle::default),
+        }
+    }
+
+    pub fn horizontal(mut self) -> Self {
+        self.axis = Axis::Horizontal;
+        self
+    }
+
+    pub fn vertical(mut self) -> Self {
+        self.axis = Axis::Vertical;
+        self
+    }
+
+    pub fn axis(mut self, axis: Axis) -> Self {
+        self.axis = axis;
+        self
+    }
+
+    pub const fn class(mut self, class: ToggleClass) -> Self {
+        self.class = StyleKind::Deferred(class);
+        self
+    }
+
+    pub const fn style(mut self, style: ToggleStyle) -> Self {
+        self.class = StyleKind::Direct(style);
+        self
     }
 }
 
@@ -40,6 +148,8 @@ impl<'v> Builder<'v> for ToggleSwitch<'v> {
 pub struct ToggleSwitchView {
     value: bool,
     changed: bool,
+    axis: Axis,
+    class: StyleKind<ToggleClass, ToggleStyle>,
 }
 
 impl View for ToggleSwitchView {
@@ -50,10 +160,15 @@ impl View for ToggleSwitchView {
         Self {
             value: *args.value,
             changed: false,
+            axis: args.axis,
+            class: args.class,
         }
     }
 
     fn update(&mut self, args: Self::Args<'_>, _: &Ui) -> Self::Response {
+        self.axis = args.axis;
+        self.class = args.class;
+
         let changed = self.changed;
         if std::mem::take(&mut self.changed) {
             *args.value = self.value;
@@ -83,8 +198,8 @@ impl View for ToggleSwitchView {
             }
 
             ViewEvent::MouseDrag { delta, .. }
-                if (self.value && delta.x.is_negative())
-                    || (!self.value && delta.x.is_positive()) =>
+                if (self.value && self.axis.main::<i32>(delta).is_negative())
+                    || (!self.value && self.axis.main::<i32>(delta).is_positive()) =>
             {
                 self.value = !self.value;
                 self.changed = true;
@@ -105,60 +220,55 @@ impl View for ToggleSwitchView {
     }
 
     fn layout(&mut self, _: Layout, space: Space) -> Size {
-        // TODO axis
-        // TOOD properties
-        space.fit(Size::new(4.0, 1.0))
+        let main = self.axis.main((4.0, 2.0));
+        space.fit(self.axis.pack(main, 1.0))
     }
 
     fn draw(&mut self, mut render: Render) {
         let rect = render.surface.rect();
 
         let selected = self.value;
-        let bg = if selected {
-            render.theme.primary
-        } else {
-            render.theme.secondary
+
+        let style = match self.class {
+            StyleKind::Deferred(style) => (style)(render.palette, self.axis, selected),
+            StyleKind::Direct(style) => style,
         };
 
-        // if render.is_hovered() {
-        //     bg = render.theme.accent;
-        // }
+        let color = if render.is_hovered() {
+            style.track_hovered.unwrap_or(style.track_color)
+        } else {
+            style.track_color
+        };
 
-        // TODO properties
-        // TODO axis
-        let unfilled = Elements::MEDIUM_RECT;
-        let pixel = Pixel::new(unfilled).fg(render.theme.surface);
-        render.surface.fill_with(pixel);
+        render.surface.fill_with(Pixel::new(style.track).fg(color));
 
-        let w = rect.width() as f32 - 1.0;
+        let extent = self.axis.main::<f32>(rect.size()) - 1.0;
 
         let x = match render.animation.get_mut(render.current) {
-            Some(animation) if selected => lerp(0.0, w, *animation.value),
-            Some(animation) if !selected => lerp(w, 0.0, *animation.value),
-            _ if selected => w,
+            Some(animation) if selected => lerp(0.0, extent, *animation.value),
+            Some(animation) if !selected => lerp(extent, 0.0, *animation.value),
+            _ if selected => extent,
             _ => 0.0,
         };
 
-        let filled = Elements::LARGE_RECT;
-        let pixel = Pixel::new(filled).fg(bg);
-        render.surface.set((x, 0.0), pixel);
+        let color = match (render.is_hovered(), selected) {
+            (true, true) => style.on_knob_hovered.unwrap_or(style.on_knob_color),
+            (true, false) => style.off_knob_hovered.unwrap_or(style.off_knob_color),
+            (false, true) => style.on_knob_color,
+            (false, false) => style.off_knob_color,
+        };
+
+        let knob = if selected {
+            style.on_knob
+        } else {
+            style.off_knob
+        };
+
+        let pos: Pos2 = self.axis.pack(x, 0.0);
+        render.surface.set(pos, Pixel::new(knob).fg(color));
     }
 }
 
-// pub fn dark_mode_switch(ui: &Ui) -> Response {
-//     // TODO get these from the properties
-//     const SUN: &str = "☀️";
-//     const MOON: &str = "🌙";
-
-//     let resp = ui.horizontal(|ui| {
-//         ui.label(if *ui.dark_mode() { MOON } else { SUN });
-//         ui.toggle_switch(&mut ui.dark_mode());
-//     });
-
-//     if *ui.dark_mode() {
-//         ui.set_theme(Theme::dark());
-//     } else {
-//         ui.set_theme(Theme::light())
-//     }
-//     resp
-// }
+pub fn toggle_switch(value: &mut bool) -> ToggleSwitch<'_> {
+    ToggleSwitch::new(value)
+}

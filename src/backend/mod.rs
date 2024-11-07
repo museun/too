@@ -1,9 +1,19 @@
 use crate::{math::Vec2, Renderer};
 
-mod events;
-pub use events::{
-    event::Event, key::Key, key_bind::Keybind, modifiers::Modifiers, mouse_button::MouseButton,
-};
+mod event;
+pub use event::Event;
+
+mod key;
+pub use key::Key;
+
+mod keybind;
+pub use keybind::Keybind;
+
+mod modifiers;
+pub use modifiers::Modifiers;
+
+mod mouse_button;
+pub use mouse_button::MouseButton;
 
 mod current_screen;
 pub use current_screen::CurrentScreen;

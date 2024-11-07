@@ -576,6 +576,10 @@ impl InputState {
         resp
     }
 
+    pub(crate) fn is_focused(&self, current: ViewId) -> bool {
+        self.focus.get() == Some(current)
+    }
+
     pub(crate) fn is_hovered(&self, current: ViewId) -> bool {
         self.intersections.borrow().hit.contains(&current)
     }

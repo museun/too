@@ -7,8 +7,7 @@ use crate::{
 use super::{
     input::InputState,
     state::{LayoutNodes, RenderNodes, ViewId, ViewNodes},
-    style::{Stylesheet, Theme},
-    Styled,
+    Palette,
 };
 
 pub struct CroppedSurface<'a> {
@@ -17,12 +16,10 @@ pub struct CroppedSurface<'a> {
 }
 
 impl<'a> CroppedSurface<'a> {
-    #[inline]
     pub fn from_surface(surface: &'a mut Surface) -> Self {
         Self::new(surface.rect(), surface)
     }
 
-    #[inline]
     pub fn new(rect: Rect, surface: &'a mut Surface) -> Self {
         let rect = surface.rect().intersection(rect);
         Self { rect, surface }
@@ -59,18 +56,15 @@ impl<'a> CroppedSurface<'a> {
         }
     }
 
-    #[inline]
     pub fn fill(&mut self, bg: impl Into<Rgba>) -> &mut Self {
         self.fill_with(bg.into())
     }
 
-    #[inline]
     pub fn fill_with(&mut self, pixel: impl Into<Pixel>) -> &mut Self {
         self.surface.fill(self.rect, pixel);
         self
     }
 
-    #[inline]
     pub fn fill_rect(&mut self, rect: impl Into<Rect>, bg: impl Into<Rgba>) -> &mut Self {
         let rect = rect.into();
         // TODO ensure these can't overflow
@@ -128,9 +122,8 @@ pub struct Render<'a, 'b> {
     pub nodes: &'a ViewNodes,
     pub(super) layout: &'a LayoutNodes,
     pub(super) render: &'a mut RenderNodes,
+    pub palette: &'a Palette,
     pub animation: &'a mut AnimationManager,
-    pub stylesheet: &'a mut Stylesheet,
-    pub theme: &'a Theme,
     pub surface: CroppedSurface<'b>,
     pub(super) input: &'a InputState,
 }
@@ -145,20 +138,11 @@ impl<'a, 'b> Render<'a, 'b> {
             self.nodes, //
             self.layout,
             self.input,
+            self.palette,
             self.animation,
-            self.stylesheet,
-            self.theme,
             id,
             surface,
         );
-    }
-
-    pub fn property<T: 'static + Copy>(&mut self, key: Styled<T>) -> T {
-        self.stylesheet.get_or_default(key)
-    }
-
-    pub fn color(&mut self, key: Styled<Rgba>) -> Rgba {
-        self.property(key)
     }
 
     pub fn current(&self) -> ViewId {
@@ -171,6 +155,10 @@ impl<'a, 'b> Render<'a, 'b> {
 
     pub fn local_rect(&self) -> Rect {
         self.surface.local_rect()
+    }
+
+    pub fn is_focused(&self) -> bool {
+        self.input.is_focused(self.current())
     }
 
     pub fn is_hovered(&self) -> bool {

@@ -5,235 +5,55 @@ use unicode_width::UnicodeWidthStr as _;
 use crate::{
     layout::Align,
     view::{
-        geom::{Margin, Size, Space},
-        Builder, Layout, Render, View,
+        geom::{Size, Space},
+        style::StyleKind,
+        Builder, Interest, Layout, Palette, Render, View,
     },
-    Grapheme, Pixel,
+    Border, Grapheme, Pixel, Rgba,
 };
-
-// TODO move this out into the main module
-#[derive(Copy, Clone, PartialEq)]
-pub struct Border {
-    pub left_top: char,
-    pub top: char,
-    pub right_top: char,
-    pub right: char,
-    pub right_bottom: char,
-    pub bottom: char,
-    pub left_bottom: char,
-    pub left: char,
-}
-
-impl std::fmt::Debug for Border {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.debug_struct("Border")
-            .field("left_top", &format_args!("0x{:04X}", self.left_top as u32))
-            .field("top", &format_args!("0x{:04X}", self.top as u32))
-            .field(
-                "right_top",
-                &format_args!("0x{:04X}", self.right_top as u32),
-            )
-            .field("right", &format_args!("0x{:04X}", self.right as u32))
-            .field(
-                "right_bottom",
-                &format_args!("0x{:04X}", self.right_bottom as u32),
-            )
-            .field("bottom", &format_args!("0x{:04X}", self.bottom as u32))
-            .field(
-                "left_bottom",
-                &format_args!("0x{:04X}", self.left_bottom as u32),
-            )
-            .field("left", &format_args!("0x{:04X}", self.left as u32))
-            .finish()
-    }
-}
-
-impl Border {
-    pub const fn without_top(self) -> Self {
-        Self {
-            left_top: self.left,
-            right_top: self.right,
-            top: ' ',
-            ..self
-        }
-    }
-
-    pub const fn without_bottom(self) -> Self {
-        Self {
-            left_bottom: self.left,
-            right_bottom: self.right,
-            bottom: ' ',
-            ..self
-        }
-    }
-
-    pub const fn without_left(self) -> Self {
-        Self {
-            left_top: self.top,
-            left: ' ',
-            left_bottom: self.bottom,
-            ..self
-        }
-    }
-
-    pub const fn without_right(self) -> Self {
-        Self {
-            right_top: self.top,
-            right: ' ',
-            right_bottom: self.bottom,
-            ..self
-        }
-    }
-
-    pub const fn without_corners(self) -> Self {
-        Self {
-            left_top: self.top,
-            right_top: self.top,
-            left_bottom: self.bottom,
-            right_bottom: self.bottom,
-            ..self
-        }
-    }
-
-    const fn has(c: char) -> bool {
-        c != ' '
-    }
-
-    pub const fn has_left(&self) -> bool {
-        Self::has(self.left) | (Self::has(self.left_top) && Self::has(self.left_bottom))
-    }
-
-    pub const fn has_top(&self) -> bool {
-        Self::has(self.top) | (Self::has(self.left_top) && Self::has(self.right_top))
-    }
-
-    pub const fn has_right(&self) -> bool {
-        Self::has(self.right) | (Self::has(self.right_top) && Self::has(self.right_bottom))
-    }
-
-    pub const fn has_bottom(&self) -> bool {
-        Self::has(self.bottom) | (Self::has(self.left_bottom) && Self::has(self.right_bottom))
-    }
-
-    pub fn as_margin(&self) -> Margin {
-        Margin::new(
-            self.has_left() as i32,
-            self.has_top() as i32,
-            self.has_right() as i32,
-            self.has_bottom() as i32,
-        )
-    }
-}
-
-impl Default for Border {
-    fn default() -> Self {
-        Self::THICK
-    }
-}
-
-impl Border {
-    pub const EMPTY: Self = Self {
-        left_top: ' ',
-        top: ' ',
-        right_top: ' ',
-        right: ' ',
-        right_bottom: ' ',
-        bottom: ' ',
-        left_bottom: ' ',
-        left: ' ',
-    };
-
-    pub const THIN: Self = Self {
-        left_top: '┌',
-        top: '─',
-        right_top: '┐',
-        right: '│',
-        right_bottom: '┘',
-        bottom: '─',
-        left_bottom: '└',
-        left: '│',
-    };
-
-    pub const THIN_WIDE: Self = Self {
-        left_top: '▁',
-        top: '▁',
-        right_top: '▁',
-        right: '▕',
-        right_bottom: '▔',
-        bottom: '▔',
-        left_bottom: '▔',
-        left: '▏',
-    };
-
-    pub const ROUNDED: Self = Self {
-        left_top: '╭',
-        top: '─',
-        right_top: '╮',
-        right: '│',
-        right_bottom: '╯',
-        bottom: '─',
-        left_bottom: '╰',
-        left: '│',
-    };
-
-    pub const DOUBLE: Self = Self {
-        left_top: '╔',
-        top: '═',
-        right_top: '╗',
-        right: '║',
-        right_bottom: '╝',
-        bottom: '═',
-        left_bottom: '╚',
-        left: '║',
-    };
-
-    pub const THICK: Self = Self {
-        left_top: '┏',
-        top: '━',
-        right_top: '┓',
-        right: '┃',
-        right_bottom: '┛',
-        bottom: '━',
-        left_bottom: '┗',
-        left: '┃',
-    };
-
-    pub const THICK_TALL: Self = Self {
-        left_top: '▛',
-        top: '▀',
-        right_top: '▜',
-        right: '▐',
-        right_bottom: '▟',
-        bottom: '▄',
-        left_bottom: '▙',
-        left: '▌',
-    };
-
-    pub const THICK_WIDE: Self = Self {
-        left_top: '▗',
-        top: '▄',
-        right_top: '▖',
-        right: '▌',
-        right_bottom: '▘',
-        bottom: '▀',
-        left_bottom: '▝',
-        left: '▐',
-    };
-}
 
 use super::measure_text;
 
-// TODO 'hoverable' and 'focusable'
-#[derive(Default, Debug, Clone)]
+pub type BorderClass = fn(&Palette, bool, bool) -> BorderStyle;
+
+#[derive(Copy, Clone, Debug)]
+pub struct BorderStyle {
+    pub title: Rgba,
+    pub border: Rgba,
+    pub border_focused: Option<Rgba>,
+    pub border_hovered: Option<Rgba>,
+}
+
+impl BorderStyle {
+    pub fn default(palette: &Palette, hovered: bool, focused: bool) -> Self {
+        Self {
+            title: palette.foreground,
+            border: palette.outline,
+            border_focused: None,
+            border_hovered: None,
+        }
+    }
+
+    pub fn interactive(palette: &Palette, hovered: bool, focused: bool) -> Self {
+        Self {
+            border_focused: Some(palette.contrast),
+            border_hovered: Some(palette.secondary),
+            ..Self::default(palette, hovered, focused)
+        }
+    }
+}
+
+#[derive(Debug)]
 #[must_use = "a view does nothing unless `show()` or `show_children()` is called"]
 pub struct BorderView {
     border: Border,
     title: Option<CompactString>,
     align: Align,
+    class: StyleKind<BorderClass, BorderStyle>,
 }
 
 impl BorderView {
-    pub const fn style(mut self, border: Border) -> Self {
+    pub const fn border(mut self, border: Border) -> Self {
         self.border = border;
         self
     }
@@ -245,6 +65,16 @@ impl BorderView {
 
     pub const fn title_align(mut self, align: Align) -> Self {
         self.align = align;
+        self
+    }
+
+    pub const fn class(mut self, class: BorderClass) -> Self {
+        self.class = StyleKind::deferred(class);
+        self
+    }
+
+    pub const fn style(mut self, style: BorderStyle) -> Self {
+        self.class = StyleKind::direct(style);
         self
     }
 }
@@ -259,6 +89,10 @@ impl View for BorderView {
 
     fn create(args: Self::Args<'_>) -> Self {
         args
+    }
+
+    fn interests(&self) -> Interest {
+        Interest::MOUSE_INSIDE
     }
 
     fn layout(&mut self, mut layout: Layout, space: Space) -> Size {
@@ -285,54 +119,60 @@ impl View for BorderView {
             .map(measure_text)
             .unwrap_or(Size::ZERO);
 
-        // TODO this needs some padding for the title_size
-        size.max(title_size) + sum
+        size.max(title_size + Size::new(1.0, 0.0)) + sum
     }
 
-    // TODO refactor this out so its on Border, so a Surface can draw a border natively
     fn draw(&mut self, mut render: Render) {
         let rect = render.surface.rect();
         let (w, h) = (rect.width() - 1, rect.height() - 1);
 
-        // TODO property for this
-        // let fg = if render.is_focused() {
-        //     render.theme.accent
-        // } else {
-        //     render.theme.outline
-        // };
+        let is_hovered = render.is_hovered();
+        let is_focused = render.is_focused();
 
-        let fg = render.theme.outline;
+        let style = match self.class {
+            StyleKind::Deferred(style) => (style)(render.palette, is_hovered, is_focused),
+            StyleKind::Direct(style) => style,
+        };
 
-        let pixel = Pixel::new(self.border.top).fg(fg);
+        let color = match (is_focused, is_hovered) {
+            (true, true) => style
+                .border_focused
+                .unwrap_or(style.border_hovered.unwrap_or(style.border)),
+            (true, false) => style.border_focused.unwrap_or(style.border),
+            (false, true) => style.border_hovered.unwrap_or(style.border),
+            (false, false) => style.border,
+        };
+
+        let pixel = Pixel::new(self.border.top).fg(color);
         for x in 1..=w {
             render.surface.set((x, 0), pixel);
         }
 
-        let pixel = Pixel::new(self.border.bottom).fg(fg);
+        let pixel = Pixel::new(self.border.bottom).fg(color);
         for x in 1..=w {
             render.surface.set((x, h), pixel);
         }
 
-        let pixel = Pixel::new(self.border.left).fg(fg);
+        let pixel = Pixel::new(self.border.left).fg(color);
         for y in 1..=h {
             render.surface.set((0, y), pixel);
         }
 
-        let pixel = Pixel::new(self.border.right).fg(fg);
+        let pixel = Pixel::new(self.border.right).fg(color);
         for y in 1..=h {
             render.surface.set((w, y), pixel);
         }
 
-        let pixel = Pixel::new(self.border.left_top).fg(fg);
+        let pixel = Pixel::new(self.border.left_top).fg(color);
         render.surface.set((0, 0), pixel);
 
-        let pixel = Pixel::new(self.border.right_top).fg(fg);
+        let pixel = Pixel::new(self.border.right_top).fg(color);
         render.surface.set((w, 0), pixel);
 
-        let pixel = Pixel::new(self.border.left_bottom).fg(fg);
+        let pixel = Pixel::new(self.border.left_bottom).fg(color);
         render.surface.set((0, h), pixel);
 
-        let pixel = Pixel::new(self.border.right_bottom).fg(fg);
+        let pixel = Pixel::new(self.border.right_bottom).fg(color);
         render.surface.set((w, h), pixel);
 
         if let Some(title) = &self.title {
@@ -346,7 +186,7 @@ impl View for BorderView {
             };
 
             let mut start = 0.0;
-            let fg = render.theme.foreground;
+            let fg = style.title;
             for grapheme in title.graphemes(true) {
                 if grapheme.chars().all(|c| c.is_whitespace()) {
                     start += grapheme.width() as f32;
@@ -362,10 +202,20 @@ impl View for BorderView {
     }
 }
 
-pub fn border() -> BorderView {
-    BorderView::default()
+pub fn border(border: Border) -> BorderView {
+    BorderView {
+        border,
+        title: None,
+        align: Align::Min,
+        class: StyleKind::deferred(BorderStyle::default),
+    }
 }
 
-pub fn frame(title: impl ToCompactString) -> BorderView {
-    BorderView::default().title(title)
+pub fn frame(border: Border, title: impl ToCompactString) -> BorderView {
+    BorderView {
+        border,
+        title: Some(title.to_compact_string()),
+        align: Align::Min,
+        class: StyleKind::deferred(BorderStyle::default),
+    }
 }
