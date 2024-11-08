@@ -42,7 +42,7 @@ pub mod label;
 #[doc(inline)]
 pub use label::Label;
 
-mod list;
+pub mod list;
 pub use list::{CrossAlign, Justify, List};
 
 mod wrap;

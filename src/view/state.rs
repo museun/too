@@ -207,9 +207,14 @@ impl State {
         let root = self.nodes.root;
         self.layout.nodes[root].rect = rect;
 
-        self.begin();
-        let resp = show(&Ui::new(self));
-        self.end();
+        let resp = {
+            #[cfg(feature = "profile")]
+            profiling::scope!("build ui");
+            self.begin();
+            let resp = show(&Ui::new(self));
+            self.end();
+            resp
+        };
 
         self.layout.compute_all(
             &self.nodes, //
@@ -790,9 +795,7 @@ impl LayoutNodes {
                 continue;
             }
 
-            let offset = pos.to_vec2();
-            let rect = layout.rect;
-            layout.rect = layout.rect.translate(offset);
+            layout.rect = layout.rect.translate(pos.to_vec2());
             queue.extend(node.children.iter().map(|&id| (id, layout.rect.min)))
         }
     }

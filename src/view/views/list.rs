@@ -5,9 +5,11 @@ use crate::{
     math::{remap, vec2, Pos2, Rect, Vec2},
     view::{
         geom::{Size, Space},
-        Builder, Elements, EventCtx, Handled, Interest, Layout, Render, Ui, View, ViewEvent,
+        style::StyleKind,
+        Builder, Elements, EventCtx, Handled, Interest, Layout, Palette, Render, Ui, View,
+        ViewEvent,
     },
-    Key, Pixel,
+    Key, Pixel, Rgba,
 };
 
 #[derive(Copy, Clone, Debug, Default, PartialEq)]
@@ -117,6 +119,7 @@ struct ListParams {
     total_gap: f32,
 }
 
+// TODO move the scrolling stuff on this so other types can also do scrolling
 #[derive(Default)]
 struct ScrollState {
     scrollable: bool,
@@ -124,7 +127,42 @@ struct ScrollState {
     knob_held: bool,
 }
 
-#[derive(Default)]
+pub type ScrollClass = fn(&Palette, Axis) -> ScrollStyle;
+
+#[derive(Copy, Clone)]
+pub struct ScrollStyle {
+    pub knob: char,
+    pub knob_grab: Option<char>,
+    pub track: Option<char>,
+    pub track_color: Option<Rgba>,
+    pub knob_color: Rgba,
+    pub knob_grab_color: Option<Rgba>,
+    pub background: Rgba,
+}
+
+impl ScrollStyle {
+    pub fn default(palette: &Palette, axis: Axis) -> Self {
+        Self {
+            knob: axis.main((
+                Elements::THICK_HORIZONTAL_LINE,
+                Elements::THICK_VERTICAL_LINE,
+            )),
+            knob_grab: Some(axis.main((
+                Elements::MEDIUM_RECT, //
+                Elements::LARGE_RECT,
+            ))),
+            track: Some(axis.main((
+                Elements::DASH_HORIZONTAL_LINE, //
+                Elements::DASH_VERTICAL_LINE,
+            ))),
+            track_color: None,
+            knob_color: palette.primary,
+            knob_grab_color: Some(palette.secondary),
+            background: palette.background,
+        }
+    }
+}
+
 #[must_use = "a view does nothing unless `show()` or `show_children()` is called"]
 pub struct List {
     axis: Axis,
@@ -133,6 +171,7 @@ pub struct List {
     gap: f32,
     state: ListState,
     scroll: ScrollState,
+    class: StyleKind<ScrollClass, ScrollStyle>,
 }
 
 impl List {
@@ -168,31 +207,56 @@ impl List {
         self.scroll.scrollable = scrollable;
         self
     }
+
+    pub const fn class(mut self, class: ScrollClass) -> Self {
+        self.class = StyleKind::Deferred(class);
+        self
+    }
+
+    pub const fn style(mut self, style: ScrollStyle) -> Self {
+        self.class = StyleKind::Direct(style);
+        self
+    }
 }
 
 impl List {
     fn draw_scrollbar(&mut self, render: &mut Render) {
+        let style = match self.class {
+            StyleKind::Deferred(style) => (style)(render.palette, self.axis),
+            StyleKind::Direct(style) => style,
+        };
+
         let rect = render.local_rect();
         let extent = self.axis.cross(rect.right_bottom() - 1);
 
-        // TODO style
-        render.surface.fill_rect(
-            Rect::from_min_size(self.axis.pack(0, extent), rect.size()),
-            "#113",
-        );
+        // TODO track
+
+        let track = style.track.unwrap_or(' ');
+        let track_color = style.track_color.unwrap_or(render.palette.outline);
+
+        let bar_rect = Rect::from_min_size(self.axis.pack(0, extent), rect.size());
+        render
+            .surface
+            .fill_rect(bar_rect, style.background)
+            .fill_rect_with(bar_rect, Pixel::new(track).fg(track_color));
 
         let pos: Pos2 = self.axis.pack(self.knob_index(rect), extent);
         let hovered =
             self.scroll.knob_held || (render.mouse_pos() == pos + render.rect().left_top());
 
-        // TODO axis + style
-        let ch = if hovered {
-            Elements::LARGE_RECT
+        let knob = if hovered {
+            style.knob_grab.unwrap_or(style.knob)
         } else {
-            Elements::THICK_VERTICAL_LINE
+            style.knob
         };
 
-        render.surface.set(pos, Pixel::new(ch).fg("#F00"));
+        let color = if hovered {
+            style.knob_grab_color.unwrap_or(style.knob_color)
+        } else {
+            style.knob_color
+        };
+
+        render.surface.set(pos, Pixel::new(knob).fg(color));
     }
 
     fn knob_offset(&self, size: Vec2) -> i32 {
@@ -211,6 +275,7 @@ impl List {
     fn scroll(&mut self, delta: i32, rect: Rect) {
         let total = self.state.main_sum().round() as usize;
         let max = total.saturating_sub(self.axis.main::<i32>(rect.size()) as usize);
+        let old = self.scroll.pos;
         self.scroll.pos = self
             .scroll
             .pos
@@ -218,16 +283,20 @@ impl List {
             .clamp(0, max);
     }
 
+    #[cfg_attr(feature = "profile", profiling::function)]
     fn flex_layout(&mut self, layout: &mut Layout, args: ListParams) {
         let node = layout.nodes.get_current();
         self.state.flex = 0.0;
+        let max = args.max_major.round() as usize;
 
         // non-flex stuff
-        for i in 0..node.children.len() {
-            let flex = layout.flex(node.children[i]);
+
+        for (i, &child) in node.children.iter().enumerate() {
+            let flex = layout.flex(child);
             if flex.has_flex() {
                 self.state.flex += flex.factor();
                 self.state.main[i] = 0.0;
+
                 continue;
             }
 
@@ -237,7 +306,7 @@ impl List {
                 // self.axis.pack(args.max_major, args.max_minor),
             );
 
-            let size = layout.compute(node.children[i], space);
+            let size = layout.compute(child, space);
             self.state.main[i] = self.axis.main(size);
             self.state.cross[i] = self.axis.cross(size);
         }
@@ -247,8 +316,8 @@ impl List {
         let division = remaining / self.state.flex;
         // assert!(division.is_finite());
 
-        for i in 0..node.children.len() {
-            let flex = layout.flex(node.children[i]);
+        for (i, &child) in node.children.iter().enumerate() {
+            let flex = layout.flex(child);
             if !flex.has_flex() {
                 continue;
             }
@@ -263,7 +332,7 @@ impl List {
                 self.axis.pack(major, args.max_minor),
             );
 
-            let size = layout.compute(node.children[i], space);
+            let size = layout.compute(child, space);
             self.state.main[i] = self.axis.main(size);
             self.state.cross[i] = self.axis.cross(size);
         }
@@ -273,8 +342,8 @@ impl List {
         let division = remaining / self.state.flex;
         // assert!(division.is_finite());
 
-        for i in 0..node.children.len() {
-            let flex = layout.flex(node.children[i]);
+        for (i, &child) in node.children.iter().enumerate() {
+            let flex = layout.flex(child);
             if !flex.has_flex() {
                 continue;
             }
@@ -290,7 +359,7 @@ impl List {
                 self.axis.pack(major, args.max_minor),
             );
 
-            let size = layout.compute(node.children[i], space);
+            let size = layout.compute(child, space);
             self.state.main[i] = self.axis.main(size);
             self.state.cross[i] = self.axis.cross(size);
         }
@@ -392,6 +461,7 @@ impl View for List {
             ViewEvent::MouseDrag {
                 current,
                 inside: true,
+                modifiers,
                 ..
             } if self.scroll.knob_held => {
                 let len = self.state.main_sum() - self.axis.main::<f32>(rect.size());
@@ -400,6 +470,7 @@ impl View for List {
                 let delta: i32 = self.axis.main(current - main);
                 let extent: i32 = self.axis.main(rect.size() - 1);
 
+                let old = self.scroll.pos;
                 self.scroll.pos = remap(
                     delta as f32, //
                     0.0..=extent as f32,
@@ -413,20 +484,20 @@ impl View for List {
             }
 
             ViewEvent::MouseDrag {
-                start,
-                current,
                 delta,
                 inside: true,
+                modifiers,
                 ..
             } => {
-                // TODO scroll acceleration
-                self.scroll(self.axis.main(-delta), rect);
+                let scale = if modifiers.is_ctrl() { 3 } else { 1 };
+                self.scroll(self.axis.main::<i32>(-delta) * scale, rect);
                 Handled::Sink
             }
 
-            ViewEvent::MouseScroll { delta, .. } => {
+            ViewEvent::MouseScroll { delta, modifiers } => {
                 // TODO modifiers
-                self.scroll(self.axis.main(delta), rect);
+                let scale = if modifiers.is_ctrl() { 3 } else { 1 };
+                self.scroll(self.axis.main::<i32>(delta) * scale, rect);
                 Handled::Sink
             }
 
@@ -494,21 +565,26 @@ impl View for List {
         let mut main = f32::clamp(self.state.main_sum() + total_gap, min_major, max_major);
         let cross = f32::clamp(self.state.cross_sum(), min_minor, max_minor);
 
-        for (i, child_main) in self
-            .justify
-            .layout(&self.state.main, main, self.gap)
-            .enumerate()
         {
-            let child_cross = self.cross_align.align(cross, self.state.cross[i]);
-            let offset: Pos2 = self
-                .axis
-                .pack(child_main - self.scroll.pos as f32, child_cross);
-            let node = node.children[i];
+            #[cfg(feature = "profile")]
+            profiling::scope!("layout elements");
 
-            if self.axis.main::<f32>(offset) >= total_extent {
-                layout.remove(node);
-            } else {
-                layout.set_position(node, offset);
+            for (i, child_main) in self
+                .justify
+                .layout(&self.state.main, main, self.gap)
+                .enumerate()
+            {
+                let child_cross = self.cross_align.align(cross, self.state.cross[i]);
+                let offset: Pos2 = self
+                    .axis
+                    .pack(child_main - self.scroll.pos as f32, child_cross);
+                let node = node.children[i];
+
+                if self.axis.main::<f32>(offset) >= total_extent {
+                    layout.remove(node);
+                } else {
+                    layout.set_position(node, offset);
+                }
             }
         }
 
@@ -527,7 +603,11 @@ impl View for List {
         }
 
         let current = render.nodes.get_current();
+
         for &child in &current.children {
+            if !render.layout.get(child).is_some() {
+                break;
+            }
             render.draw(child)
         }
 
@@ -547,5 +627,6 @@ pub const fn list() -> List {
             pos: 0,
             knob_held: false,
         },
+        class: StyleKind::deferred(ScrollStyle::default),
     }
 }
