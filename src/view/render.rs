@@ -12,17 +12,22 @@ use super::{
 
 pub struct CroppedSurface<'a> {
     pub rect: Rect,
+    pub(super) clip_rect: Rect,
     pub surface: &'a mut Surface,
 }
 
 impl<'a> CroppedSurface<'a> {
     pub fn from_surface(surface: &'a mut Surface) -> Self {
-        Self::new(surface.rect(), surface)
+        Self::new(surface.rect(), surface.rect(), surface)
     }
 
-    pub fn new(rect: Rect, surface: &'a mut Surface) -> Self {
+    pub fn new(rect: Rect, clip_rect: Rect, surface: &'a mut Surface) -> Self {
         let rect = surface.rect().intersection(rect);
-        Self { rect, surface }
+        Self {
+            rect,
+            clip_rect,
+            surface,
+        }
     }
 
     #[inline]
@@ -33,7 +38,7 @@ impl<'a> CroppedSurface<'a> {
         }
 
         let pos = pos.into() + offset;
-        if !self.rect.contains(pos) {
+        if !self.clip_rect.contains(pos) {
             return false;
         }
         self.surface.set(pos, cell);
@@ -47,7 +52,7 @@ impl<'a> CroppedSurface<'a> {
         }
 
         let pos = pos.into() + offset;
-        if !self.rect.contains(pos) {
+        if !self.clip_rect.contains(pos) {
             return;
         }
 
@@ -61,15 +66,15 @@ impl<'a> CroppedSurface<'a> {
     }
 
     pub fn fill_with(&mut self, pixel: impl Into<Pixel>) -> &mut Self {
-        self.surface.fill(self.rect, pixel);
+        self.surface.fill(self.clip_rect, pixel);
         self
     }
 
     pub fn fill_rect(&mut self, rect: impl Into<Rect>, bg: impl Into<Rgba>) -> &mut Self {
         let rect = rect.into();
         // TODO ensure these can't overflow
-        let rect = rect.translate(self.rect.left_top().to_vec2());
-        let rect = rect.intersection(self.rect);
+        let rect = rect.translate(self.clip_rect.left_top().to_vec2());
+        let rect = rect.intersection(self.clip_rect);
         self.surface.fill(rect, bg.into());
         self
     }
@@ -77,8 +82,8 @@ impl<'a> CroppedSurface<'a> {
     pub fn fill_rect_with(&mut self, rect: impl Into<Rect>, pixel: impl Into<Pixel>) -> &mut Self {
         let rect = rect.into();
         // TODO ensure these can't overflow
-        let rect = rect.translate(self.rect.left_top().to_vec2());
-        let rect = rect.intersection(self.rect);
+        let rect = rect.translate(self.clip_rect.left_top().to_vec2());
+        let rect = rect.intersection(self.clip_rect);
         self.surface.fill(rect, pixel.into());
         self
     }
@@ -86,6 +91,7 @@ impl<'a> CroppedSurface<'a> {
     pub fn expand(&mut self, size: impl Into<Vec2>) -> CroppedSurface<'_> {
         CroppedSurface {
             rect: self.rect.expand2(size.into()).intersection(self.rect),
+            clip_rect: self.clip_rect,
             surface: self.surface,
         }
     }
@@ -99,9 +105,10 @@ impl<'a> CroppedSurface<'a> {
     }
 
     pub fn fill_up_to_with(&mut self, size: impl Into<Vec2>, pixel: impl Into<Pixel>) {
-        let rect = Rect::from_min_size(self.rect.min, size.into());
+        let rect = Rect::from_min_size(self.clip_rect.min, size.into());
         CroppedSurface {
-            rect: rect.intersection(self.rect),
+            rect: rect.intersection(self.clip_rect),
+            clip_rect: self.clip_rect,
             surface: self.surface,
         }
         .fill_with(pixel);
@@ -132,6 +139,7 @@ impl<'a, 'b> Render<'a, 'b> {
     pub fn draw(&mut self, id: ViewId) {
         let surface = CroppedSurface {
             rect: self.surface.rect,
+            clip_rect: self.surface.clip_rect,
             surface: self.surface.surface,
         };
         self.render.draw(

@@ -48,6 +48,10 @@ impl<'a> Layout<'a> {
         self.layout.enable_clipping(self.nodes);
     }
 
+    pub fn remove(&mut self, id: ViewId) {
+        self.layout.remove(id);
+    }
+
     pub fn set_position(&mut self, id: ViewId, pos: impl Into<Pos2>) {
         self.layout.set_position(id, pos);
     }

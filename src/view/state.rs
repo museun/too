@@ -166,7 +166,7 @@ impl State {
             &self.input,
             &self.palette.borrow(),
             &mut self.animations,
-            CroppedSurface::new(rect, surface),
+            CroppedSurface::new(rect, rect, surface),
         );
 
         DEBUG.with(|c| {
@@ -523,31 +523,24 @@ impl RenderNodes {
             return;
         };
 
-        let mut rect = node.rect;
+        let rect = node.rect;
         if rect.width() == 0 || rect.height() == 0 {
             return;
         }
 
-        // if let Some(pid) = nodes
-        //     .get(id)
-        //     .and_then(|node| node.parent)
-        //     .filter(|&c| c != nodes.root)
-        // {
-        // if let Some(parent) = layout.nodes.get(pid) {
-        //     if !parent.rect.contains_rect_inclusive(rect) {
-        //         return;
-        //     }
-        // }
-        // }
+        let mut clip_rect = rect;
 
         if let Some(parent) = node.clipped_by {
             let Some(parent) = layout.nodes.get(parent) else {
                 return;
             };
-            if !rect.partial_contains_rect(parent.rect) {
-                return;
-            }
-            rect = parent.rect.intersection(rect);
+            // if !rect.partial_contains_rect(parent.rect) {
+            //     return;
+            // }
+            clip_rect = parent.rect.intersection(rect);
+        }
+        if clip_rect.width() == 0 || clip_rect.height() == 0 {
+            return;
         }
 
         nodes.begin(id);
@@ -557,6 +550,7 @@ impl RenderNodes {
                 self.axis_stack.push(node.primary_axis());
                 let surface = CroppedSurface {
                     rect,
+                    clip_rect,
                     surface: surface.surface,
                 };
                 let render = Render {
@@ -745,6 +739,10 @@ impl LayoutNodes {
         self.interest.push_layer(nodes.current());
     }
 
+    pub fn remove(&mut self, id: ViewId) {
+        self.nodes.remove(id);
+    }
+
     pub fn set_position(&mut self, id: ViewId, pos: impl Into<Pos2>) {
         if let Some(node) = self.nodes.get_mut(id) {
             let offset = pos.into().to_vec2();
@@ -793,6 +791,7 @@ impl LayoutNodes {
             }
 
             let offset = pos.to_vec2();
+            let rect = layout.rect;
             layout.rect = layout.rect.translate(offset);
             queue.extend(node.children.iter().map(|&id| (id, layout.rect.min)))
         }

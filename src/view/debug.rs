@@ -56,7 +56,7 @@ impl DebugNode {
             debug_nodes.push(DebugNode {
                 id,
                 name: short_name(view.type_name()),
-                rect: layout.get(id).unwrap().rect,
+                rect: layout.get(id).map(|c| c.rect).unwrap_or_default(),
                 debug: format!("{view:#?}").split('\n').map(String::from).collect(),
                 children,
                 flex: view.flex(),
@@ -75,7 +75,7 @@ impl DebugNode {
         Self {
             id: root,
             name: short_name(view.type_name()),
-            rect: layout.get(root).unwrap().rect,
+            rect: layout.get(root).map(|c| c.rect).unwrap_or_default(),
             debug: format!("{view:#?}").split('\n').map(String::from).collect(),
             children,
             flex: view.flex(),

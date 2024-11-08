@@ -13,7 +13,7 @@ use crate::{
 };
 
 #[derive(Copy, Clone, Default, Debug, PartialEq)]
-pub enum State {
+pub enum ButtonState {
     Hovered,
     Held,
     Clicked,
@@ -29,19 +29,24 @@ pub struct ButtonStyle {
 }
 
 impl ButtonStyle {
-    fn common(palette: &Palette, state: State, primary: Rgba, mut text_color: Rgba) -> ButtonStyle {
+    fn common(
+        palette: &Palette,
+        state: ButtonState,
+        primary: Rgba,
+        mut text_color: Rgba,
+    ) -> ButtonStyle {
         let background = primary;
         let is_dark = background.is_dark();
 
         let background = match state {
-            State::Hovered => palette.accent,
-            State::Held => palette.secondary,
-            State::Clicked => palette.primary,
-            State::Disabled => {
+            ButtonState::Hovered => palette.accent,
+            ButtonState::Held => palette.secondary,
+            ButtonState::Clicked => palette.primary,
+            ButtonState::Disabled => {
                 text_color = palette.outline;
                 palette.surface
             }
-            State::None => background,
+            ButtonState::None => background,
         };
 
         ButtonStyle {
@@ -50,11 +55,11 @@ impl ButtonStyle {
         }
     }
 
-    pub fn default(palette: &Palette, state: State) -> Self {
+    pub fn default(palette: &Palette, state: ButtonState) -> Self {
         Self::common(palette, state, palette.outline, palette.foreground)
     }
 
-    pub fn success(palette: &Palette, state: State) -> Self {
+    pub fn success(palette: &Palette, state: ButtonState) -> Self {
         let fg = if palette.is_dark() {
             palette.background
         } else {
@@ -63,7 +68,7 @@ impl ButtonStyle {
         Self::common(palette, state, palette.success, fg)
     }
 
-    pub fn info(palette: &Palette, state: State) -> Self {
+    pub fn info(palette: &Palette, state: ButtonState) -> Self {
         let fg = if palette.is_dark() {
             palette.background
         } else {
@@ -72,7 +77,7 @@ impl ButtonStyle {
         Self::common(palette, state, palette.info, fg)
     }
 
-    pub fn warning(palette: &Palette, state: State) -> Self {
+    pub fn warning(palette: &Palette, state: ButtonState) -> Self {
         let fg = if palette.is_dark() {
             palette.background
         } else {
@@ -81,7 +86,7 @@ impl ButtonStyle {
         Self::common(palette, state, palette.warning, fg)
     }
 
-    pub fn danger(palette: &Palette, state: State) -> Self {
+    pub fn danger(palette: &Palette, state: ButtonState) -> Self {
         let fg = if palette.is_dark() {
             palette.background
         } else {
@@ -91,7 +96,7 @@ impl ButtonStyle {
     }
 }
 
-pub type ButtonClass = fn(&Palette, State) -> ButtonStyle;
+pub type ButtonClass = fn(&Palette, ButtonState) -> ButtonStyle;
 
 pub fn button(label: impl ToCompactString) -> Button {
     Button::new(label)
@@ -102,7 +107,7 @@ pub fn button(label: impl ToCompactString) -> Button {
 pub struct Button {
     label: CompactString,
     margin: Margin,
-    state: State,
+    state: ButtonState,
     class: StyleKind<ButtonClass, ButtonStyle>,
 }
 
@@ -111,7 +116,7 @@ impl Button {
         Button {
             label: label.to_compact_string(),
             margin: Margin::ZERO,
-            state: State::None,
+            state: ButtonState::None,
             class: StyleKind::Deferred(ButtonStyle::default),
         }
     }
@@ -122,7 +127,7 @@ impl Button {
     }
 
     pub const fn disabled(mut self, disabled: bool) -> Self {
-        self.state = State::Disabled;
+        self.state = ButtonState::Disabled;
         self
     }
 
@@ -155,8 +160,8 @@ impl View for Button {
         self.margin = builder.margin;
 
         let state = self.state;
-        if let State::Clicked = self.state {
-            self.state = State::Hovered
+        if let ButtonState::Clicked = self.state {
+            self.state = ButtonState::Hovered
         }
 
         Response { state }
@@ -167,15 +172,15 @@ impl View for Button {
     }
 
     fn event(&mut self, event: ViewEvent, ctx: EventCtx) -> Handled {
-        if matches!(self.state, State::Disabled) {
+        if matches!(self.state, ButtonState::Disabled) {
             return Handled::Bubble;
         }
 
         self.state = match event {
-            ViewEvent::MouseClicked { inside: true, .. } => State::Clicked,
-            ViewEvent::MouseHeld { inside: true, .. } => State::Held,
-            ViewEvent::MouseEntered => State::Hovered,
-            ViewEvent::MouseLeave => State::None,
+            ViewEvent::MouseClicked { inside: true, .. } => ButtonState::Clicked,
+            ViewEvent::MouseHeld { inside: true, .. } => ButtonState::Held,
+            ViewEvent::MouseEntered => ButtonState::Hovered,
+            ViewEvent::MouseLeave => ButtonState::None,
             _ => return Handled::Bubble,
         };
 
@@ -206,23 +211,23 @@ impl View for Button {
 
 #[derive(Copy, Clone, Debug, Default, PartialEq)]
 pub struct Response {
-    state: State,
+    state: ButtonState,
 }
 
 impl Response {
     pub const fn clicked(&self) -> bool {
-        matches!(self.state, State::Clicked)
+        matches!(self.state, ButtonState::Clicked)
     }
 
     pub const fn hovered(&self) -> bool {
-        matches!(self.state, State::Hovered)
+        matches!(self.state, ButtonState::Hovered)
     }
 
     pub const fn held(&self) -> bool {
-        matches!(self.state, State::Held)
+        matches!(self.state, ButtonState::Held)
     }
 
     pub const fn disabled(&self) -> bool {
-        matches!(self.state, State::Disabled)
+        matches!(self.state, ButtonState::Disabled)
     }
 }

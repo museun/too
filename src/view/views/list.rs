@@ -2,9 +2,8 @@ use core::f32;
 
 use crate::{
     layout::Axis,
-    math::{pos2, remap, vec2, Pos2, Rect, Vec2},
+    math::{remap, vec2, Pos2, Rect, Vec2},
     view::{
-        debug,
         geom::{Size, Space},
         Builder, Elements, EventCtx, Handled, Interest, Layout, Render, Ui, View, ViewEvent,
     },
@@ -101,12 +100,12 @@ impl ListState {
         self.cross.resize(len, 0.0);
     }
 
-    fn main_sum(&self, offset: usize) -> f32 {
-        self.main.iter().skip(offset).copied().sum()
+    fn main_sum(&self) -> f32 {
+        self.main.iter().copied().sum()
     }
 
-    fn cross_sum(&self, offset: usize) -> f32 {
-        self.cross.iter().skip(offset).copied().fold(0.0, f32::max)
+    fn cross_sum(&self) -> f32 {
+        self.cross.iter().copied().fold(0.0, f32::max)
     }
 }
 
@@ -119,6 +118,13 @@ struct ListParams {
 }
 
 #[derive(Default)]
+struct ScrollState {
+    scrollable: bool,
+    pos: usize,
+    knob_held: bool,
+}
+
+#[derive(Default)]
 #[must_use = "a view does nothing unless `show()` or `show_children()` is called"]
 pub struct List {
     axis: Axis,
@@ -126,10 +132,7 @@ pub struct List {
     cross_align: CrossAlign,
     gap: f32,
     state: ListState,
-    scrollable: bool,
-    pos: usize,
-    last: usize,
-    knob_held: bool,
+    scroll: ScrollState,
 }
 
 impl List {
@@ -162,7 +165,7 @@ impl List {
     }
 
     pub const fn scrollable(mut self, scrollable: bool) -> Self {
-        self.scrollable = scrollable;
+        self.scroll.scrollable = scrollable;
         self
     }
 }
@@ -179,7 +182,8 @@ impl List {
         );
 
         let pos: Pos2 = self.axis.pack(self.knob_index(rect), extent);
-        let hovered = self.knob_held || (render.mouse_pos() == pos + render.rect().left_top());
+        let hovered =
+            self.scroll.knob_held || (render.mouse_pos() == pos + render.rect().left_top());
 
         // TODO axis + style
         let ch = if hovered {
@@ -192,28 +196,26 @@ impl List {
     }
 
     fn knob_offset(&self, size: Vec2) -> i32 {
-        let total = self.state.main.len().saturating_sub(1) as f32;
+        let total = self.state.main_sum() - self.axis.main::<f32>(size);
         let extent = self.axis.main(size - 1);
-        remap(self.pos as f32, 0.0..=total, 0.0..=extent).round() as i32
+        remap(self.scroll.pos as f32, 0.0..=total, 0.0..=extent).round() as i32
     }
 
     fn knob_index(&self, rect: Rect) -> i32 {
-        let total = self.state.main.len() as f32 - 1.0;
+        let total = self.state.main_sum() - self.axis.main::<f32>(rect.size());
         let size = rect.right_bottom() - 1;
         let extent: f32 = self.axis.main(size);
-        remap(self.pos as f32, 0.0..=total, 0.0..=extent).round() as i32
+        remap(self.scroll.pos as f32, 0.0..=total, 0.0..=extent).round() as i32
     }
 
     fn scroll(&mut self, delta: i32, rect: Rect) {
-        let total = self.state.main.len().saturating_sub(1);
-        self.pos = self
+        let total = self.state.main_sum().round() as usize;
+        let max = total.saturating_sub(self.axis.main::<i32>(rect.size()) as usize);
+        self.scroll.pos = self
+            .scroll
             .pos
             .saturating_add_signed(delta as isize)
-            .clamp(0, total);
-
-        // let extent: f32 = self.axis.main(rect.size() - 1);
-
-        // let p = remap(self.pos as f32, 0.0..=total, 0.0..=extent);
+            .clamp(0, max);
     }
 
     fn flex_layout(&mut self, layout: &mut Layout, args: ListParams) {
@@ -221,7 +223,7 @@ impl List {
         self.state.flex = 0.0;
 
         // non-flex stuff
-        for i in self.pos..node.children.len() {
+        for i in 0..node.children.len() {
             let flex = layout.flex(node.children[i]);
             if flex.has_flex() {
                 self.state.flex += flex.factor();
@@ -241,14 +243,11 @@ impl List {
         }
 
         // expanded stuff
-        let remaining = f32::max(
-            args.max_major - args.total_gap - self.state.main_sum(self.pos),
-            0.0,
-        );
+        let remaining = f32::max(args.max_major - args.total_gap - self.state.main_sum(), 0.0);
         let division = remaining / self.state.flex;
         // assert!(division.is_finite());
 
-        for i in self.pos..node.children.len() {
+        for i in 0..node.children.len() {
             let flex = layout.flex(node.children[i]);
             if !flex.has_flex() {
                 continue;
@@ -270,14 +269,11 @@ impl List {
         }
 
         // flex stuff
-        let remaining = f32::max(
-            args.max_major - args.total_gap - self.state.main_sum(self.pos),
-            0.0,
-        );
+        let remaining = f32::max(args.max_major - args.total_gap - self.state.main_sum(), 0.0);
         let division = remaining / self.state.flex;
         // assert!(division.is_finite());
 
-        for i in self.pos..node.children.len() {
+        for i in 0..node.children.len() {
             let flex = layout.flex(node.children[i]);
             if !flex.has_flex() {
                 continue;
@@ -328,8 +324,11 @@ impl View for List {
     fn update(&mut self, args: Self::Args<'_>, ui: &Ui) -> Self::Response {
         *self = Self {
             state: std::mem::take(&mut self.state),
-            pos: self.pos,
-            knob_held: self.knob_held,
+            scroll: ScrollState {
+                pos: self.scroll.pos,
+                knob_held: self.scroll.knob_held,
+                ..args.scroll
+            },
             ..args
         }
     }
@@ -339,7 +338,7 @@ impl View for List {
     }
 
     fn interests(&self) -> Interest {
-        if self.scrollable {
+        if self.scroll.scrollable {
             Interest::MOUSE | Interest::FOCUS_INPUT
         } else {
             Interest::NONE
@@ -347,7 +346,7 @@ impl View for List {
     }
 
     fn event(&mut self, event: ViewEvent, ctx: EventCtx) -> Handled {
-        if !self.scrollable {
+        if !self.scroll.scrollable {
             return Handled::Bubble;
         }
 
@@ -378,7 +377,7 @@ impl View for List {
 
             ViewEvent::MouseMove { pos, .. } => {
                 if knob_pos != pos {
-                    self.knob_held = false;
+                    self.scroll.knob_held = false;
                 }
                 Handled::Sink
             }
@@ -386,7 +385,7 @@ impl View for List {
             ViewEvent::MouseHeld {
                 pos, inside: true, ..
             } => {
-                self.knob_held = knob_pos == pos;
+                self.scroll.knob_held = knob_pos == pos;
                 Handled::Sink
             }
 
@@ -394,21 +393,21 @@ impl View for List {
                 current,
                 inside: true,
                 ..
-            } if self.knob_held => {
-                let len = self.state.main.len().saturating_sub(1);
+            } if self.scroll.knob_held => {
+                let len = self.state.main_sum() - self.axis.main::<f32>(rect.size());
 
                 let main = self.axis.main((rect.left(), rect.top()));
                 let delta: i32 = self.axis.main(current - main);
                 let extent: i32 = self.axis.main(rect.size() - 1);
 
-                self.pos = remap(
+                self.scroll.pos = remap(
                     delta as f32, //
                     0.0..=extent as f32,
-                    0.0..=len as f32,
+                    0.0..=len,
                 )
                 .round() as usize;
 
-                self.pos = self.pos.clamp(0, len);
+                self.scroll.pos = self.scroll.pos.clamp(0, len.round() as usize);
 
                 Handled::Sink
             }
@@ -436,15 +435,20 @@ impl View for List {
     }
 
     fn layout(&mut self, mut layout: Layout, mut space: Space) -> Size {
-        layout.enable_clipping();
+        if self.scroll.scrollable {
+            layout.enable_clipping();
+        }
 
-        let margin: Size = if self.scrollable {
+        let margin: Size = if self.scroll.scrollable {
             self.axis.pack(0.0, 1.0)
         } else {
             Size::ZERO
         };
 
         space.max -= margin;
+
+        let total_extent = self.axis.main(space.max);
+        let start = self.scroll.pos;
 
         let node = layout.nodes.get_current();
         self.state.resize(node.children.len());
@@ -476,7 +480,7 @@ impl View for List {
             self.flex_layout(&mut layout, args);
 
             if align.is_stretch() {
-                let minor = f32::clamp(self.state.cross_sum(self.pos), min_minor, max_minor);
+                let minor = f32::clamp(self.state.cross_sum(), min_minor, max_minor);
                 let args = ListParams {
                     max_major,
                     min_minor: minor,
@@ -487,47 +491,29 @@ impl View for List {
             }
         }
 
-        let mut main = f32::clamp(
-            self.state.main_sum(self.pos) + total_gap,
-            min_major,
-            max_major,
-        );
-        let cross = f32::clamp(self.state.cross_sum(self.pos), min_minor, max_minor);
+        let mut main = f32::clamp(self.state.main_sum() + total_gap, min_major, max_major);
+        let cross = f32::clamp(self.state.cross_sum(), min_minor, max_minor);
 
-        let mut total = 0.0_f32;
         for (i, child_main) in self
             .justify
-            .layout(&self.state.main[self.pos..], main, self.gap)
+            .layout(&self.state.main, main, self.gap)
             .enumerate()
-            .map(|(i, main)| (i + self.pos, main))
         {
-            if total >= self.axis.main(space.max) {
-                break;
-            }
-
             let child_cross = self.cross_align.align(cross, self.state.cross[i]);
-            let offset: Pos2 = self.axis.pack(child_main, child_cross);
-
+            let offset: Pos2 = self
+                .axis
+                .pack(child_main - self.scroll.pos as f32, child_cross);
             let node = node.children[i];
-            layout.set_position(node, offset);
-            total += 1.0;
-            self.last += 1;
-        }
 
-        for &child in &node.children[..self.pos] {
-            layout.set_size(child, Vec2::ZERO);
-        }
-        for &child in node
-            .children
-            .get(self.pos + self.last + 1..)
-            .into_iter()
-            .flatten()
-        {
-            layout.set_size(child, Vec2::ZERO);
+            if self.axis.main::<f32>(offset) >= total_extent {
+                layout.remove(node);
+            } else {
+                layout.set_position(node, offset);
+            }
         }
 
         if main.is_infinite() {
-            main = self.state.main_sum(self.pos);
+            main = self.state.main_sum();
         }
 
         let size: Size = self.axis.pack(main, cross);
@@ -535,13 +521,13 @@ impl View for List {
     }
 
     fn draw(&mut self, mut render: Render) {
-        if !self.scrollable {
+        if !self.scroll.scrollable {
             self.default_draw(render);
             return;
         }
 
         let current = render.nodes.get_current();
-        for &child in current.children.iter().skip(self.pos).take(self.last) {
+        for &child in &current.children {
             render.draw(child)
         }
 
@@ -556,9 +542,10 @@ pub const fn list() -> List {
         cross_align: CrossAlign::Start,
         gap: 0.0,
         state: ListState::new(),
-        scrollable: false,
-        pos: 0,
-        last: 0,
-        knob_held: false,
+        scroll: ScrollState {
+            scrollable: false,
+            pos: 0,
+            knob_held: false,
+        },
     }
 }
