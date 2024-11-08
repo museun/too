@@ -1,11 +1,4 @@
-use too::{
-    view::{
-        self,
-        views::{list::ScrollStyle, shorthands::list, Constrain, CrossAlign, Fill},
-        Elements, Ui, ViewExt,
-    },
-    Rgba,
-};
+use too::view::{self, Ui};
 
 fn eval_args_run(view: impl FnMut(&Ui)) -> std::io::Result<()> {
     match std::env::args().nth(1).as_deref() {
