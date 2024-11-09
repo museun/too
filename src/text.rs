@@ -5,11 +5,12 @@ use unicode_segmentation::UnicodeSegmentation;
 use unicode_width::{UnicodeWidthChar, UnicodeWidthStr};
 
 use crate::{
+    layout::Align,
     math::{pos2, vec2, Rect, Vec2},
     Attribute, Cell, Color, Grapheme, Pixel, Surface,
 };
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub enum GraphemeKind<'a> {
     Cluster(Cow<'a, str>),
     Scalar(char),
@@ -150,13 +151,8 @@ impl<T: MeasureText> MeasureText for Option<T> {
     }
 }
 
-#[derive(Copy, Clone, Default, Debug, PartialEq)]
-pub enum Justification {
-    #[default]
-    Start,
-    Center,
-    End,
-}
+// TODO use a different type (we have a `Justify` now)
+pub type Justification = Align;
 
 pub struct Text<T: MeasureText> {
     pub text: T,
@@ -180,8 +176,8 @@ impl<T: MeasureText> Text<T> {
             fg: Color::Reset,
             bg: Color::Reuse,
             attribute: Attribute::RESET,
-            main: Justification::Start,
-            cross: Justification::Start,
+            main: Justification::Min,
+            cross: Justification::Min,
         }
     }
 
@@ -197,6 +193,13 @@ impl<T: MeasureText> Text<T> {
 
     pub fn attribute(mut self, attribute: Attribute) -> Self {
         self.attribute |= attribute;
+        self
+    }
+
+    pub fn maybe_attribute(mut self, attribute: Option<Attribute>) -> Self {
+        if let Some(attribute) = attribute {
+            self.attribute |= attribute
+        }
         self
     }
 
@@ -243,6 +246,7 @@ impl<T: MeasureText> Text<T> {
     }
 
     pub fn draw(&self, rect: Rect, surface: &mut Surface) {
+        #[derive(Debug)]
         struct Line<'a> {
             grapheme: GraphemeKind<'a>,
             x: i32,
@@ -261,9 +265,9 @@ impl<T: MeasureText> Text<T> {
             let w = grapheme.width() as i32;
             if w + width > available_width {
                 let x = match self.main {
-                    Justification::Start => 0,
+                    Justification::Min => 0,
                     Justification::Center => (available_width - width) / 2,
-                    Justification::End => available_width - width,
+                    Justification::Max => available_width - width,
                 };
 
                 let x = x + rect.left();
@@ -274,9 +278,7 @@ impl<T: MeasureText> Text<T> {
             }
 
             match grapheme {
-                GraphemeKind::Cluster(c) => {
-                    temp.push_str(&c);
-                }
+                GraphemeKind::Cluster(c) => temp.push_str(&c),
                 GraphemeKind::Scalar(s) => temp.push(s),
             }
             width += w;
@@ -284,9 +286,9 @@ impl<T: MeasureText> Text<T> {
 
         if !temp.is_empty() {
             let x = match self.main {
-                Justification::Start => 0,
+                Justification::Min => 0,
                 Justification::Center => (available_width - width) / 2,
-                Justification::End => available_width - width,
+                Justification::Max => available_width - width,
             };
 
             let x = x + rect.left();
@@ -298,26 +300,24 @@ impl<T: MeasureText> Text<T> {
         let total = lines.len() as i32;
 
         let y = match self.cross {
-            Justification::Start => rect.top(),
+            Justification::Min => rect.top(),
             Justification::Center => rect.top() + (available_height - total) / 2,
-            Justification::End => rect.bottom() - total,
+            Justification::Max => rect.bottom() - total,
         };
 
         for line in lines {
-            let cell = match line.grapheme {
-                GraphemeKind::Cluster(c) => Cell::Grapheme(
-                    Grapheme::new(c)
-                        .fg(self.fg)
-                        .bg(self.bg)
-                        .attribute(self.attribute),
-                ),
-                GraphemeKind::Scalar(s) => Cell::Pixel(
-                    Pixel::new(s)
-                        .fg(self.fg)
-                        .bg(self.bg)
-                        .attribute(self.attribute),
-                ),
+            if line.x.is_negative() || line.y.is_negative() {
+                continue;
+            }
+
+            let mut cell = match line.grapheme {
+                GraphemeKind::Cluster(c) => Cell::Grapheme(Grapheme::new(c)),
+                GraphemeKind::Scalar(s) => Cell::Pixel(Pixel::new(s)),
             };
+            cell.set_fg(self.fg);
+            cell.set_bg(self.bg);
+            cell.set_attribute(self.attribute);
+
             surface.set(pos2(line.x, line.y + y), cell);
         }
     }
@@ -337,7 +337,7 @@ mod util {
             .chain(digits(d.unsigned_abs()))
     }
 
-    pub fn count_digits(d: usize) -> usize {
+    pub const fn count_digits(d: usize) -> usize {
         let (mut len, mut n) = (1, 1);
         while len < 20 {
             n *= 10;

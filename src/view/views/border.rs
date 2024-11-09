@@ -43,13 +43,22 @@ impl BorderStyle {
     }
 }
 
-#[derive(Debug)]
 #[must_use = "a view does nothing unless `show()` or `show_children()` is called"]
 pub struct BorderView {
     border: Border,
     title: Option<CompactString>,
     align: Align,
     class: StyleKind<BorderClass, BorderStyle>,
+}
+
+impl std::fmt::Debug for BorderView {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("BorderView")
+            .field("title", &self.title)
+            .field("align", &self.align)
+            .field("class", &self.class)
+            .finish()
+    }
 }
 
 impl BorderView {
@@ -102,7 +111,6 @@ impl View for BorderView {
         }
 
         let sum = margin.size();
-
         let offset = margin.left_top();
         let child_space = space.shrink(sum);
 
@@ -119,7 +127,8 @@ impl View for BorderView {
             .map(measure_text)
             .unwrap_or(Size::ZERO);
 
-        size.max(title_size + Size::new(1.0, 0.0)) + sum
+        let max = size.max(title_size + Size::new(1.0, 0.0));
+        space.fit(max + sum)
     }
 
     fn draw(&mut self, mut render: Render) {

@@ -85,7 +85,7 @@ impl Margin {
     }
 
     pub fn size(&self) -> Size {
-        self.sum() / 2.0
+        self.sum() * Size::new(0.5, 1.0)
     }
 
     pub const fn left_top(&self) -> Pos2 {
@@ -434,6 +434,13 @@ impl std::ops::Mul<Align2> for Size {
     fn mul(self, rhs: Align2) -> Self::Output {
         let (x, y) = rhs.factor();
         Self::new(self.width * x, self.height * y)
+    }
+}
+
+impl std::ops::Mul for Size {
+    type Output = Self;
+    fn mul(self, rhs: Self) -> Self::Output {
+        Self::new(self.width * rhs.width, self.height * rhs.height)
     }
 }
 

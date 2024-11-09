@@ -9,7 +9,7 @@ use slotmap::{SecondaryMap, SlotMap};
 
 use crate::{
     layout::{Anchor2, Axis, LinearLayout},
-    math::{Pos2, Rect, Vec2},
+    math::{pos2, vec2, Pos2, Rect, Vec2},
     AnimationManager, Rgba, Surface, Text,
 };
 
@@ -136,10 +136,6 @@ impl State {
         self.nodes.current()
     }
 
-    pub fn update(&mut self, dt: f32) {
-        self.animations.update(dt);
-    }
-
     #[cfg_attr(feature = "profile", profiling::function)]
     pub fn event(&mut self, event: &crate::Event) {
         if let crate::Event::Resize(size) = event {
@@ -150,6 +146,33 @@ impl State {
         let _resp = self
             .input
             .update(&self.nodes, &self.layout, &mut self.animations, event);
+    }
+
+    pub fn update(&mut self, dt: f32) {
+        self.animations.update(dt);
+    }
+
+    #[cfg_attr(feature = "profile", profiling::function)]
+    pub fn build<R: 'static>(&mut self, rect: Rect, mut show: impl FnMut(&Ui) -> R) -> R {
+        let root = self.nodes.root;
+        self.layout.nodes[root].rect = rect;
+
+        let resp = {
+            #[cfg(feature = "profile")]
+            profiling::scope!("build ui");
+            self.begin();
+            let resp = show(&Ui::new(self));
+            self.end();
+            resp
+        };
+
+        self.layout.compute_all(
+            &self.nodes, //
+            &self.input,
+            rect,
+        );
+
+        resp
     }
 
     #[cfg_attr(feature = "profile", profiling::function)]
@@ -200,29 +223,6 @@ impl State {
                 DebugMode::Off => {}
             }
         });
-    }
-
-    #[cfg_attr(feature = "profile", profiling::function)]
-    pub fn build<R: 'static>(&mut self, rect: Rect, mut show: impl FnMut(&Ui) -> R) -> R {
-        let root = self.nodes.root;
-        self.layout.nodes[root].rect = rect;
-
-        let resp = {
-            #[cfg(feature = "profile")]
-            profiling::scope!("build ui");
-            self.begin();
-            let resp = show(&Ui::new(self));
-            self.end();
-            resp
-        };
-
-        self.layout.compute_all(
-            &self.nodes, //
-            &self.input,
-            rect,
-        );
-
-        resp
     }
 
     fn begin(&mut self) {
@@ -444,6 +444,7 @@ impl ViewNodes {
     }
 
     // TODO this should push the id to the stack and pop it off
+    // TODO this should handle views not in the layout
     pub fn scoped<R>(&self, id: ViewId, act: impl FnOnce(&mut dyn Erased) -> R) -> Option<R> {
         let nodes = self.nodes.borrow();
         let node = nodes.get(id)?;
@@ -651,6 +652,10 @@ impl LayoutNodes {
         self.nodes.get(id)
     }
 
+    pub fn contains(&self, id: ViewId) -> bool {
+        self.nodes.contains_key(id)
+    }
+
     pub fn rect(&self, id: ViewId) -> Option<Rect> {
         self.get(id).map(|c| c.rect)
     }
@@ -795,7 +800,13 @@ impl LayoutNodes {
                 continue;
             }
 
+            // we can't clamp for things -x or -y
+            if !layout.rect.min.x.is_negative() && !layout.rect.min.y.is_negative() {
+                layout.rect.min = layout.rect.min.clamp(rect.min, rect.max);
+            }
+            layout.rect.max = layout.rect.max.clamp(rect.min, rect.max);
             layout.rect = layout.rect.translate(pos.to_vec2());
+
             queue.extend(node.children.iter().map(|&id| (id, layout.rect.min)))
         }
     }

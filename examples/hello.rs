@@ -19,7 +19,6 @@ fn eval_args_run(view: impl FnMut(&Ui)) -> std::io::Result<()> {
 
 #[derive(Default)]
 struct App;
-
 impl App {
     fn view(&mut self, ui: &Ui) {}
 }

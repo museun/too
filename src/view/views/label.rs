@@ -1,17 +1,15 @@
 use compact_str::{CompactString, ToCompactString};
-use unicode_segmentation::UnicodeSegmentation as _;
-use unicode_width::UnicodeWidthStr as _;
+use unicode_segmentation::UnicodeSegmentation;
 
 use crate::{
+    math::pos2,
     view::{
         geom::{Size, Space},
         style::StyleKind,
         Builder, Layout, Palette, Render, View,
     },
-    Attribute, Grapheme, Rgba,
+    Attribute, Grapheme, Justification, Rgba, Text,
 };
-
-use super::measure_text;
 
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub struct LabelStyle {
@@ -55,6 +53,8 @@ impl Label {
         Label {
             label: label.to_compact_string(),
             class: StyleKind::Deferred(LabelStyle::default),
+            main: Justification::Start,
+            cross: Justification::Start,
             attribute: None,
         }
     }
@@ -66,6 +66,16 @@ impl Label {
 
     pub const fn style(mut self, style: LabelStyle) -> Self {
         self.class = StyleKind::Direct(style);
+        self
+    }
+
+    pub const fn horizontal_align(mut self, justify: Justification) -> Self {
+        self.main = justify;
+        self
+    }
+
+    pub const fn vertical_align(mut self, justify: Justification) -> Self {
+        self.cross = justify;
         self
     }
 
@@ -107,6 +117,8 @@ impl Label {
 pub struct Label {
     label: CompactString,
     class: StyleKind<LabelClass, LabelStyle>,
+    main: Justification,
+    cross: Justification,
     attribute: Option<Attribute>,
 }
 
@@ -123,8 +135,8 @@ impl View for Label {
     }
 
     fn layout(&mut self, layout: Layout, space: Space) -> Size {
-        // TODO support wrapping | truncation
-        space.fit(measure_text(&self.label))
+        let size = Size::from(Text::new(&self.label).size());
+        space.fit(size)
     }
 
     fn draw(&mut self, mut render: Render) {
@@ -139,8 +151,8 @@ impl View for Label {
             if let Some(attr) = self.attribute {
                 cell = cell.attribute(attr);
             }
-            render.surface.set((start, 0), cell);
-            start += grapheme.width() as i32
+            render.surface.set(pos2(start, 0), cell);
+            start += 1;
         }
     }
 }

@@ -22,7 +22,7 @@ impl RadioStyle {
     pub fn default(palette: &Palette, selected: bool) -> Self {
         Self {
             text_color: palette.foreground,
-            background: palette.outline,
+            background: palette.surface,
             selected_background: palette.primary,
             hovered_text: None,
             hovered_background: None,
@@ -90,7 +90,10 @@ where
     }
 }
 
-pub fn radio<'a, V: PartialEq>(value: V, existing: &'a mut V, label: &'a str) -> Radio<'a, V> {
+pub fn radio<'a, V>(value: V, existing: &'a mut V, label: &'a str) -> Radio<'a, V>
+where
+    V: PartialEq,
+{
     Radio {
         value,
         existing,

@@ -65,6 +65,14 @@ struct Intersections {
     sunk: Vec<ViewId>,
 }
 
+impl Intersections {
+    fn remove(&mut self, id: ViewId) {
+        self.hit.retain(|&c| c != id);
+        self.entered.retain(|&c| c != id);
+        self.sunk.retain(|&c| c != id);
+    }
+}
+
 #[derive(Default, Debug)]
 struct Mouse {
     pos: Pos2,
@@ -531,6 +539,10 @@ impl InputState {
         Self::hit_test(mouse.pos, layout, &mut intersections.hit);
     }
 
+    pub(in crate::view) fn remove(&self, id: ViewId) {
+        self.intersections.borrow_mut().remove(id);
+    }
+
     #[cfg_attr(feature = "profile", profiling::function)]
     fn hit_test(pos: Pos2, layout: &LayoutNodes, out: &mut Vec<ViewId>) {
         for (id, _) in layout.interest.iter() {
@@ -607,6 +619,7 @@ impl<'a> EventCtx<'a> {
         self.nodes.current()
     }
 
+    #[track_caller]
     pub fn rect(&self) -> Rect {
         self.layout.rect(self.current).unwrap()
     }

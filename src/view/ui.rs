@@ -28,7 +28,7 @@ pub struct Ui<'a> {
 }
 
 impl<'a> Ui<'a> {
-    pub fn new(state: &'a mut State) -> Self {
+    pub(super) fn new(state: &'a mut State) -> Self {
         Self {
             nodes: &state.nodes,
             layout: &state.layout,
@@ -119,16 +119,6 @@ impl<'a> Ui<'a> {
         R: 'static,
     {
         self.show_children(views::Float, show).flatten_right()
-    }
-}
-
-impl<'a> Ui<'a> {
-    // pub fn set_debug_mode(&self, mode: DebugMode) {
-    //     self.debug.mode.set(mode);
-    // }
-
-    pub fn debug(msg: impl ToCompactString) {
-        super::state::debug(msg);
     }
 }
 
@@ -251,7 +241,7 @@ impl<'a> Ui<'a> {
         self.show(shorthands::toggle_switch(value))
     }
 
-    pub fn button(&self, label: &str) -> Response<button::Response> {
+    pub fn button(&self, label: &str) -> Response<button::ButtonResponse> {
         self.show(shorthands::button(label).margin((1, 0)))
     }
 
@@ -314,10 +304,9 @@ impl<'a> Ui<'a> {
         self.show(views::Expander)
     }
 
-    // TODO make this work better
-    // pub fn separator(&self) -> Response {
-    //     self.show(views::Separator)
-    // }
+    pub fn separator(&self) -> Response {
+        self.show(shorthands::separator())
+    }
 
     pub fn vertical<R>(&self, show: impl FnOnce(&Ui) -> R) -> Response<R>
     where

@@ -2,7 +2,7 @@ use std::ops::RangeInclusive;
 
 use crate::{
     layout::Axis,
-    math::{lerp, normalize, Vec2},
+    math::{lerp, normalize, Pos2},
     view::{
         geom::{Size, Space},
         style::StyleKind,
@@ -163,7 +163,7 @@ impl View for Progress {
     }
 
     fn draw(&mut self, mut render: Render) {
-        let rect = render.surface.rect();
+        let rect = render.rect();
         let axis = self.axis;
 
         let style = match self.class {
@@ -192,9 +192,12 @@ impl View for Progress {
             style.filled_color
         };
 
-        let pos: Vec2 = axis.pack(x, axis.cross(rect.size()));
+        let cross = axis.cross(rect.size() - 1);
         let pixel = Pixel::new(style.filled).fg(color);
-        render.surface.fill_up_to_with(pos, pixel);
+        for x in 0..x as i32 {
+            let pos: Pos2 = axis.pack(x, cross);
+            render.surface.set(pos, pixel);
+        }
     }
 }
 

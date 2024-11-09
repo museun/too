@@ -50,6 +50,7 @@ impl<'a> Layout<'a> {
 
     pub fn remove(&mut self, id: ViewId) {
         self.layout.remove(id);
+        self.input.remove(id);
     }
 
     pub fn set_position(&mut self, id: ViewId, pos: impl Into<Pos2>) {

@@ -40,12 +40,20 @@ pub fn debug_view(mut app: impl FnMut(&Ui)) -> std::io::Result<()> {
     Ok(())
 }
 
-pub fn run<R: 'static>(mut app: impl FnMut(&Ui) -> R) -> std::io::Result<()> {
+pub fn run<R: 'static>(app: impl FnMut(&Ui) -> R) -> std::io::Result<()> {
+    application(|| Palette::dark(), app)
+}
+
+pub fn application<R: 'static>(
+    start: impl Fn() -> Palette,
+    mut app: impl FnMut(&Ui) -> R,
+) -> std::io::Result<()> {
     use crate::{Backend, EventReader};
     let mut term = crate::term::Term::setup(crate::term::Config::default().hook_panics(true))?;
     let mut surface = crate::Surface::new(term.size());
 
     let mut state = State::new();
+    *state.palette.get_mut() = start();
     state.set_debug_mode(DebugMode::PerFrame);
 
     let target = Duration::from_secs_f32(1.0 / 60.0);

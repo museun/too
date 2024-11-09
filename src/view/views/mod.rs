@@ -48,7 +48,7 @@ pub use list::{CrossAlign, Justify, List};
 mod wrap;
 pub use wrap::Wrap;
 
-mod expander;
+pub mod expander;
 pub use expander::{Expander, Separator};
 
 mod mouse_area;
@@ -167,6 +167,9 @@ pub mod shorthands {
 
     #[doc(inline)]
     pub use super::selected::selected;
+
+    #[doc(inline)]
+    pub use super::expander::separator;
 
     #[doc(inline)]
     pub use super::slider::slider;

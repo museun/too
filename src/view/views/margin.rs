@@ -29,10 +29,10 @@ impl View for Margin {
         this
     }
 
-    // TODO this is wrong, its not offseting the children correctly
     fn layout(&mut self, mut layout: Layout, space: Space) -> Size {
         let node = layout.nodes.get_current();
 
+        // TODO this is off by 1 h
         let margin = self.margin.sum();
         let offset = self.margin.left_top();
         let space = space.shrink(margin);

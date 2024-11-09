@@ -1,6 +1,6 @@
 use crate::Rgba;
 
-#[derive(Debug)]
+#[derive(Copy, Clone, Debug)]
 pub enum StyleKind<Class, Style> {
     Deferred(Class),
     Direct(Style),
@@ -98,9 +98,11 @@ impl Elements {
     pub const THICK_HORIZONTAL_LINE: char = '━';
     pub const DASH_HORIZONTAL_LINE: char = '╌';
     pub const THICK_DASH_HORIZONTAL_LINE: char = '╍';
+    pub const DOUBLE_HORIZONATAL_LINE: char = '═';
 
     pub const VERTICAL_LINE: char = '│';
     pub const THICK_VERTICAL_LINE: char = '┃';
     pub const DASH_VERTICAL_LINE: char = '╎';
     pub const THICK_DASH_VERTICAL_LINE: char = '╏';
+    pub const DOUBLE_VERTICAL_LINE: char = '║';
 }

@@ -36,6 +36,7 @@ impl CollapsibleStyle {
 }
 
 #[derive(Debug)]
+#[must_use = "a view does nothing unless `ui.adhoc()` is called"]
 pub struct Collapsible<'a, F> {
     state: &'a mut bool,
     title: &'a str,

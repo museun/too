@@ -121,6 +121,14 @@ impl TextInputResponse {
         let g = self.state.borrow();
         Ref::filter_map(g, |i| i.selection_buffer()).ok()
     }
+
+    pub fn set_text(&self, data: impl ToString) {
+        let mut state = self.state.borrow_mut();
+        state.clear();
+        state.buf = data.to_string();
+        state.cursor = state.buf.width();
+        state.selection = state.cursor;
+    }
 }
 
 #[derive(Debug)]

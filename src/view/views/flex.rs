@@ -1,9 +1,15 @@
 use crate::view::{geom, Builder, View};
 
-#[derive(Copy, Clone, Debug, PartialEq)]
+#[derive(Copy, Clone, PartialEq)]
 #[must_use = "a view does nothing unless `show()` or `show_children()` is called"]
 pub struct Flex {
     flex: geom::Flex,
+}
+
+impl std::fmt::Debug for Flex {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        self.flex.fmt(f)
+    }
 }
 
 impl Flex {

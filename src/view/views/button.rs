@@ -1,15 +1,12 @@
 use compact_str::{CompactString, ToCompactString};
-use unicode_segmentation::UnicodeSegmentation as _;
-use unicode_width::UnicodeWidthStr as _;
 
 use crate::{
     view::{
         geom::{Margin, Size, Space},
         style::StyleKind,
-        views::measure_text,
         Builder, EventCtx, Handled, Interest, Layout, Palette, Render, Ui, View, ViewEvent,
     },
-    Grapheme, Rgba,
+    Justification, Rgba, Text,
 };
 
 #[derive(Copy, Clone, Default, Debug, PartialEq)]
@@ -108,6 +105,9 @@ pub struct Button {
     label: CompactString,
     margin: Margin,
     state: ButtonState,
+    disabled: bool,
+    main: Justification,
+    cross: Justification,
     class: StyleKind<ButtonClass, ButtonStyle>,
 }
 
@@ -115,10 +115,23 @@ impl Button {
     pub fn new(label: impl ToCompactString) -> Self {
         Button {
             label: label.to_compact_string(),
-            margin: Margin::ZERO,
+            margin: Margin::symmetric(1, 0),
             state: ButtonState::None,
+            disabled: false,
+            main: Justification::Start,
+            cross: Justification::Start,
             class: StyleKind::Deferred(ButtonStyle::default),
         }
+    }
+
+    pub const fn text_horizontal_align(mut self, justify: Justification) -> Self {
+        self.main = justify;
+        self
+    }
+
+    pub const fn text_vertical_align(mut self, justify: Justification) -> Self {
+        self.cross = justify;
+        self
     }
 
     pub fn margin(mut self, margin: impl Into<Margin>) -> Self {
@@ -126,8 +139,13 @@ impl Button {
         self
     }
 
-    pub const fn disabled(mut self, disabled: bool) -> Self {
-        self.state = ButtonState::Disabled;
+    pub const fn disabled_if(mut self, disabled: bool) -> Self {
+        self.disabled = disabled;
+        self.state = if disabled {
+            ButtonState::Disabled
+        } else {
+            ButtonState::None
+        };
         self
     }
 
@@ -148,23 +166,33 @@ impl<'v> Builder<'v> for Button {
 
 impl View for Button {
     type Args<'v> = Self;
-    type Response = Response;
+    type Response = ButtonResponse;
 
     fn create(builder: Self::Args<'_>) -> Self {
         builder
     }
 
     fn update(&mut self, builder: Self::Args<'_>, _: &Ui) -> Self::Response {
+        // TODO splat this
         self.label = builder.label;
         self.class = builder.class;
         self.margin = builder.margin;
+        self.disabled = builder.disabled;
+        self.main = builder.main;
+        self.cross = builder.cross;
 
         let state = self.state;
         if let ButtonState::Clicked = self.state {
             self.state = ButtonState::Hovered
         }
 
-        Response { state }
+        if self.disabled {
+            self.state = ButtonState::Disabled
+        } else if !self.disabled && matches!(self.state, ButtonState::Disabled) {
+            self.state = ButtonState::None
+        }
+
+        ButtonResponse { state }
     }
 
     fn interests(&self) -> Interest {
@@ -188,7 +216,8 @@ impl View for Button {
     }
 
     fn layout(&mut self, layout: Layout, space: Space) -> Size {
-        space.fit(measure_text(&self.label) + self.margin)
+        let size = Size::from(Text::new(&self.label).size());
+        space.fit(size + self.margin)
     }
 
     fn draw(&mut self, mut render: Render) {
@@ -199,22 +228,21 @@ impl View for Button {
 
         render.surface.fill(style.background);
 
-        let mut surface = render.surface.shrink(self.margin);
-        let mut start = 0;
-        // TODO get the default text color
-        for grapheme in self.label.graphemes(true) {
-            surface.set((start, 0), Grapheme::new(grapheme).fg(style.text_color));
-            start += grapheme.width() as i32
-        }
+        let surface = render.surface.shrink(self.margin);
+        Text::new(&self.label)
+            .main(self.main)
+            .cross(self.cross)
+            .fg(style.text_color)
+            .draw(surface.rect(), surface.surface);
     }
 }
 
 #[derive(Copy, Clone, Debug, Default, PartialEq)]
-pub struct Response {
+pub struct ButtonResponse {
     state: ButtonState,
 }
 
-impl Response {
+impl ButtonResponse {
     pub const fn clicked(&self) -> bool {
         matches!(self.state, ButtonState::Clicked)
     }

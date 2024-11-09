@@ -65,5 +65,16 @@ pub fn remap<N: Num>(val: N, from: RangeInclusive<N>, to: RangeInclusive<N>) -> 
     let (x2, y2) = (*to.start(), *to.end());
     // inverse lerp to map val to the from range
     // lerp the result with the to range to get the remapped value
-    lerp(x2, y2, (val - x1) / (y1 - x1))
+    let t = lerp(x2, y2, (val - x1) / (y1 - x1));
+    clamp_num(t, x2, y2)
+}
+
+fn clamp_num<N: Num>(value: N, min: N, max: N) -> N {
+    if value < min {
+        return min;
+    }
+    if value > max {
+        return max;
+    }
+    value
 }

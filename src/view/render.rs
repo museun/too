@@ -100,20 +100,6 @@ impl<'a> CroppedSurface<'a> {
         self.expand(-size.into())
     }
 
-    pub fn fill_up_to(&mut self, size: impl Into<Vec2>, bg: impl Into<Rgba>) {
-        self.fill_up_to_with(size, bg.into())
-    }
-
-    pub fn fill_up_to_with(&mut self, size: impl Into<Vec2>, pixel: impl Into<Pixel>) {
-        let rect = Rect::from_min_size(self.clip_rect.min, size.into());
-        CroppedSurface {
-            rect: rect.intersection(self.clip_rect),
-            clip_rect: self.clip_rect,
-            surface: self.surface,
-        }
-        .fill_with(pixel);
-    }
-
     // crop?
     pub const fn rect(&self) -> Rect {
         self.rect
@@ -127,11 +113,12 @@ impl<'a> CroppedSurface<'a> {
 pub struct Render<'a, 'b> {
     pub current: ViewId,
     pub nodes: &'a ViewNodes,
-    pub(super) layout: &'a LayoutNodes,
-    pub(super) render: &'a mut RenderNodes,
     pub palette: &'a Palette,
     pub animation: &'a mut AnimationManager,
     pub surface: CroppedSurface<'b>,
+
+    pub(super) layout: &'a LayoutNodes,
+    pub(super) render: &'a mut RenderNodes,
     pub(super) input: &'a InputState,
 }
 
