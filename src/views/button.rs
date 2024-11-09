@@ -3,8 +3,8 @@ use compact_str::{CompactString, ToCompactString};
 use crate::{
     view::{
         geom::{Margin, Size, Space},
-        style::StyleKind,
-        Builder, EventCtx, Handled, Interest, Layout, Palette, Render, Ui, View, ViewEvent,
+        Builder, EventCtx, Handled, Interest, Layout, Palette, Render, StyleKind, Ui, View,
+        ViewEvent,
     },
     Justification, Rgba, Text,
 };

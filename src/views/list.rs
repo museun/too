@@ -5,9 +5,8 @@ use crate::{
     math::{remap, vec2, Pos2, Rect, Vec2},
     view::{
         geom::{Size, Space},
-        style::StyleKind,
-        Builder, Elements, EventCtx, Handled, Interest, Layout, Palette, Render, Ui, View,
-        ViewEvent,
+        Builder, Elements, EventCtx, Handled, Interest, Layout, Palette, Render, StyleKind, Ui,
+        View, ViewEvent,
     },
     Key, Pixel, Rgba,
 };
@@ -442,7 +441,7 @@ impl View for List {
                     _ => return Handled::Bubble,
                 };
                 self.scroll(delta, rect);
-                return Handled::Sink;
+                Handled::Sink
             }
 
             ViewEvent::MouseMove { pos, .. } => {

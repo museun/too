@@ -12,8 +12,8 @@ use crate::{
     math::pos2,
     view::{
         geom::{Size, Space},
-        style::StyleKind,
-        Builder, EventCtx, Handled, Interest, Layout, Palette, Render, Ui, View, ViewEvent,
+        Builder, EventCtx, Handled, Interest, Layout, Palette, Render, StyleKind, Ui, View,
+        ViewEvent,
     },
     Attribute, Grapheme, Key, Pixel, Rgba,
 };

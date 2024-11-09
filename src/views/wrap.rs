@@ -9,7 +9,7 @@ use crate::{
     },
 };
 
-use super::Justify;
+use super::list::Justify;
 
 #[derive(Copy, Clone, Debug, Default, PartialEq)]
 pub struct Wrap {

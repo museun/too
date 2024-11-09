@@ -4,15 +4,13 @@ use unicode_width::UnicodeWidthStr as _;
 
 use crate::{
     layout::Align,
+    measure_text,
     view::{
         geom::{Size, Space},
-        style::StyleKind,
-        Builder, Interest, Layout, Palette, Render, View,
+        Builder, Interest, Layout, Palette, Render, StyleKind, View,
     },
     Border, Grapheme, Pixel, Rgba,
 };
-
-use super::measure_text;
 
 pub type BorderClass = fn(&Palette, bool, bool) -> BorderStyle;
 

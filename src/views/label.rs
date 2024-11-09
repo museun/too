@@ -5,8 +5,7 @@ use crate::{
     math::pos2,
     view::{
         geom::{Size, Space},
-        style::StyleKind,
-        Builder, Layout, Palette, Render, View,
+        Builder, Layout, Palette, Render, StyleKind, View,
     },
     Attribute, Grapheme, Justification, Rgba, Text,
 };
@@ -145,14 +144,12 @@ impl View for Label {
             StyleKind::Direct(style) => style,
         };
 
-        let mut start = 0;
-        for grapheme in self.label.graphemes(true) {
+        for (start, grapheme) in self.label.graphemes(true).enumerate() {
             let mut cell = Grapheme::new(grapheme).fg(style.foreground);
             if let Some(attr) = self.attribute {
                 cell = cell.attribute(attr);
             }
-            render.surface.set(pos2(start, 0), cell);
-            start += 1;
+            render.surface.set(pos2(start as i32, 0), cell);
         }
     }
 }

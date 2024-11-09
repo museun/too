@@ -9,7 +9,7 @@ use slotmap::{SecondaryMap, SlotMap};
 
 use crate::{
     layout::{Anchor2, Axis, LinearLayout},
-    math::{pos2, vec2, Pos2, Rect, Vec2},
+    math::{Pos2, Rect, Vec2},
     AnimationManager, Rgba, Surface, Text,
 };
 
@@ -20,8 +20,7 @@ use super::{
     layout::IntrinsicSize,
     style::Palette,
     ui::Ui,
-    view::Erased,
-    CroppedSurface, Interest, Layout, Render, View,
+    CroppedSurface, Erased, Interest, Layout, Render, View,
 };
 
 #[derive(Copy, Clone, Debug, Default, PartialEq, PartialOrd, Eq, Ord, Hash)]
@@ -272,7 +271,7 @@ impl ViewNodes {
             parent: None,
             children: Vec::new(),
             next: 0,
-            view: RefCell::new(Slot::new(Root)),
+            view: RefCell::new(Slot::new(internal_views::Root)),
         });
 
         Self {
@@ -515,6 +514,7 @@ impl RenderNodes {
         self.axis_stack.iter().nth_back(1).copied()
     }
 
+    #[allow(clippy::too_many_arguments)]
     pub(super) fn draw(
         &mut self,
         nodes: &ViewNodes,
@@ -883,7 +883,7 @@ impl std::fmt::Debug for ViewNode {
 }
 
 #[derive(Default)]
-pub enum Slot {
+pub(in crate::view) enum Slot {
     #[default]
     Vacant,
     Inhabited(Box<dyn Erased>),
@@ -939,24 +939,4 @@ impl std::ops::DerefMut for Slot {
     }
 }
 
-#[derive(Debug)]
-struct Root;
-
-impl View for Root {
-    type Args<'v> = ();
-    type Response = ();
-
-    fn create(_: Self::Args<'_>) -> Self {
-        Self
-    }
-
-    fn primary_axis(&self) -> Axis {
-        Axis::Vertical
-    }
-
-    fn layout(&mut self, mut layout: Layout, space: Space) -> Size {
-        layout.new_layer();
-        self.default_layout(layout, space.loosen());
-        space.max
-    }
-}
+pub(in crate::view) mod internal_views;

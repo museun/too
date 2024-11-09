@@ -2,27 +2,27 @@ use crate::view::{geom, Builder, View};
 
 #[derive(Copy, Clone, PartialEq)]
 #[must_use = "a view does nothing unless `show()` or `show_children()` is called"]
-pub struct Flex {
+pub struct FlexView {
     flex: geom::Flex,
 }
 
-impl std::fmt::Debug for Flex {
+impl std::fmt::Debug for FlexView {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         self.flex.fmt(f)
     }
 }
 
-impl Flex {
+impl FlexView {
     pub fn new(flex: impl Into<geom::Flex>) -> Self {
         Self { flex: flex.into() }
     }
 }
 
-impl<'v> Builder<'v> for Flex {
+impl<'v> Builder<'v> for FlexView {
     type View = Self;
 }
 
-impl View for Flex {
+impl View for FlexView {
     type Args<'v> = Self;
     type Response = ();
 

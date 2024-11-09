@@ -1,23 +1,18 @@
+use compact_str::ToCompactString;
 use std::cell::{Ref, RefCell};
 
 use crate::{
     layout::Align2,
     math::{Pos2, Rect},
-    view::views::shorthands::todo_value,
+    views::{self},
     Border, Rgba,
 };
-use compact_str::ToCompactString;
 
 use super::{
     geom::{Flex, Margin},
     input::InputState,
-    state::{LayoutNodes, ViewNodes},
-    view::Adhoc,
-    views::{
-        self, button, checkbox::checkbox, radio::radio, selected::selected, shorthands,
-        TextInputResponse, ToggleResponse,
-    },
-    Builder, Palette, Response, State, View, ViewId,
+    state::{internal_views, LayoutNodes, ViewNodes},
+    Adhoc, Builder, Palette, Response, State, View, ViewId,
 };
 
 pub struct Ui<'a> {
@@ -97,28 +92,32 @@ impl<'a> Ui<'a> {
     where
         R: 'static,
     {
-        self.show_children(views::Scope, show).flatten_right()
+        self.show_children(internal_views::Scope, show)
+            .flatten_right()
     }
 
     pub fn layer<R>(&self, show: impl FnOnce(&Ui) -> R) -> Response<R>
     where
         R: 'static,
     {
-        self.show_children(views::Layer, show).flatten_right()
+        self.show_children(internal_views::Layer, show)
+            .flatten_right()
     }
 
     pub fn clip<R>(&self, show: impl FnOnce(&Ui) -> R) -> Response<R>
     where
         R: 'static,
     {
-        self.show_children(views::Clip, show).flatten_right()
+        self.show_children(internal_views::Clip, show)
+            .flatten_right()
     }
 
     pub fn float<R>(&self, show: impl FnOnce(&Ui) -> R) -> Response<R>
     where
         R: 'static,
     {
-        self.show_children(views::Float, show).flatten_right()
+        self.show_children(internal_views::Float, show)
+            .flatten_right()
     }
 }
 
@@ -144,7 +143,7 @@ impl<'a> Ui<'a> {
     where
         R: 'static,
     {
-        self.show_children(shorthands::aligned(align), show)
+        self.show_children(views::aligned(align), show)
             .flatten_right()
     }
 
@@ -152,7 +151,7 @@ impl<'a> Ui<'a> {
     where
         R: 'static,
     {
-        self.show_children(views::Margin::new(margin), show)
+        self.show_children(views::MarginView::new(margin), show)
             .flatten_right()
     }
 
@@ -197,7 +196,7 @@ impl<'a> Ui<'a> {
     pub fn draggable<R>(
         &self,
         show: impl FnOnce(&Ui) -> R,
-    ) -> Response<(Option<views::Dragging>, R)>
+    ) -> Response<(Option<views::DraggingResponse>, R)>
     where
         R: 'static,
     {
@@ -211,22 +210,22 @@ impl<'a> Ui<'a> {
     where
         R: 'static,
     {
-        self.show_children(shorthands::mouse_area(), show)
+        self.show_children(views::mouse_area(), show)
     }
 
     pub fn key_area<R>(&self, show: impl FnOnce(&Ui) -> R) -> Response<(views::KeyAreaResponse, R)>
     where
         R: 'static,
     {
-        self.show_children(shorthands::key_area(), show)
+        self.show_children(views::key_area(), show)
     }
 
     pub fn progress(&self, value: f32) -> Response {
-        self.show(shorthands::progress(value))
+        self.show(views::progress(value))
     }
 
-    pub fn text_input(&self, focus: bool) -> Response<TextInputResponse> {
-        let resp = self.show(shorthands::text_input());
+    pub fn text_input(&self, focus: bool) -> Response<views::TextInputResponse> {
+        let resp = self.show(views::text_input());
         if focus {
             self.set_focus(resp.id());
         }
@@ -234,45 +233,45 @@ impl<'a> Ui<'a> {
     }
 
     pub fn slider(&self, value: &mut f32) -> Response {
-        self.show(shorthands::slider(value))
+        self.show(views::slider(value))
     }
 
-    pub fn toggle_switch(&self, value: &mut bool) -> Response<ToggleResponse> {
-        self.show(shorthands::toggle_switch(value))
+    pub fn toggle_switch(&self, value: &mut bool) -> Response<views::ToggleResponse> {
+        self.show(views::toggle_switch(value))
     }
 
-    pub fn button(&self, label: &str) -> Response<button::ButtonResponse> {
-        self.show(shorthands::button(label).margin((1, 0)))
+    pub fn button(&self, label: &str) -> Response<views::ButtonResponse> {
+        self.show(views::button(label).margin((1, 0)))
     }
 
     pub fn checkbox(&self, value: &mut bool, label: &str) -> Response<bool> {
-        self.adhoc(checkbox(value, label))
+        self.adhoc(views::checkbox(value, label))
     }
 
     pub fn todo_value(&self, value: &mut bool, label: &str) -> Response<bool> {
-        self.adhoc(todo_value(value, label))
+        self.adhoc(views::todo_value(value, label))
     }
 
     pub fn selected(&self, value: &mut bool, label: &str) -> Response<bool> {
-        self.adhoc(selected(value, label))
+        self.adhoc(views::selected(value, label))
     }
 
     pub fn radio<V>(&self, value: V, existing: &mut V, label: &str) -> Response<bool>
     where
         V: PartialEq,
     {
-        self.adhoc(radio(value, existing, label))
+        self.adhoc(views::radio(value, existing, label))
     }
 
     pub fn label(&self, data: impl ToCompactString) -> Response {
-        self.show(shorthands::label(data))
+        self.show(views::label(data))
     }
 
     pub fn expand<R>(&self, show: impl FnOnce(&Ui) -> R) -> Response<R>
     where
         R: 'static,
     {
-        self.show_children(views::Flex::new(Flex::Tight(1.0)), show)
+        self.show_children(views::FlexView::new(Flex::Tight(1.0)), show)
             .flatten_right()
     }
 
@@ -280,7 +279,7 @@ impl<'a> Ui<'a> {
     where
         R: 'static,
     {
-        self.show_children(views::Flex::new(Flex::Loose(1.0)), show)
+        self.show_children(views::FlexView::new(Flex::Loose(1.0)), show)
             .flatten_right()
     }
 
@@ -288,7 +287,7 @@ impl<'a> Ui<'a> {
     where
         R: 'static,
     {
-        self.show_children(shorthands::vertical_wrap(), show)
+        self.show_children(views::vertical_wrap(), show)
             .flatten_right()
     }
 
@@ -296,23 +295,23 @@ impl<'a> Ui<'a> {
     where
         R: 'static,
     {
-        self.show_children(shorthands::horizontal_wrap().row_gap(1), show)
+        self.show_children(views::horizontal_wrap().row_gap(1), show)
             .flatten_right()
     }
 
     pub fn expander(&self) -> Response {
-        self.show(views::Expander)
+        self.show(views::expander())
     }
 
     pub fn separator(&self) -> Response {
-        self.show(shorthands::separator())
+        self.show(views::separator())
     }
 
     pub fn vertical<R>(&self, show: impl FnOnce(&Ui) -> R) -> Response<R>
     where
         R: 'static,
     {
-        self.show_children(shorthands::list().vertical(), show)
+        self.show_children(views::list().vertical(), show)
             .flatten_right()
     }
 
@@ -320,7 +319,7 @@ impl<'a> Ui<'a> {
     where
         R: 'static,
     {
-        self.show_children(shorthands::list().horizontal().gap(1), show)
+        self.show_children(views::list().horizontal().gap(1), show)
             .flatten_right()
     }
 
@@ -328,7 +327,7 @@ impl<'a> Ui<'a> {
     where
         R: 'static,
     {
-        self.show_children(shorthands::border(border), show)
+        self.show_children(views::border(border), show)
             .flatten_right()
     }
 
@@ -341,7 +340,7 @@ impl<'a> Ui<'a> {
     where
         R: 'static,
     {
-        self.show_children(shorthands::frame(border, title), show)
+        self.show_children(views::frame(border, title), show)
             .flatten_right()
     }
 
@@ -351,6 +350,6 @@ impl<'a> Ui<'a> {
         title: &str,
         show: impl FnOnce(&Ui) -> R,
     ) -> Response<Option<R>> {
-        self.adhoc(shorthands::collapsible(state, title, show))
+        self.adhoc(views::collapsible(state, title, show))
     }
 }

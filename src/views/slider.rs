@@ -6,8 +6,8 @@ use crate::{
     math::{denormalize, inverse_lerp, lerp, normalize, Pos2},
     view::{
         geom::{Size, Space},
-        style::{Palette, StyleKind},
-        Builder, Elements, EventCtx, Handled, Interest, Knob, Layout, Render, Ui, View, ViewEvent,
+        Builder, Elements, EventCtx, Handled, Interest, Knob, Layout, Palette, Render, StyleKind,
+        Ui, View, ViewEvent,
     },
     Pixel, Rgba,
 };

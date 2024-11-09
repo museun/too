@@ -1,5 +1,5 @@
 use crate::{
-    view::{style::StyleKind, views::shorthands, Adhoc, Palette, Response, Ui},
+    view::{Adhoc, Palette, Response, StyleKind, Ui},
     Border,
 };
 
@@ -73,18 +73,15 @@ where
                 if *self.state {
                     let inner = ui.show_children(
                         // TODO make frame take a label so we can change the color of the text, but not the marker
-                        shorthands::frame(
-                            style.border,
-                            format!("{} {}", style.expanded, self.title),
-                        )
-                        .style(style.border_style),
+                        super::frame(style.border, format!("{} {}", style.expanded, self.title))
+                            .style(style.border_style),
                         self.show,
                     );
                     return Some(inner);
                 }
 
                 ui.show_children(
-                    shorthands::border(style.border).style(style.border_style),
+                    super::border(style.border).style(style.border_style),
                     |ui| {
                         ui.horizontal(|ui| {
                             ui.label(style.collapsed);

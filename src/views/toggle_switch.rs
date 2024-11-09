@@ -6,9 +6,8 @@ use crate::{
     math::{lerp, Pos2},
     view::{
         geom::{Size, Space},
-        style::StyleKind,
-        Builder, Elements, EventCtx, Handled, Interest, Knob, Layout, Palette, Render, Ui, View,
-        ViewEvent,
+        Builder, Elements, EventCtx, Handled, Interest, Knob, Layout, Palette, Render, StyleKind,
+        Ui, View, ViewEvent,
     },
     Pixel, Rgba,
 };

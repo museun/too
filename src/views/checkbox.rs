@@ -1,9 +1,9 @@
 use crate::{
-    view::{style::StyleKind, view::Adhoc, Palette, Response, Ui},
+    view::{Adhoc, Palette, Response, StyleKind, Ui},
     Rgba,
 };
 
-use super::{label::LabelStyle, shorthands};
+use super::label::LabelStyle;
 
 pub type CheckboxClass = fn(&Palette, bool) -> CheckboxStyle;
 
@@ -79,7 +79,7 @@ impl<'a> Adhoc<'a> for Checkbox<'a> {
                         style.unchecked
                     };
                     ui.label(marker);
-                    ui.show(shorthands::label(self.label).style(LabelStyle { foreground }));
+                    ui.show(super::label(self.label).style(LabelStyle { foreground }));
                 });
             })
             .flatten_left();

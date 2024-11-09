@@ -1,5 +1,5 @@
 use crate::{
-    view::{style::StyleKind, Adhoc, Palette, Response},
+    view::{Adhoc, Palette, Response, StyleKind},
     Rgba,
 };
 

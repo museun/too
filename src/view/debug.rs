@@ -115,7 +115,7 @@ fn render_compact_tree(node: &DebugNode) -> String {
 }
 
 fn render_pretty_tree(node: &DebugNode) -> String {
-    enum Label {
+    enum DebugLabel {
         Header,
         Separator,
         Split {
@@ -128,7 +128,7 @@ fn render_pretty_tree(node: &DebugNode) -> String {
         },
     }
 
-    impl Label {
+    impl DebugLabel {
         fn new(s: impl compact_str::ToCompactString, align: Align) -> Self {
             Self::Label {
                 align,
@@ -174,37 +174,37 @@ fn render_pretty_tree(node: &DebugNode) -> String {
         height: usize,
         total_width: usize,
         total_height: usize,
-        labels: Vec<Label>,
+        labels: Vec<DebugLabel>,
         children: Vec<Self>,
     }
 
     impl Node {
         fn new(node: &DebugNode, spacing: usize) -> Self {
             let mut labels = vec![
-                Label::Split {
+                DebugLabel::Split {
                     min: format!("{:?}", node.id.data()).into(),
                     max: node.name.clone().into(),
                 },
-                Label::Header,
-                Label::Split {
+                DebugLabel::Header,
+                DebugLabel::Split {
                     min: format!("x: {:?}", node.rect.min.x).into(),
                     max: format!("w: {:?}", node.rect.width()).into(),
                 },
-                Label::Split {
+                DebugLabel::Split {
                     min: format!("y: {:?}", node.rect.min.y).into(),
                     max: format!("h: {:?}", node.rect.height()).into(),
                 },
-                Label::Separator,
+                DebugLabel::Separator,
             ];
 
             if !node.interest.is_none() {
                 for label in format!("{:?}", node.interest).split(" | ") {
-                    labels.push(Label::Label {
+                    labels.push(DebugLabel::Label {
                         align: Align::Center,
                         text: label.into(),
                     });
                 }
-                labels.push(Label::Separator);
+                labels.push(DebugLabel::Separator);
             }
 
             if node.flex.has_flex() {
@@ -213,25 +213,25 @@ fn render_pretty_tree(node: &DebugNode) -> String {
                     Flex::Loose(..) => "Loose",
                 };
 
-                labels.push(Label::Split {
+                labels.push(DebugLabel::Split {
                     min: "Flex:".into(),
                     max: format!("{:.2?}", node.flex.factor()).into(),
                 });
 
-                labels.push(Label::Split {
+                labels.push(DebugLabel::Split {
                     min: "Fit:".into(),
                     max: flex.into(),
                 });
-                labels.push(Label::Separator);
+                labels.push(DebugLabel::Separator);
             }
 
             for debug in &node.debug {
-                labels.push(Label::new(debug, Align::Min));
+                labels.push(DebugLabel::new(debug, Align::Min));
             }
 
             if node.children.len() > 1 {
-                labels.push(Label::Separator);
-                labels.push(Label::Split {
+                labels.push(DebugLabel::Separator);
+                labels.push(DebugLabel::Split {
                     min: "Children".into(),
                     max: format!("{}", node.children.len()).into(),
                 });
@@ -295,9 +295,10 @@ fn render_pretty_tree(node: &DebugNode) -> String {
                 grid[y0 + self.height - 1][x] = '─';
             }
 
-            for y in y0 + 1..y0 + self.height - 1 {
-                grid[y][left] = '│';
-                grid[y][right - 1] = '│';
+            // for clippy
+            for grid in grid.iter_mut().take(y0 + self.height - 1).skip(y0 + 1) {
+                grid[left] = '│';
+                grid[right - 1] = '│';
             }
 
             grid[y0][left] = '┌';
@@ -307,21 +308,21 @@ fn render_pretty_tree(node: &DebugNode) -> String {
 
             for (row, label) in self.labels.iter().enumerate() {
                 match label {
-                    Label::Header => {
+                    DebugLabel::Header => {
                         grid[y0 + row + 1][left] = '╞';
                         grid[y0 + row + 1][left + self.width - 1] = '╡';
                         for i in 1..self.width - 1 {
                             grid[y0 + row + 1][left + i] = '═';
                         }
                     }
-                    Label::Separator => {
+                    DebugLabel::Separator => {
                         grid[y0 + row + 1][left] = '┝';
                         grid[y0 + row + 1][left + self.width - 1] = '┥';
                         for i in 1..self.width - 1 {
                             grid[y0 + row + 1][left + i] = '╌';
                         }
                     }
-                    Label::Split { min, max } => {
+                    DebugLabel::Split { min, max } => {
                         let start = left + 2;
                         for (i, ch) in min.char_indices() {
                             grid[y0 + row + 1][start + i] = ch
@@ -331,7 +332,7 @@ fn render_pretty_tree(node: &DebugNode) -> String {
                             grid[y0 + row + 1][start + i] = ch
                         }
                     }
-                    Label::Label { align, text } => {
+                    DebugLabel::Label { align, text } => {
                         let offset = match align {
                             Align::Min => 2,
                             Align::Center => (self.width - text.width()) / 2,

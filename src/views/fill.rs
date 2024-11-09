@@ -21,7 +21,7 @@ impl Fill {
         }
     }
 
-    pub fn fill(bg: impl Into<Rgba>) -> Self {
+    pub fn fill_with(bg: impl Into<Rgba>) -> Self {
         Self::new(bg, Size::FILL)
     }
 

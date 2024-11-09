@@ -1,9 +1,9 @@
 use crate::{
-    view::{style::StyleKind, view::Adhoc, Palette, Response},
+    view::{Adhoc, Palette, Response, StyleKind},
     Attribute, Rgba,
 };
 
-use super::{label::LabelStyle, shorthands};
+use super::label::LabelStyle;
 
 pub type TodoClass = fn(&Palette, bool) -> TodoStyle;
 
@@ -68,7 +68,7 @@ impl<'a> Adhoc<'a> for TodoValue<'a> {
 
                 ui.horizontal(|ui| {
                     ui.show(
-                        shorthands::label(self.label)
+                        super::label(self.label)
                             .style(LabelStyle { foreground })
                             .attribute(attr),
                     );

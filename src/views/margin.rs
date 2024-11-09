@@ -5,11 +5,11 @@ use crate::view::{
 
 #[derive(Copy, Clone, Debug, PartialEq)]
 #[must_use = "a view does nothing unless `show()` or `show_children()` is called"]
-pub struct Margin {
+pub struct MarginView {
     margin: geom::Margin,
 }
 
-impl Margin {
+impl MarginView {
     pub fn new(margin: impl Into<geom::Margin>) -> Self {
         Self {
             margin: margin.into(),
@@ -17,11 +17,11 @@ impl Margin {
     }
 }
 
-impl<'v> Builder<'v> for Margin {
+impl<'v> Builder<'v> for MarginView {
     type View = Self;
 }
 
-impl View for Margin {
+impl View for MarginView {
     type Args<'v> = Self;
     type Response = ();
 

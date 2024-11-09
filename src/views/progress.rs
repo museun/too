@@ -5,8 +5,7 @@ use crate::{
     math::{lerp, normalize, Pos2},
     view::{
         geom::{Size, Space},
-        style::StyleKind,
-        Builder, Elements, Layout, Palette, Render, View,
+        Builder, Elements, Layout, Palette, Render, StyleKind, View,
     },
     Pixel, Rgba,
 };

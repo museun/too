@@ -10,7 +10,7 @@ use crate::{
 
 use super::{
     state::{LayoutNodes, ViewId, ViewNodes},
-    view::Erased,
+    Erased,
 };
 
 mod interest;

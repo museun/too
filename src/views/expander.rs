@@ -2,8 +2,7 @@ use crate::{
     layout::Axis,
     view::{
         geom::{Flex, Size, Space},
-        style::StyleKind,
-        Builder, Elements, Layout, Palette, Render, View,
+        Builder, Elements, Layout, Palette, Render, StyleKind, View,
     },
     Pixel, Rgba,
 };
@@ -32,6 +31,10 @@ impl View for Expander {
         let axis = layout.parent_axis();
         axis.pack(axis.main(space.max.finite_or_zero()), 0.0)
     }
+}
+
+pub const fn expander() -> Expander {
+    Expander
 }
 
 pub type SeparatorClass = fn(&Palette, Axis) -> SeparatorStyle;

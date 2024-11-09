@@ -24,6 +24,16 @@ pub mod animation;
 pub use animation::AnimationManager;
 
 pub mod view;
+pub mod views;
+
+// TODO get rid of this
+use crate::view::geom::Size;
+#[inline(always)]
+#[deprecated(note = "don't use this, use Text when its implemented")]
+pub fn measure_text(data: &str) -> Size {
+    use unicode_width::UnicodeWidthStr as _;
+    Size::new(data.width() as f32, 1.0)
+}
 
 #[cfg(feature = "terminal")]
 pub mod term;

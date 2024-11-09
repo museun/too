@@ -11,13 +11,13 @@ struct DragState {
 }
 
 #[derive(Copy, Clone, Debug, Default, PartialEq)]
-pub struct Dragging {
+pub struct DraggingResponse {
     start: Pos2,
     current: Pos2,
     offset: Pos2,
 }
 
-impl Dragging {
+impl DraggingResponse {
     pub const fn start(&self) -> Pos2 {
         self.start
     }
@@ -68,8 +68,8 @@ impl MouseAreaResponse {
         self.leave
     }
 
-    pub fn dragged(&self) -> Option<Dragging> {
-        self.dragged.as_ref().map(|d| Dragging {
+    pub fn dragged(&self) -> Option<DraggingResponse> {
+        self.dragged.as_ref().map(|d| DraggingResponse {
             start: d.start,
             current: d.pos,
             offset: d.pos + d.offset,
