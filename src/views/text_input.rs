@@ -9,9 +9,8 @@ use unicode_width::UnicodeWidthStr as _;
 
 use crate::{
     layout::Axis,
-    math::pos2,
+    math::{pos2, Size, Space},
     view::{
-        geom::{Size, Space},
         Builder, EventCtx, Handled, Interest, Layout, Palette, Render, StyleKind, Ui, View,
         ViewEvent,
     },

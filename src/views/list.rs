@@ -2,9 +2,8 @@ use core::f32;
 
 use crate::{
     layout::{Axis, CrossAlign, Justify},
-    math::{remap, vec2, Pos2, Rect, Vec2},
+    math::{remap, vec2, Pos2, Rect, Size, Space, Vec2},
     view::{
-        geom::{Size, Space},
         Builder, Elements, EventCtx, Handled, Interest, Layout, Palette, Render, StyleKind, Ui,
         View, ViewEvent,
     },

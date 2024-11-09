@@ -2,14 +2,13 @@ use compact_str::ToCompactString;
 use std::cell::{Ref, RefCell};
 
 use crate::{
-    layout::Align2,
-    math::{Pos2, Rect},
+    layout::{Align2, Flex},
+    math::{Margin, Pos2, Rect},
     views::{self},
     Border, Rgba,
 };
 
 use super::{
-    geom::{Flex, Margin},
     input::InputState,
     state::{internal_views, LayoutNodes, ViewNodes},
     Adhoc, Builder, Palette, Response, State, View, ViewId,

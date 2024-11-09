@@ -1,9 +1,7 @@
 use crate::{
-    layout::Axis,
-    view::{
-        geom::{Flex, Size, Space},
-        Builder, Elements, Layout, Palette, Render, StyleKind, View,
-    },
+    layout::{Axis, Flex},
+    math::{Size, Space},
+    view::{Builder, Elements, Layout, Palette, Render, StyleKind, View},
     Pixel, Rgba,
 };
 

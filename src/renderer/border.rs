@@ -1,4 +1,4 @@
-use crate::view::geom::Margin;
+use crate::math::Margin;
 
 // TODO move this out into the main module
 #[derive(Copy, Clone, PartialEq)]

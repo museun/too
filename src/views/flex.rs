@@ -1,9 +1,12 @@
-use crate::view::{geom, Builder, View};
+use crate::{
+    layout::Flex,
+    view::{Builder, View},
+};
 
 #[derive(Copy, Clone, PartialEq)]
 #[must_use = "a view does nothing unless `show()` or `show_children()` is called"]
 pub struct FlexView {
-    flex: geom::Flex,
+    flex: Flex,
 }
 
 impl std::fmt::Debug for FlexView {
@@ -13,7 +16,7 @@ impl std::fmt::Debug for FlexView {
 }
 
 impl FlexView {
-    pub fn new(flex: impl Into<geom::Flex>) -> Self {
+    pub fn new(flex: impl Into<Flex>) -> Self {
         Self { flex: flex.into() }
     }
 }
@@ -30,7 +33,7 @@ impl View for FlexView {
         args
     }
 
-    fn flex(&self) -> geom::Flex {
+    fn flex(&self) -> Flex {
         self.flex
     }
 }

@@ -2,11 +2,8 @@ use std::ops::Range;
 
 use crate::{
     layout::{Align, Axis, Justify},
-    math::Pos2,
-    view::{
-        geom::{Size, Space},
-        Builder, Layout, Ui, View,
-    },
+    math::{Pos2, Size, Space},
+    view::{Builder, Layout, Ui, View},
 };
 
 #[derive(Copy, Clone, Debug, Default, PartialEq)]

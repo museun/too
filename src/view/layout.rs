@@ -1,10 +1,9 @@
 use crate::{
-    layout::Axis,
-    math::{Pos2, Vec2},
+    layout::{Axis, Flex},
+    math::{Pos2, Size, Space, Vec2},
 };
 
 use super::{
-    geom::{Flex, Size, Space},
     input::InputState,
     state::{LayoutNodes, ViewId, ViewNodes},
 };

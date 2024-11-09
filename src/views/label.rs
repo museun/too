@@ -2,11 +2,8 @@ use compact_str::{CompactString, ToCompactString};
 use unicode_segmentation::UnicodeSegmentation;
 
 use crate::{
-    math::pos2,
-    view::{
-        geom::{Size, Space},
-        Builder, Layout, Palette, Render, StyleKind, View,
-    },
+    math::{pos2, Size, Space},
+    view::{Builder, Layout, Palette, Render, StyleKind, View},
     Attribute, Grapheme, Justification, Rgba, Text,
 };
 

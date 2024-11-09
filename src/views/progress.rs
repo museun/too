@@ -2,11 +2,8 @@ use std::ops::RangeInclusive;
 
 use crate::{
     layout::Axis,
-    math::{lerp, normalize, Pos2},
-    view::{
-        geom::{Size, Space},
-        Builder, Elements, Layout, Palette, Render, StyleKind, View,
-    },
+    math::{lerp, normalize, Pos2, Size, Space},
+    view::{Builder, Elements, Layout, Palette, Render, StyleKind, View},
     Pixel, Rgba,
 };
 

@@ -3,13 +3,12 @@ use slotmap::Key;
 use unicode_width::UnicodeWidthStr;
 
 use crate::{
-    layout::Align,
+    layout::{Align, Flex},
     math::{rect, vec2, Rect},
     Event, Surface,
 };
 
 use super::{
-    geom::Flex,
     helpers::short_name,
     state::{Debug, LayoutNodes, ViewNodes},
     Interest, State, Ui, ViewId,

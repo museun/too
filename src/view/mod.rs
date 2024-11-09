@@ -1,12 +1,9 @@
 use std::time::{Duration, Instant};
 
 pub mod debug;
-pub mod geom;
 pub mod helpers;
 
 mod state;
-use geom::{Flex, Size, Space};
-use layout::IntrinsicSize;
 pub use state::{debug, DebugMode, State, ViewId};
 
 mod response;
@@ -19,7 +16,7 @@ mod ui;
 pub use ui::Ui;
 
 mod layout;
-pub use layout::Layout;
+pub use layout::{IntrinsicSize, Layout};
 
 mod render;
 pub use render::{CroppedSurface, Render};
@@ -27,7 +24,10 @@ pub use render::{CroppedSurface, Render};
 mod style;
 pub use style::{Elements, Knob, Palette, StyleKind};
 
-use crate::layout::Axis;
+use crate::{
+    layout::{Axis, Flex},
+    math::{Size, Space},
+};
 
 pub trait Adhoc<'v>: Sized {
     type Output: 'static;

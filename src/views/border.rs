@@ -4,11 +4,9 @@ use unicode_width::UnicodeWidthStr as _;
 
 use crate::{
     layout::Align,
+    math::{Size, Space},
     measure_text,
-    view::{
-        geom::{Size, Space},
-        Builder, Interest, Layout, Palette, Render, StyleKind, View,
-    },
+    view::{Builder, Interest, Layout, Palette, Render, StyleKind, View},
     Border, Grapheme, Pixel, Rgba,
 };
 

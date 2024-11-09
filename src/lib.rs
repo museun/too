@@ -27,7 +27,7 @@ pub mod view;
 pub mod views;
 
 // TODO get rid of this
-use crate::view::geom::Size;
+use crate::math::Size;
 #[inline(always)]
 #[deprecated(note = "don't use this, use Text when its implemented")]
 pub fn measure_text(data: &str) -> Size {

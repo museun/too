@@ -18,3 +18,12 @@ pub use pos2::{pos2, Pos2};
 mod num;
 pub use num::Num;
 pub use num::{almost_eq, denormalize, inverse_lerp, lerp, normalize, remap};
+
+mod margin;
+pub use margin::Margin;
+
+mod size;
+pub use size::Size;
+
+mod space;
+pub use space::Space;

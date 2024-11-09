@@ -1,9 +1,7 @@
 use crate::{
     layout::Align2,
-    view::{
-        geom::{Size, Space},
-        Builder, Layout, View,
-    },
+    math::{Size, Space},
+    view::{Builder, Layout, View},
 };
 
 pub const fn aligned(align: Align2) -> Aligned {

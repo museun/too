@@ -1,6 +1,6 @@
-use crate::view::{
-    geom::{Size, Space},
-    Builder, Layout, View,
+use crate::{
+    math::{Size, Space},
+    view::{Builder, Layout, View},
 };
 
 #[derive(Debug, Copy, Clone)]

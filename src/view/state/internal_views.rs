@@ -1,9 +1,7 @@
 use crate::{
     layout::Axis,
-    view::{
-        geom::{Size, Space},
-        Builder, Layout, View,
-    },
+    math::{Size, Space},
+    view::{Builder, Layout, View},
 };
 
 #[derive(Debug)]

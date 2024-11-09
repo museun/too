@@ -3,9 +3,8 @@ use std::time::Duration;
 use crate::{
     animation::{easing, Animation},
     layout::Axis,
-    math::{lerp, Pos2},
+    math::{lerp, Pos2, Size, Space},
     view::{
-        geom::{Size, Space},
         Builder, Elements, EventCtx, Handled, Interest, Knob, Layout, Palette, Render, StyleKind,
         Ui, View, ViewEvent,
     },

@@ -1,9 +1,6 @@
 use crate::{
-    math::Pos2,
-    view::{
-        geom::{Size, Space},
-        Builder, Layout, View,
-    },
+    math::{Pos2, Size, Space},
+    view::{Builder, Layout, View},
 };
 
 #[derive(Copy, Clone, Debug, PartialEq)]

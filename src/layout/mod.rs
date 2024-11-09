@@ -17,3 +17,6 @@ pub use align::{Align, Align2};
 
 mod cross_align;
 pub use cross_align::CrossAlign;
+
+mod flex;
+pub use flex::Flex;

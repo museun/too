@@ -1,8 +1,8 @@
 use compact_str::{CompactString, ToCompactString};
 
 use crate::{
+    math::{Margin, Size, Space},
     view::{
-        geom::{Margin, Size, Space},
         Builder, EventCtx, Handled, Interest, Layout, Palette, Render, StyleKind, Ui, View,
         ViewEvent,
     },

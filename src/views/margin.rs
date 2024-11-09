@@ -1,16 +1,16 @@
-use crate::view::{
-    geom::{self, Size, Space},
-    Builder, Layout, View,
+use crate::{
+    math::{Margin, Size, Space},
+    view::{Builder, Layout, View},
 };
 
 #[derive(Copy, Clone, Debug, PartialEq)]
 #[must_use = "a view does nothing unless `show()` or `show_children()` is called"]
 pub struct MarginView {
-    margin: geom::Margin,
+    margin: Margin,
 }
 
 impl MarginView {
-    pub fn new(margin: impl Into<geom::Margin>) -> Self {
+    pub fn new(margin: impl Into<Margin>) -> Self {
         Self {
             margin: margin.into(),
         }

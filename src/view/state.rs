@@ -9,17 +9,12 @@ use slotmap::{SecondaryMap, SlotMap};
 
 use crate::{
     layout::{Anchor2, Axis, LinearLayout},
-    math::{Pos2, Rect, Vec2},
+    math::{Pos2, Rect, Size, Space, Vec2},
     AnimationManager, Rgba, Surface, Text,
 };
 
 use super::{
-    geom::{Size, Space},
-    helpers::Queue,
-    input::InputState,
-    layout::IntrinsicSize,
-    style::Palette,
-    ui::Ui,
+    helpers::Queue, input::InputState, layout::IntrinsicSize, style::Palette, ui::Ui,
     CroppedSurface, Erased, Interest, Layout, Render, View,
 };
 
@@ -158,7 +153,8 @@ impl State {
 
         let resp = {
             #[cfg(feature = "profile")]
-            profiling::scope!("build ui");
+            // stop it
+            // profiling::scope!("build ui");
             self.begin();
             let resp = show(&Ui::new(self));
             self.end();

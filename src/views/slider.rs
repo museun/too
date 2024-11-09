@@ -3,9 +3,8 @@ use std::ops::RangeInclusive;
 
 use crate::{
     layout::Axis,
-    math::{denormalize, inverse_lerp, lerp, normalize, Pos2},
+    math::{denormalize, inverse_lerp, lerp, normalize, Pos2, Size, Space},
     view::{
-        geom::{Size, Space},
         Builder, Elements, EventCtx, Handled, Interest, Knob, Layout, Palette, Render, StyleKind,
         Ui, View, ViewEvent,
     },

@@ -1,8 +1,6 @@
 use crate::{
-    view::{
-        geom::{Size, Space},
-        Builder, Layout, Render, View,
-    },
+    math::{Size, Space},
+    view::{Builder, Layout, Render, View},
     Rgba,
 };
 
