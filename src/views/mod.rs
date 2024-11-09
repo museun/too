@@ -39,8 +39,6 @@ pub use label::{label, Label, LabelClass, LabelStyle};
 
 mod list;
 pub use list::{list, List, ScrollClass, ScrollStyle};
-// TODO move these to the geom module, and do a local impl for the various things that use them
-pub use list::{CrossAlign, Justify};
 
 mod margin;
 pub use margin::MarginView;

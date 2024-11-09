@@ -1,15 +1,13 @@
 use std::ops::Range;
 
 use crate::{
-    layout::{Align, Axis},
+    layout::{Align, Axis, Justify},
     math::Pos2,
     view::{
         geom::{Size, Space},
         Builder, Layout, Ui, View,
     },
 };
-
-use super::list::Justify;
 
 #[derive(Copy, Clone, Debug, Default, PartialEq)]
 pub struct Wrap {

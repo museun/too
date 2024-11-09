@@ -1,7 +1,7 @@
 use core::f32;
 
 use crate::{
-    layout::Axis,
+    layout::{Axis, CrossAlign, Justify},
     math::{remap, vec2, Pos2, Rect, Vec2},
     view::{
         geom::{Size, Space},
@@ -10,76 +10,6 @@ use crate::{
     },
     Key, Pixel, Rgba,
 };
-
-#[derive(Copy, Clone, Debug, Default, PartialEq)]
-pub enum Justify {
-    #[default]
-    Start,
-    End,
-    Center,
-    SpaceBetween,
-    SpaceAround,
-    SpaceEvenly,
-}
-
-impl Justify {
-    pub fn layout(self, sizes: &[f32], size: f32, gap: f32) -> impl Iterator<Item = f32> + use<'_> {
-        let count = sizes.len() as f32;
-        let total_gap = gap * (count - 1.0);
-
-        let total_size = sizes.iter().sum::<f32>() + total_gap;
-
-        let gap = match self {
-            Self::Start | Self::End | Self::Center => gap,
-            Self::SpaceBetween => (size - (total_size - total_gap)) / (count - 1.0),
-            Self::SpaceAround => (size - (total_size - total_gap)) / count,
-            Self::SpaceEvenly => (size - (total_size - total_gap)) / (count + 1.0),
-        };
-
-        let mut pos = match self {
-            Self::Start | Self::SpaceBetween => 0.0,
-            Self::Center => (size - total_size) * 0.5,
-            Self::End => size - total_size,
-            Self::SpaceAround => gap * 0.5,
-            Self::SpaceEvenly => gap,
-        };
-
-        let mut iter = sizes.iter();
-        std::iter::from_fn(move || {
-            let old = pos;
-            pos += *iter.next()? + gap;
-            Some(old)
-        })
-    }
-}
-
-#[derive(Copy, Clone, Debug, Default, PartialEq)]
-pub enum CrossAlign {
-    #[default]
-    Start,
-    End,
-    Center,
-    Stretch,
-    Fill,
-}
-
-impl CrossAlign {
-    pub const fn is_stretch(&self) -> bool {
-        matches!(self, Self::Stretch)
-    }
-
-    pub const fn is_fill(&self) -> bool {
-        matches!(self, Self::Fill)
-    }
-
-    pub fn align(self, available: f32, size: f32) -> f32 {
-        match self {
-            Self::Start | Self::Stretch | Self::Fill => 0.0,
-            Self::End => available - size,
-            Self::Center => (available - size) * 0.5,
-        }
-    }
-}
 
 #[derive(Debug, Default)]
 struct ListState {
