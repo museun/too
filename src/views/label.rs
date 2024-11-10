@@ -152,19 +152,3 @@ impl View for Label {
         }
     }
 }
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    #[test]
-    fn asdf() {
-        let test = "hello world this is a test with more data"; // but nothing over 6 characters
-
-        for i in [5, 10, 20, 30] {
-            for (i, line) in Label::wrap(&test, Size::new(i as f32, 3.0)).enumerate() {
-                eprintln!("{i}: {} '{line}'", line.len());
-            }
-            eprintln!("^{i}")
-        }
-    }
-}
