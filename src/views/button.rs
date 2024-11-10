@@ -1,12 +1,13 @@
 use compact_str::{CompactString, ToCompactString};
 
 use crate::{
+    layout::Align,
     math::{Margin, Size, Space},
     view::{
         Builder, EventCtx, Handled, Interest, Layout, Palette, Render, StyleKind, Ui, View,
         ViewEvent,
     },
-    Justification, Rgba, Text,
+    Rgba, Text,
 };
 
 #[derive(Copy, Clone, Default, Debug, PartialEq)]
@@ -106,8 +107,8 @@ pub struct Button {
     margin: Margin,
     state: ButtonState,
     disabled: bool,
-    main: Justification,
-    cross: Justification,
+    main: Align,
+    cross: Align,
     class: StyleKind<ButtonClass, ButtonStyle>,
 }
 
@@ -118,18 +119,18 @@ impl Button {
             margin: Margin::symmetric(1, 0),
             state: ButtonState::None,
             disabled: false,
-            main: Justification::Start,
-            cross: Justification::Start,
+            main: Align::Min,
+            cross: Align::Min,
             class: StyleKind::Deferred(ButtonStyle::default),
         }
     }
 
-    pub const fn text_horizontal_align(mut self, justify: Justification) -> Self {
+    pub const fn text_horizontal_align(mut self, justify: Align) -> Self {
         self.main = justify;
         self
     }
 
-    pub const fn text_vertical_align(mut self, justify: Justification) -> Self {
+    pub const fn text_vertical_align(mut self, justify: Align) -> Self {
         self.cross = justify;
         self
     }

@@ -11,7 +11,7 @@ use crate::{
 use super::{
     helpers::short_name,
     state::{Debug, LayoutNodes, ViewNodes},
-    Interest, State, Ui, ViewId,
+    Interest, Palette, State, Ui, ViewId,
 };
 
 #[derive(Debug)]
@@ -38,7 +38,7 @@ impl DebugNode {
         render_pretty_tree(self)
     }
 
-    fn new(root: ViewId, nodes: &ViewNodes, layout: &LayoutNodes) -> Self {
+    pub fn new(root: ViewId, nodes: &ViewNodes, layout: &LayoutNodes) -> Self {
         fn build(
             debug_nodes: &mut Vec<DebugNode>,
             id: ViewId,
@@ -461,10 +461,9 @@ impl std::fmt::Display for TreeOutput {
 }
 
 fn evaluate<R: 'static>(mut app: impl FnMut(&Ui) -> R) -> (DebugNode, Vec<String>) {
-    let mut state = State::new();
+    let mut state = State::new(Palette::default());
 
     let size = vec2(80, 25);
-
     state.event(&Event::Resize(size));
 
     let mut surface = Surface::new(size);

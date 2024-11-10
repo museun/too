@@ -7,8 +7,7 @@ use super::{
 
 use crate::{
     math::{pos2, rect, Pos2, Rect, Vec2},
-    text::MeasureText,
-    Event, Text,
+    Event,
 };
 
 /// An owned view of a rect region that allows drawing
@@ -92,7 +91,7 @@ impl Surface {
     }
 
     // PERF we can use 'set_line' if we patch any cells afterward
-    // #[cfg_attr(feature = "profile", profiling::function)]
+    #[cfg_attr(feature = "profile", profiling::function)]
     pub fn fill(&mut self, rect: Rect, pixel: impl Into<Pixel>) -> &mut Self {
         let pixel = pixel.into();
         let rect = self.rect().intersection(rect);
@@ -104,15 +103,7 @@ impl Surface {
         self
     }
 
-    // this can't be a trait method probably
     #[cfg_attr(feature = "profile", profiling::function)]
-    pub fn text<T: MeasureText>(&mut self, rect: Rect, text: impl Into<Text<T>>) -> &mut Self {
-        let text: Text<T> = text.into();
-        let rect = self.rect().intersection(rect);
-        text.draw(rect, self);
-        self
-    }
-
     pub fn border(&mut self, rect: Rect, border: Border, fg: impl Into<Color>) -> &mut Self {
         let fg = fg.into();
         let (w, h) = (rect.width() - 1, rect.height() - 1);
@@ -198,12 +189,6 @@ impl Surface {
         // }
 
         self.size = size;
-    }
-
-    #[cfg_attr(feature = "profile", profiling::function)]
-    pub fn compact(&mut self) {
-        self.front.shrink_to_fit();
-        self.back.shrink_to_fit();
     }
 
     // TODO `force invalidate` (rather than a lazy invalidate)

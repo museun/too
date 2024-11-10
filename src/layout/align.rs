@@ -7,12 +7,6 @@ pub enum Align {
     Max,
 }
 
-#[allow(non_upper_case_globals)]
-impl Align {
-    pub const Start: Self = Self::Min;
-    pub const End: Self = Self::Max;
-}
-
 impl Align {
     pub const fn factor(&self) -> f32 {
         match self {
@@ -22,7 +16,7 @@ impl Align {
         }
     }
 
-    pub fn align(&self, available: f32, size: f32) -> f32 {
+    pub const fn align(&self, available: f32, size: f32) -> f32 {
         (available - size) * self.factor()
     }
 }
@@ -35,6 +29,7 @@ impl Align {
     pub const BOTTOM: Self = Self::Max;
 
     pub const START: Self = Self::Min;
+    pub const MIDDLE: Self = Self::Center;
     pub const END: Self = Self::Max;
 }
 

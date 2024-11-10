@@ -3,12 +3,13 @@ use std::cell::{Ref, RefCell};
 
 use crate::{
     layout::{Align2, Flex},
-    math::{Margin, Pos2, Rect},
-    views::{self},
+    math::{Margin, Pos2, Rect, Size},
+    views::{self, Constrain},
     Border, Rgba,
 };
 
 use super::{
+    debug::DebugNode,
     input::InputState,
     state::{internal_views, LayoutNodes, ViewNodes},
     Adhoc, Builder, Palette, Response, State, View, ViewId,
@@ -19,18 +20,28 @@ pub struct Ui<'a> {
     pub(in crate::view) layout: &'a LayoutNodes,
     pub(in crate::view) input: &'a InputState,
     pub(in crate::view) palette: &'a RefCell<Palette>,
+    pub(in crate::view) client_rect: Rect,
 }
 
 impl<'a> Ui<'a> {
-    pub(super) fn new(state: &'a mut State) -> Self {
+    pub(super) fn new(state: &'a mut State, client_rect: Rect) -> Self {
         Self {
             nodes: &state.nodes,
             layout: &state.layout,
             input: &state.input,
             palette: &state.palette,
+            client_rect,
         }
     }
 
+    // FIXME remove this
+    #[doc(hidden)]
+    pub fn node_tree_representation(&self) -> String {
+        DebugNode::new(self.nodes.root(), self.nodes, self.layout).compact_tree()
+    }
+}
+
+impl<'a> Ui<'a> {
     pub fn adhoc<'v, A>(&self, view: A) -> A::Output
     where
         A: Adhoc<'v>,
@@ -62,6 +73,10 @@ impl<'a> Ui<'a> {
 }
 
 impl<'a> Ui<'a> {
+    pub fn client_rect(&self) -> Rect {
+        self.client_rect
+    }
+
     pub fn current_available_rect(&self) -> Rect {
         let parent = self.nodes.parent();
         self.layout.get(parent).map(|c| c.rect).unwrap_or_default()
@@ -92,6 +107,14 @@ impl<'a> Ui<'a> {
         R: 'static,
     {
         self.show_children(internal_views::Scope, show)
+            .flatten_right()
+    }
+
+    pub fn screen<R>(&self, name: &'static str, show: impl FnOnce(&Ui) -> R) -> Response<R>
+    where
+        R: 'static,
+    {
+        self.show_children(internal_views::UniqueName(name), show)
             .flatten_right()
     }
 
@@ -168,6 +191,27 @@ impl<'a> Ui<'a> {
     {
         self.show_children(views::Offset::new(offset), show)
             .flatten_right()
+    }
+
+    pub fn exact_size<R>(&self, size: impl Into<Size>, show: impl FnOnce(&Ui) -> R) -> Response<R>
+    where
+        R: 'static,
+    {
+        self.constrain(Constrain::exact_size(size), show)
+    }
+
+    pub fn exact_height<R>(&self, height: i32, show: impl FnOnce(&Ui) -> R) -> Response<R>
+    where
+        R: 'static,
+    {
+        self.constrain(Constrain::exact_height(height), show)
+    }
+
+    pub fn exact_width<R>(&self, width: i32, show: impl FnOnce(&Ui) -> R) -> Response<R>
+    where
+        R: 'static,
+    {
+        self.constrain(Constrain::exact_width(width), show)
     }
 
     pub fn constrain<R>(
@@ -298,7 +342,11 @@ impl<'a> Ui<'a> {
             .flatten_right()
     }
 
-    pub fn expander(&self) -> Response {
+    pub fn expand_space(&self) -> Response {
+        self.show(views::Fill::all_space())
+    }
+
+    pub fn expand_axis(&self) -> Response {
         self.show(views::expander())
     }
 

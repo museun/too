@@ -9,6 +9,9 @@ pub type RadioClass = fn(&Palette, bool) -> RadioStyle;
 
 #[derive(Debug)]
 pub struct RadioStyle {
+    pub selected: Option<&'static str>,
+    pub unselected: Option<&'static str>,
+
     pub text_color: Rgba,
 
     pub background: Rgba,
@@ -21,6 +24,8 @@ pub struct RadioStyle {
 impl RadioStyle {
     pub fn default(palette: &Palette, selected: bool) -> Self {
         Self {
+            selected: None,
+            unselected: None,
             text_color: palette.foreground,
             background: palette.surface,
             selected_background: palette.primary,

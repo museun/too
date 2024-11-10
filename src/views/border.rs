@@ -123,8 +123,8 @@ impl View for BorderView {
             .map(measure_text)
             .unwrap_or(Size::ZERO);
 
-        let max = size.max(title_size + Size::new(1.0, 0.0));
-        space.fit(max + sum)
+        let max = size.max(title_size) + Size::new(1.0, 0.0);
+        space.fit(max)
     }
 
     fn draw(&mut self, mut render: Render) {

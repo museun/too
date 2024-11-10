@@ -154,6 +154,7 @@ pub trait Erased: std::any::Any + std::fmt::Debug {
     fn layout(&mut self, layout: Layout, space: Space) -> Size;
     fn draw(&mut self, render: Render);
 
+    fn as_any(&self) -> &dyn std::any::Any;
     fn as_mut_any(&mut self) -> &mut dyn std::any::Any;
     fn type_name(&self) -> &'static str;
 }
@@ -194,6 +195,10 @@ impl<T: View> Erased for T {
         T::draw(self, render)
     }
 
+    fn as_any(&self) -> &dyn std::any::Any {
+        self
+    }
+
     fn as_mut_any(&mut self) -> &mut dyn std::any::Any {
         self
     }
@@ -212,23 +217,53 @@ pub fn debug_view(mut app: impl FnMut(&Ui)) -> std::io::Result<()> {
 }
 
 pub fn run<R: 'static>(app: impl FnMut(&Ui) -> R) -> std::io::Result<()> {
-    application(Palette::dark, app)
+    application(Config::default(), app)
+}
+
+pub struct Config {
+    pub palette: Palette,
+    pub debug: DebugMode,
+    pub fps: f32,
+    pub ctrl_c_quits: bool,
+    pub ctrl_z_switches: bool,
+    pub hook_panics: bool,
+}
+
+impl Default for Config {
+    fn default() -> Self {
+        Self {
+            palette: Palette::dark(),
+            debug: DebugMode::PerFrame,
+            fps: 60.0,
+            ctrl_c_quits: true,
+            ctrl_z_switches: false,
+            hook_panics: false,
+        }
+    }
 }
 
 pub fn application<R: 'static>(
-    start: impl Fn() -> Palette,
+    config: Config,
     mut app: impl FnMut(&Ui) -> R,
 ) -> std::io::Result<()> {
-    use crate::{Backend, EventReader};
-    let mut term = crate::term::Term::setup(crate::term::Config::default().hook_panics(true))?;
-    let mut surface = crate::Surface::new(term.size());
+    use crate::{
+        term::{Config as TermConfig, Term},
+        Backend, EventReader, Surface,
+    };
 
-    let mut state = State::new();
-    *state.palette.get_mut() = start();
-    state.set_debug_mode(DebugMode::PerFrame);
+    let mut term = Term::setup(
+        TermConfig::default()
+            .hook_panics(config.hook_panics)
+            .ctrl_c_quits(config.ctrl_c_quits)
+            .ctrl_z_switches(config.ctrl_z_switches),
+    )?;
+    let mut surface = Surface::new(term.size());
 
-    let target = Duration::from_secs_f32(1.0 / 60.0);
-    let max_budget = target / 2;
+    let mut state = State::new(config.palette);
+    state.set_debug_mode(config.debug);
+
+    let target = Duration::from_secs_f32(1.0 / config.fps.max(1.0));
+    let max_budget = (target / 2).max(Duration::from_millis(1));
 
     let mut prev = Instant::now();
 

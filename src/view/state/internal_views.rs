@@ -1,4 +1,5 @@
 use crate::{
+    hasher::hash_fnv_1a,
     layout::Axis,
     math::{Size, Space},
     view::{Builder, Layout, View},
@@ -97,5 +98,28 @@ impl View for Scope {
 
     fn create(args: Self::Args<'_>) -> Self {
         args
+    }
+}
+
+#[derive(Copy, Clone, Debug, PartialEq)]
+pub struct UniqueName(pub(in crate::view) &'static str);
+
+#[derive(Debug)]
+pub struct Screen {
+    pub(in crate::view) key: u64,
+}
+
+impl<'v> Builder<'v> for UniqueName {
+    type View = Screen;
+}
+
+impl View for Screen {
+    type Args<'v> = UniqueName;
+    type Response = ();
+
+    fn create(UniqueName(args): Self::Args<'_>) -> Self {
+        Self {
+            key: hash_fnv_1a(args.as_bytes()),
+        }
     }
 }

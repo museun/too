@@ -396,7 +396,7 @@ impl View for List {
 
                 let main = self.axis.main((rect.left(), rect.top()));
                 let delta: i32 = self.axis.main(current - main);
-                let extent: i32 = self.axis.main(rect.size());
+                let extent: i32 = self.axis.main(rect.size() - 1);
 
                 self.scroll.pos = remap(
                     delta as f32, //

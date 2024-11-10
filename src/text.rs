@@ -151,16 +151,13 @@ impl<T: MeasureText> MeasureText for Option<T> {
     }
 }
 
-// TODO use a different type (we have a `Justify` now)
-pub type Justification = Align;
-
 pub struct Text<T: MeasureText> {
     pub text: T,
     fg: Color,
     bg: Color,
     attribute: Attribute,
-    main: Justification,
-    cross: Justification,
+    main: Align,
+    cross: Align,
 }
 
 impl<T: MeasureText> From<T> for Text<T> {
@@ -176,8 +173,8 @@ impl<T: MeasureText> Text<T> {
             fg: Color::Reset,
             bg: Color::Reuse,
             attribute: Attribute::RESET,
-            main: Justification::Min,
-            cross: Justification::Min,
+            main: Align::Min,
+            cross: Align::Min,
         }
     }
 
@@ -231,12 +228,12 @@ impl<T: MeasureText> Text<T> {
         self.attribute(Attribute::STRIKEOUT)
     }
 
-    pub fn main(mut self, main: Justification) -> Self {
+    pub fn main(mut self, main: Align) -> Self {
         self.main = main;
         self
     }
 
-    pub fn cross(mut self, cross: Justification) -> Self {
+    pub fn cross(mut self, cross: Align) -> Self {
         self.cross = cross;
         self
     }
@@ -265,9 +262,9 @@ impl<T: MeasureText> Text<T> {
             let w = grapheme.width() as i32;
             if w + width > available_width {
                 let x = match self.main {
-                    Justification::Min => 0,
-                    Justification::Center => (available_width - width) / 2,
-                    Justification::Max => available_width - width,
+                    Align::Min => 0,
+                    Align::Center => (available_width - width) / 2,
+                    Align::Max => available_width - width,
                 };
 
                 let x = x + rect.left();
@@ -286,9 +283,9 @@ impl<T: MeasureText> Text<T> {
 
         if !temp.is_empty() {
             let x = match self.main {
-                Justification::Min => 0,
-                Justification::Center => (available_width - width) / 2,
-                Justification::Max => available_width - width,
+                Align::Min => 0,
+                Align::Center => (available_width - width) / 2,
+                Align::Max => available_width - width,
             };
 
             let x = x + rect.left();
@@ -300,9 +297,9 @@ impl<T: MeasureText> Text<T> {
         let total = lines.len() as i32;
 
         let y = match self.cross {
-            Justification::Min => rect.top(),
-            Justification::Center => rect.top() + (available_height - total) / 2,
-            Justification::Max => rect.bottom() - total,
+            Align::Min => rect.top(),
+            Align::Center => rect.top() + (available_height - total) / 2,
+            Align::Max => rect.bottom() - total,
         };
 
         for line in lines {

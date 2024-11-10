@@ -2,9 +2,10 @@ use compact_str::{CompactString, ToCompactString};
 use unicode_segmentation::UnicodeSegmentation;
 
 use crate::{
+    layout::Align,
     math::{pos2, Size, Space},
     view::{Builder, Layout, Palette, Render, StyleKind, View},
-    Attribute, Grapheme, Justification, Rgba, Text,
+    Attribute, Grapheme, Rgba, Text,
 };
 
 #[derive(Copy, Clone, Debug, PartialEq)]
@@ -49,8 +50,8 @@ impl Label {
         Label {
             label: label.to_compact_string(),
             class: StyleKind::Deferred(LabelStyle::default),
-            main: Justification::Start,
-            cross: Justification::Start,
+            main: Align::Min,
+            cross: Align::Min,
             attribute: None,
         }
     }
@@ -65,12 +66,12 @@ impl Label {
         self
     }
 
-    pub const fn horizontal_align(mut self, justify: Justification) -> Self {
+    pub const fn horizontal_align(mut self, justify: Align) -> Self {
         self.main = justify;
         self
     }
 
-    pub const fn vertical_align(mut self, justify: Justification) -> Self {
+    pub const fn vertical_align(mut self, justify: Align) -> Self {
         self.cross = justify;
         self
     }
@@ -113,8 +114,8 @@ impl Label {
 pub struct Label {
     label: CompactString,
     class: StyleKind<LabelClass, LabelStyle>,
-    main: Justification,
-    cross: Justification,
+    main: Align,
+    cross: Align,
     attribute: Option<Attribute>,
 }
 
@@ -141,6 +142,7 @@ impl View for Label {
             StyleKind::Direct(style) => style,
         };
 
+        // TODO use a measure thing
         for (start, grapheme) in self.label.graphemes(true).enumerate() {
             let mut cell = Grapheme::new(grapheme).fg(style.foreground);
             if let Some(attr) = self.attribute {

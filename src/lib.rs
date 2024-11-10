@@ -18,7 +18,7 @@ pub use renderer::{
 pub mod layout;
 
 mod text;
-pub use text::{Justification, MeasureText, Text};
+pub use text::{MeasureText, Text};
 
 pub mod animation;
 pub use animation::AnimationManager;

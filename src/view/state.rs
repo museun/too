@@ -85,12 +85,12 @@ pub struct State {
 
 impl Default for State {
     fn default() -> Self {
-        Self::new()
+        Self::new(Palette::default())
     }
 }
 
 impl State {
-    pub fn new() -> Self {
+    pub fn new(palette: Palette) -> Self {
         let nodes = ViewNodes::new();
         let mut layout = LayoutNodes::new();
         layout.nodes.insert(nodes.root, LayoutNode::new(nodes.root));
@@ -101,7 +101,7 @@ impl State {
             render: RenderNodes::new(),
             input: InputState::default(),
             animations: AnimationManager::new(),
-            palette: RefCell::new(Palette::dark()),
+            palette: RefCell::new(palette),
             frame_count: 0,
         }
     }
@@ -116,6 +116,14 @@ impl State {
             return;
         }
         debug(msg);
+    }
+
+    pub fn set_palette(&self, palette: Palette) {
+        *self.palette.borrow_mut() = palette
+    }
+
+    pub fn palette(&self) -> Ref<'_, Palette> {
+        self.palette.borrow()
     }
 
     pub fn set_debug_mode(&self, mode: DebugMode) {
@@ -154,9 +162,9 @@ impl State {
         let resp = {
             #[cfg(feature = "profile")]
             // stop it
-            // profiling::scope!("build ui");
+            profiling::scope!("build ui");
             self.begin();
-            let resp = show(&Ui::new(self));
+            let resp = show(&Ui::new(self, rect));
             self.end();
             resp
         };
@@ -173,8 +181,8 @@ impl State {
     #[cfg_attr(feature = "profile", profiling::function)]
     pub fn render(&mut self, surface: &mut Surface) {
         self.frame_count += 1;
-        let root = self.root();
 
+        let root = self.root();
         let rect = self.layout.rect(root).unwrap();
         surface.clear(rect, self.palette.get_mut().background);
 
@@ -203,7 +211,7 @@ impl State {
                     for msg in debug.drain() {
                         let text = Text::new(msg).fg(Rgba::hex("#F00")).bg(Rgba::hex("#000"));
                         if let Some(rect) = layout.allocate(text.size()) {
-                            surface.text(rect, text);
+                            text.draw(rect, surface);
                         }
                     }
                 }
@@ -211,7 +219,7 @@ impl State {
                     for msg in debug.iter() {
                         let text = Text::new(msg).fg(Rgba::hex("#F00")).bg(Rgba::hex("#000"));
                         if let Some(rect) = layout.allocate(text.size()) {
-                            surface.text(rect, text);
+                            text.draw(rect, surface);
                         }
                     }
                 }
@@ -283,9 +291,10 @@ impl ViewNodes {
     }
 
     pub fn end(&self, id: ViewId) {
-        let Some(id) = self.stack.borrow_mut().pop() else {
+        let Some(old) = self.stack.borrow_mut().pop() else {
             unreachable!("stack was empty");
         };
+        assert_eq!(old, id, "begin id: {id:?} did not match end id: {old:?}")
     }
 
     pub(in crate::view) fn begin_view<V: View>(
@@ -340,15 +349,22 @@ impl ViewNodes {
         Some(id)
     }
 
-    fn allocate_view<V: View>(&self, parent: ViewId, args: V::Args<'_>) -> (ViewId, V::Response) {
+    fn allocate_view<V: View>(
+        &self,
+        parent_id: ViewId,
+        args: V::Args<'_>,
+    ) -> (ViewId, V::Response) {
+        let view = V::create(args);
+        let name = view.type_name();
+
         let id = self.nodes.borrow_mut().insert(ViewNode {
-            parent: Some(parent),
+            parent: Some(parent_id),
             children: vec![],
             next: 0,
-            view: RefCell::new(Slot::new(V::create(args))),
+            view: RefCell::new(Slot::new(view)),
         });
 
-        let parent = &mut self.nodes.borrow_mut()[parent];
+        let parent = &mut self.nodes.borrow_mut()[parent_id];
         if parent.next < parent.children.len() {
             parent.children[parent.next] = id;
         } else {
@@ -356,6 +372,7 @@ impl ViewNodes {
         }
         parent.next += 1;
 
+        // eprintln!("alloc {id:?} ({name}) for {parent_id:?}");
         (id, V::Response::default())
     }
 
@@ -398,7 +415,7 @@ impl ViewNodes {
     }
 
     fn cleanup(&self, start: ViewId) {
-        // why doesn't NLL drop this borrow at the 'return'?
+        // FIXME NLL 2024
         {
             let nodes = self.nodes.borrow();
             let node = &nodes[start];

@@ -32,6 +32,12 @@ pub struct Palette {
     pub info: Rgba,
 }
 
+impl Default for Palette {
+    fn default() -> Self {
+        Self::dark()
+    }
+}
+
 impl Palette {
     pub fn is_dark(&self) -> bool {
         self.background.is_dark()
