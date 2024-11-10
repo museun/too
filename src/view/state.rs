@@ -255,7 +255,6 @@ slotmap::new_key_type! {
 pub struct ViewNodes {
     nodes: RefCell<SlotMap<ViewId, ViewNode>>,
     stack: RefCell<Vec<ViewId>>,
-    unique: RefCell<SecondaryMap<ViewId, u64>>,
     removed: RefCell<Vec<ViewId>>,
     root: ViewId,
 }
@@ -279,7 +278,6 @@ impl ViewNodes {
         Self {
             nodes: RefCell::new(nodes),
             stack: RefCell::default(),
-            unique: RefCell::default(),
             removed: RefCell::default(),
             root,
         }
@@ -354,7 +352,6 @@ impl ViewNodes {
         args: V::Args<'_>,
     ) -> (ViewId, V::Response) {
         let view = V::create(args);
-        let name = view.type_name();
 
         let id = self.nodes.borrow_mut().insert(ViewNode {
             parent: Some(parent_id),
@@ -381,6 +378,7 @@ impl ViewNodes {
 
         while let Some(id) = queue.pop_front() {
             removed.push(id);
+
             let Some(node) = nodes.remove(id) else {
                 continue;
             };
@@ -429,6 +427,7 @@ impl ViewNodes {
         node.children.truncate(node.next);
 
         let mut removed = self.removed.borrow_mut();
+
         while let Some(id) = queue.pop_front() {
             removed.push(id);
             let Some(next) = nodes.remove(id) else {

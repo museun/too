@@ -110,14 +110,6 @@ impl<'a> Ui<'a> {
             .flatten_right()
     }
 
-    pub fn screen<R>(&self, name: &'static str, show: impl FnOnce(&Ui) -> R) -> Response<R>
-    where
-        R: 'static,
-    {
-        self.show_children(internal_views::UniqueName(name), show)
-            .flatten_right()
-    }
-
     pub fn layer<R>(&self, show: impl FnOnce(&Ui) -> R) -> Response<R>
     where
         R: 'static,
