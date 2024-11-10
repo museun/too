@@ -27,6 +27,7 @@ pub use style::{Elements, Knob, Palette, StyleKind};
 use crate::{
     layout::{Axis, Flex},
     math::{Size, Space},
+    AnimationManager,
 };
 
 pub trait Adhoc<'v>: Sized {
@@ -223,6 +224,7 @@ pub fn run<R: 'static>(app: impl FnMut(&Ui) -> R) -> std::io::Result<()> {
 pub struct Config {
     pub palette: Palette,
     pub debug: DebugMode,
+    pub animation: AnimationManager,
     pub fps: f32,
     pub ctrl_c_quits: bool,
     pub ctrl_z_switches: bool,
@@ -234,6 +236,7 @@ impl Default for Config {
         Self {
             palette: Palette::dark(),
             debug: DebugMode::PerFrame,
+            animation: AnimationManager::default(),
             fps: 60.0,
             ctrl_c_quits: true,
             ctrl_z_switches: false,
@@ -259,7 +262,7 @@ pub fn application<R: 'static>(
     )?;
     let mut surface = Surface::new(term.size());
 
-    let mut state = State::new(config.palette);
+    let mut state = State::new(config.palette, config.animation);
     state.set_debug_mode(config.debug);
 
     let target = Duration::from_secs_f32(1.0 / config.fps.max(1.0));

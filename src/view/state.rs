@@ -85,12 +85,12 @@ pub struct State {
 
 impl Default for State {
     fn default() -> Self {
-        Self::new(Palette::default())
+        Self::new(Palette::default(), AnimationManager::default())
     }
 }
 
 impl State {
-    pub fn new(palette: Palette) -> Self {
+    pub fn new(palette: Palette, animations: AnimationManager) -> Self {
         let nodes = ViewNodes::new();
         let mut layout = LayoutNodes::new();
         layout.nodes.insert(nodes.root, LayoutNode::new(nodes.root));
@@ -100,7 +100,7 @@ impl State {
             layout,
             render: RenderNodes::new(),
             input: InputState::default(),
-            animations: AnimationManager::new(),
+            animations,
             palette: RefCell::new(palette),
             frame_count: 0,
         }
@@ -244,7 +244,7 @@ impl State {
             self.layout.nodes.remove(id);
         }
         self.input.end();
-        self.layout.interest.clear();
+        self.layout.end();
     }
 }
 
@@ -255,6 +255,7 @@ slotmap::new_key_type! {
 pub struct ViewNodes {
     nodes: RefCell<SlotMap<ViewId, ViewNode>>,
     stack: RefCell<Vec<ViewId>>,
+    unique: RefCell<SecondaryMap<ViewId, u64>>,
     removed: RefCell<Vec<ViewId>>,
     root: ViewId,
 }
@@ -263,7 +264,6 @@ impl std::fmt::Debug for ViewNodes {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("ViewNodes")
             .field("root", &self.root)
-            // .field("nodes", &ArenaDebug(&self.nodes.borrow()))
             .finish()
     }
 }
@@ -281,6 +281,7 @@ impl ViewNodes {
         Self {
             nodes: RefCell::new(nodes),
             stack: RefCell::default(),
+            unique: RefCell::default(),
             removed: RefCell::default(),
             root,
         }
@@ -372,7 +373,6 @@ impl ViewNodes {
         }
         parent.next += 1;
 
-        // eprintln!("alloc {id:?} ({name}) for {parent_id:?}");
         (id, V::Response::default())
     }
 
@@ -645,14 +645,12 @@ pub struct LayoutNodes {
     nodes: SecondaryMap<ViewId, LayoutNode>,
     clip_stack: Vec<ViewId>,
     axis_stack: Vec<Axis>,
-    pub interest: MouseInterest,
+    pub(super) interest: MouseInterest,
 }
 
 impl std::fmt::Debug for LayoutNodes {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.debug_struct("LayoutNodes")
-            // .field("nodes", &ArenaDebug(&self.nodes))
-            .finish()
+        f.debug_struct("LayoutNodes").finish()
     }
 }
 
@@ -671,6 +669,59 @@ impl LayoutNodes {
 
     pub fn rect(&self, id: ViewId) -> Option<Rect> {
         self.get(id).map(|c| c.rect)
+    }
+
+    pub fn intrinsic_size(&self, nodes: &ViewNodes, id: ViewId, axis: Axis, extent: f32) -> f32 {
+        nodes.begin(id);
+
+        let size = nodes
+            .scoped(id, |node| {
+                let size = IntrinsicSize {
+                    nodes,
+                    layout: self,
+                };
+                node.size(size, axis, extent)
+            })
+            .unwrap();
+
+        nodes.end(id);
+        size
+    }
+
+    pub fn enable_clipping(&mut self, nodes: &ViewNodes) {
+        self.clip_stack.push(nodes.current());
+    }
+
+    pub fn new_layer(&mut self, nodes: &ViewNodes) {
+        self.interest.push_layer(nodes.current());
+    }
+
+    pub fn remove(&mut self, id: ViewId) {
+        self.nodes.remove(id);
+    }
+
+    pub fn set_position(&mut self, id: ViewId, pos: impl Into<Pos2>) {
+        if let Some(node) = self.nodes.get_mut(id) {
+            let offset = pos.into().to_vec2();
+            node.rect = node.rect.translate(offset);
+        }
+    }
+
+    pub fn set_size(&mut self, id: ViewId, size: impl Into<Vec2>) {
+        if let Some(node) = self.nodes.get_mut(id) {
+            node.rect.set_size(size);
+        }
+    }
+}
+
+impl LayoutNodes {
+    fn new() -> Self {
+        Self {
+            nodes: SecondaryMap::new(),
+            clip_stack: Vec::new(),
+            axis_stack: Vec::new(),
+            interest: MouseInterest::new(),
+        }
     }
 
     #[inline(always)]
@@ -737,57 +788,8 @@ impl LayoutNodes {
         size
     }
 
-    pub fn intrinsic_size(&self, nodes: &ViewNodes, id: ViewId, axis: Axis, extent: f32) -> f32 {
-        nodes.begin(id);
-
-        let size = nodes
-            .scoped(id, |node| {
-                let size = IntrinsicSize {
-                    nodes,
-                    layout: self,
-                };
-                node.size(size, axis, extent)
-            })
-            .unwrap();
-
-        nodes.end(id);
-        size
-    }
-
-    pub fn enable_clipping(&mut self, nodes: &ViewNodes) {
-        self.clip_stack.push(nodes.current());
-    }
-
-    pub fn new_layer(&mut self, nodes: &ViewNodes) {
-        self.interest.push_layer(nodes.current());
-    }
-
-    pub fn remove(&mut self, id: ViewId) {
-        self.nodes.remove(id);
-    }
-
-    pub fn set_position(&mut self, id: ViewId, pos: impl Into<Pos2>) {
-        if let Some(node) = self.nodes.get_mut(id) {
-            let offset = pos.into().to_vec2();
-            node.rect = node.rect.translate(offset);
-        }
-    }
-
-    pub fn set_size(&mut self, id: ViewId, size: impl Into<Vec2>) {
-        if let Some(node) = self.nodes.get_mut(id) {
-            node.rect.set_size(size);
-        }
-    }
-}
-
-impl LayoutNodes {
-    fn new() -> Self {
-        Self {
-            nodes: SecondaryMap::new(),
-            clip_stack: Vec::new(),
-            axis_stack: Vec::new(),
-            interest: MouseInterest::new(),
-        }
+    fn end(&mut self) {
+        self.interest.clear();
     }
 
     #[cfg_attr(feature = "profile", profiling::function)]
