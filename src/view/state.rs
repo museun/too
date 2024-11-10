@@ -272,10 +272,8 @@ impl ViewNodes {
     pub(super) fn new() -> Self {
         let mut nodes = SlotMap::with_key();
         let root = nodes.insert(ViewNode {
-            parent: None,
-            children: Vec::new(),
-            next: 0,
             view: RefCell::new(Slot::new(internal_views::Root)),
+            ..ViewNode::default()
         });
 
         Self {
@@ -360,9 +358,8 @@ impl ViewNodes {
 
         let id = self.nodes.borrow_mut().insert(ViewNode {
             parent: Some(parent_id),
-            children: vec![],
-            next: 0,
             view: RefCell::new(Slot::new(view)),
+            ..ViewNode::default()
         });
 
         let parent = &mut self.nodes.borrow_mut()[parent_id];
@@ -880,6 +877,7 @@ impl std::fmt::Debug for LayoutNode {
     }
 }
 
+#[derive(Default)]
 pub struct ViewNode {
     pub parent: Option<ViewId>,
     pub children: Vec<ViewId>,

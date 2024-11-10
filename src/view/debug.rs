@@ -11,7 +11,7 @@ use crate::{
 use super::{
     helpers::short_name,
     state::{Debug, LayoutNodes, ViewNodes},
-    Interest, Palette, State, Ui, ViewId,
+    Interest, State, Ui, ViewId,
 };
 
 #[derive(Debug)]
@@ -461,7 +461,7 @@ impl std::fmt::Display for TreeOutput {
 }
 
 fn evaluate<R: 'static>(mut app: impl FnMut(&Ui) -> R) -> (DebugNode, Vec<String>) {
-    let mut state = State::new(Palette::default());
+    let mut state = State::default();
 
     let size = vec2(80, 25);
     state.event(&Event::Resize(size));
