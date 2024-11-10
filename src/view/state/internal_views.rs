@@ -1,5 +1,4 @@
 use crate::{
-    hasher::hash_fnv_1a,
     layout::Axis,
     math::{Size, Space},
     view::{Builder, Layout, View},

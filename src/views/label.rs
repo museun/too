@@ -1,11 +1,12 @@
 use compact_str::{CompactString, ToCompactString};
 use unicode_segmentation::UnicodeSegmentation;
+use unicode_width::UnicodeWidthStr;
 
 use crate::{
     layout::Align,
     math::{pos2, Size, Space},
     view::{Builder, Layout, Palette, Render, StyleKind, View},
-    Attribute, Grapheme, Rgba, Text,
+    Attribute, Grapheme, Rgba,
 };
 
 #[derive(Copy, Clone, Debug, PartialEq)]
@@ -51,7 +52,6 @@ impl Label {
             label: label.to_compact_string(),
             class: StyleKind::Deferred(LabelStyle::default),
             main: Align::Min,
-            cross: Align::Min,
             attribute: None,
         }
     }
@@ -68,11 +68,6 @@ impl Label {
 
     pub const fn horizontal_align(mut self, justify: Align) -> Self {
         self.main = justify;
-        self
-    }
-
-    pub const fn vertical_align(mut self, justify: Align) -> Self {
-        self.cross = justify;
         self
     }
 
@@ -115,8 +110,13 @@ pub struct Label {
     label: CompactString,
     class: StyleKind<LabelClass, LabelStyle>,
     main: Align,
-    cross: Align,
     attribute: Option<Attribute>,
+}
+
+#[derive(Copy, Clone, Debug)]
+pub struct Measure {
+    pub truncate: Option<usize>,
+    pub size: Size,
 }
 
 impl<'v> Builder<'v> for Label {
@@ -132,8 +132,7 @@ impl View for Label {
     }
 
     fn layout(&mut self, layout: Layout, space: Space) -> Size {
-        let size = Size::from(Text::new(&self.label).size());
-        space.fit(size)
+        space.fit(Size::new(self.label.width() as f32, 1.0))
     }
 
     fn draw(&mut self, mut render: Render) {
@@ -142,13 +141,30 @@ impl View for Label {
             StyleKind::Direct(style) => style,
         };
 
-        // TODO use a measure thing
-        for (start, grapheme) in self.label.graphemes(true).enumerate() {
-            let mut cell = Grapheme::new(grapheme).fg(style.foreground);
+        let local = render.local_rect();
+
+        for (x, g) in self.label.graphemes(true).enumerate() {
+            let mut cell = Grapheme::new(g).fg(style.foreground);
             if let Some(attr) = self.attribute {
-                cell = cell.attribute(attr);
+                cell = cell.attribute(attr)
             }
-            render.surface.set(pos2(start as i32, 0), cell);
+            render.surface.set(pos2(x as i32, 0), cell);
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    #[test]
+    fn asdf() {
+        let test = "hello world this is a test with more data"; // but nothing over 6 characters
+
+        for i in [5, 10, 20, 30] {
+            for (i, line) in Label::wrap(&test, Size::new(i as f32, 3.0)).enumerate() {
+                eprintln!("{i}: {} '{line}'", line.len());
+            }
+            eprintln!("^{i}")
         }
     }
 }
