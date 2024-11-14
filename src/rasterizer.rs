@@ -1,11 +1,11 @@
-use std::ops::RangeInclusive;
+use std::{borrow::Cow, ops::RangeInclusive};
 
 use unicode_segmentation::UnicodeSegmentation;
 
 use crate::{
     layout::Axis,
     math::{pos2, Pos2, Rect},
-    view::CroppedSurface,
+    view::{CroppedSurface, ViewId},
     Attribute, Cell, Color, Grapheme, Pixel, Rgba,
 };
 
@@ -63,6 +63,9 @@ impl<'a> Rasterizer for CroppedSurface<'a> {
 }
 
 pub trait Rasterizer {
+    fn begin(&mut self, id: ViewId) {}
+    fn end(&mut self, id: ViewId) {}
+
     fn set_rect(&mut self, rect: Rect);
     fn rect(&self) -> Rect;
 
@@ -85,11 +88,12 @@ pub trait Rasterizer {
     fn get_mut(&mut self, pos: Pos2) -> Option<&mut Cell>;
 }
 
+#[derive(Clone, Debug, PartialEq)]
 pub struct TextShape<'a> {
-    label: &'a str,
-    fg: Color,
-    bg: Color,
-    attribute: Option<Attribute>,
+    pub(crate) label: Cow<'a, str>,
+    pub(crate) fg: Color,
+    pub(crate) bg: Color,
+    pub(crate) attribute: Option<Attribute>,
 }
 
 impl<'a> From<&'a str> for TextShape<'a> {
@@ -101,7 +105,7 @@ impl<'a> From<&'a str> for TextShape<'a> {
 impl<'a> TextShape<'a> {
     pub const fn new(label: &'a str) -> Self {
         Self {
-            label,
+            label: Cow::Borrowed(label),
             fg: Color::Reuse,
             bg: Color::Reset,
             attribute: None,

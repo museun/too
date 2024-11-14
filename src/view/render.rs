@@ -3,7 +3,7 @@ use std::ops::RangeInclusive;
 use crate::{
     layout::Axis,
     math::{Pos2, Rect, Vec2},
-    rasterizer::{Rasterizer, TextShape},
+    rasterizer::{self, Rasterizer, TextShape},
     Animations, Cell, Pixel, Rgba, Surface,
 };
 
@@ -272,7 +272,7 @@ impl RenderNodes {
         input: &InputState,
         palette: &Palette,
         animation: &mut Animations,
-        surface: &mut dyn Rasterizer,
+        rasterizer: &mut dyn Rasterizer,
         rect: Rect,
     ) {
         let Some(node) = layout.nodes.get(id) else {
@@ -299,6 +299,7 @@ impl RenderNodes {
             return;
         }
 
+        rasterizer.begin(id);
         nodes.begin(id);
 
         nodes
@@ -309,14 +310,14 @@ impl RenderNodes {
                 //     clip_rect,
                 //     surface: surface.surface,
                 // };
-                surface.set_rect(clip_rect);
+                rasterizer.set_rect(clip_rect);
                 let render = Render {
                     current: id,
                     nodes,
                     layout,
                     palette,
                     animation,
-                    rasterizer: surface,
+                    rasterizer,
                     input,
                     render: self,
                     rect,
@@ -328,5 +329,6 @@ impl RenderNodes {
             .unwrap();
 
         nodes.end(id);
+        rasterizer.end(id);
     }
 }

@@ -1,5 +1,7 @@
 use std::time::{Duration, Instant};
 
+use crate::Animations;
+
 pub mod debug;
 pub mod helpers;
 
@@ -34,8 +36,6 @@ pub use adhoc::Adhoc;
 
 mod builder;
 pub use builder::{Builder, View, ViewExt};
-
-use crate::Animations;
 
 mod erased;
 use erased::Erased;
@@ -165,3 +165,5 @@ pub fn application<R: 'static>(
 
     Ok(())
 }
+
+pub mod test;

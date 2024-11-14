@@ -81,9 +81,12 @@ impl State {
         }
 
         // TODO debounce 'event'
-        let _resp = self
-            .input
-            .update(&self.nodes, &self.layout, &mut self.animations, event);
+        let _resp = self.input.update(
+            &self.nodes, //
+            &self.layout,
+            &mut self.animations,
+            event,
+        );
     }
 
     pub fn update(&mut self, dt: f32) {
