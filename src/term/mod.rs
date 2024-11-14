@@ -111,7 +111,6 @@ pub struct Output {
 
 impl Output {
     fn resize(&mut self, hint: usize) {
-        let hint = hint * 13;
         let fd = self.out.get_ref().try_clone().unwrap();
         self.out = BufWriter::with_capacity(hint, fd);
     }
@@ -252,7 +251,7 @@ impl Backend for Term {
     }
 
     fn writer(&mut self) -> Self::Renderer<'_> {
-        TermRenderer::new(&mut self.output.out)
+        TermRenderer::new(self.output.out.capacity(), &mut self.output.out)
     }
 }
 
@@ -278,15 +277,15 @@ impl EventReader for Term {
             #[allow(unreachable_patterns)]
             match cmd {
                 Command::SetTitle(title) => {
-                    let _ = TermRenderer::new(&mut *self).set_title(&title);
+                    let _ = TermRenderer::new(0, &mut *self).set_title(&title);
                 }
                 Command::SwitchMainScreen => {
-                    let _ = TermRenderer::new(&mut *self).switch_to_main_screen();
+                    let _ = TermRenderer::new(0, &mut *self).switch_to_main_screen();
                     self.config.current_screen = CurrentScreen::Main;
                     inplace.replace(Event::SwitchMainScreen);
                 }
                 Command::SwitchAltScreen => {
-                    let _ = TermRenderer::new(&mut *self).switch_to_alt_screen();
+                    let _ = TermRenderer::new(0, &mut *self).switch_to_alt_screen();
                     self.config.current_screen = CurrentScreen::Alt;
                     inplace.replace(Event::SwitchAltScreen);
                 }
@@ -316,12 +315,12 @@ impl EventReader for Term {
         if ev.is_keybind_pressed(CTRL_Z) && self.config.ctrl_z_switches {
             match self.config.current_screen {
                 CurrentScreen::Main => {
-                    let _ = TermRenderer::new(&mut *self).switch_to_alt_screen();
+                    let _ = TermRenderer::new(0, &mut *self).switch_to_alt_screen();
                     self.config.current_screen = CurrentScreen::Alt;
                     return Some(Event::SwitchAltScreen);
                 }
                 CurrentScreen::Alt => {
-                    let _ = TermRenderer::new(&mut *self).switch_to_main_screen();
+                    let _ = TermRenderer::new(0, &mut *self).switch_to_main_screen();
                     self.config.current_screen = CurrentScreen::Main;
                     return Some(Event::SwitchMainScreen);
                 }

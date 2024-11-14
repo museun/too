@@ -2,7 +2,7 @@ use unicode_segmentation::UnicodeSegmentation;
 
 use super::{
     cell::{Attribute, Cell, Color},
-    Border, Pixel, Renderer, Rgba,
+    Pixel, Renderer,
 };
 
 use crate::{
@@ -80,71 +80,23 @@ impl Surface {
         self.back[start..end].fill(Cell::Pixel(pixel));
     }
 
-    #[cfg_attr(feature = "profile", profiling::function)]
-    pub fn clear(&mut self, rect: Rect, color: impl Into<Rgba>) {
-        let pixel = Pixel::new(' ').bg(color.into());
-        let rect = rect.intersection(self.rect());
-        for y in rect.top()..rect.bottom() {
-            self.set_line(y, rect.left(), rect.right(), pixel)
-        }
-    }
-
     // PERF we can use 'set_line' if we patch any cells afterward
     #[cfg_attr(feature = "profile", profiling::function)]
-    pub fn fill(&mut self, rect: Rect, pixel: impl Into<Pixel>) -> &mut Self {
+    pub fn fill(&mut self, rect: Rect, pixel: impl Into<Pixel>) {
+        let pixel = pixel.into();
+        if rect == self.rect() {
+            self.back.fill(Cell::Pixel(pixel));
+        }
         // TODO optimize this with line-vectored drawing
         // TODO if rect == self.rect just do a full clear
-        let pixel = pixel.into();
+
         let rect = self.rect().intersection(rect);
         for y in rect.top()..rect.bottom() {
+            // self.set_line(y, rect.left(), rect.right(), pixel)
             for x in rect.left()..rect.right() {
                 self.set(pos2(x, y), pixel);
             }
         }
-        self
-    }
-
-    #[cfg_attr(feature = "profile", profiling::function)]
-    pub fn border(&mut self, rect: Rect, border: Border, fg: impl Into<Color>) -> &mut Self {
-        let fg = fg.into();
-        let (w, h) = (rect.width() - 1, rect.height() - 1);
-
-        let offset = rect.left_top();
-
-        let pixel = Pixel::new(border.top).fg(fg);
-        for x in 1..=w {
-            // TODO draw_line
-            self.set(pos2(x, 0) + offset, pixel);
-        }
-
-        let pixel = Pixel::new(border.bottom).fg(fg);
-        for x in 1..=w {
-            self.set(pos2(x, h) + offset, pixel);
-        }
-
-        let pixel = Pixel::new(border.left).fg(fg);
-        for y in 1..=h {
-            self.set(pos2(0, y) + offset, pixel);
-        }
-
-        let pixel = Pixel::new(border.right).fg(fg);
-        for y in 1..=h {
-            self.set(pos2(w, y) + offset, pixel);
-        }
-
-        let pixel = Pixel::new(border.left_top).fg(fg);
-        self.set(pos2(0, 0) + offset, pixel);
-
-        let pixel = Pixel::new(border.right_top).fg(fg);
-        self.set(pos2(w, 0) + offset, pixel);
-
-        let pixel = Pixel::new(border.left_bottom).fg(fg);
-        self.set(pos2(0, h) + offset, pixel);
-
-        let pixel = Pixel::new(border.right_bottom).fg(fg);
-        self.set(pos2(w, h) + offset, pixel);
-
-        self
     }
 
     pub const fn rect(&self) -> Rect {

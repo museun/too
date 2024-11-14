@@ -23,6 +23,7 @@ pub struct State {
     pub(in crate::view) animations: Animations,
     pub(in crate::view) palette: RefCell<Palette>,
     pub(in crate::view) frame_count: u64,
+    pub(in crate::view) dt: f32,
 }
 
 impl Default for State {
@@ -45,6 +46,7 @@ impl State {
             animations,
             palette: RefCell::new(palette),
             frame_count: 0,
+            dt: 1.0,
         }
     }
 
@@ -101,6 +103,7 @@ impl State {
 
     pub fn update(&mut self, dt: f32) {
         self.animations.update(dt);
+        self.dt = dt;
     }
 
     #[cfg_attr(feature = "profile", profiling::function)]

@@ -321,7 +321,7 @@ impl<'a> Rasterizer for CroppedSurface<'a> {
 
     fn text(&mut self, shape: TextShape<'_>) {
         for (x, g) in shape.label.graphemes(true).enumerate() {
-            let mut cell = Grapheme::new(g).fg(shape.fg);
+            let mut cell = Grapheme::new(g).fg(shape.fg).bg(shape.bg);
             if let Some(attr) = shape.attribute {
                 cell = cell.attribute(attr)
             }

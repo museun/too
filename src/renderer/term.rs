@@ -3,14 +3,37 @@ use std::io::Write;
 use super::Renderer;
 use crate::{math::Pos2, Attribute, Rgba};
 
+struct CountWrites<W: Write> {
+    out: W,
+    count: usize,
+    cap: usize,
+}
+
+impl<W: Write> std::io::Write for CountWrites<W> {
+    fn write(&mut self, buf: &[u8]) -> std::io::Result<usize> {
+        let n = self.out.write(buf)?;
+        self.count += n;
+        Ok(n)
+    }
+
+    fn flush(&mut self) -> std::io::Result<()> {
+        self.out.flush()?;
+        // debug(format_str!("count: {} / {}", self.count, self.cap));
+        self.count = 0;
+        Ok(())
+    }
+}
+
 /// Renders to a `Backend` using ANSI escape sequences
 pub struct TermRenderer<W: Write> {
-    out: W,
+    out: CountWrites<W>,
 }
 
 impl<W: Write> TermRenderer<W> {
-    pub const fn new(out: W) -> Self {
-        Self { out }
+    pub const fn new(cap: usize, out: W) -> Self {
+        Self {
+            out: CountWrites { out, count: 0, cap },
+        }
     }
 }
 

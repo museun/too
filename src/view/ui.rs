@@ -19,6 +19,7 @@ pub struct Ui<'a> {
     pub(in crate::view) palette: &'a RefCell<Palette>,
     pub(in crate::view) client_rect: Rect,
     pub(in crate::view) frame_count: u64,
+    pub(in crate::view) dt: f32,
 }
 
 impl<'a> Ui<'a> {
@@ -30,6 +31,7 @@ impl<'a> Ui<'a> {
             palette: &state.palette,
             client_rect,
             frame_count: state.frame_count,
+            dt: state.dt,
         }
     }
 }
@@ -77,6 +79,10 @@ impl<'a> Ui<'a> {
 
     pub fn frame_count(&self) -> u64 {
         self.frame_count
+    }
+
+    pub fn dt(&self) -> f32 {
+        self.dt
     }
 
     pub fn current(&self) -> ViewId {
