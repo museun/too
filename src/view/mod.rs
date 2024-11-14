@@ -4,7 +4,7 @@ pub mod debug;
 pub mod helpers;
 
 mod state;
-pub use state::{debug, DebugMode, State, ViewId};
+pub use state::{debug, DebugMode, State};
 
 mod response;
 pub use response::Response;
@@ -16,13 +16,22 @@ mod ui;
 pub use ui::Ui;
 
 mod layout;
-pub use layout::{IntrinsicSize, Layout};
+pub use layout::{IntrinsicSize, Layout, LayoutNode, LayoutNodes};
 
 mod render;
 pub use render::{CroppedSurface, Render};
 
+mod view_nodes;
+pub use view_nodes::{ViewNode, ViewNodes};
+
 mod style;
 pub use style::{Elements, Knob, Palette, StyleKind};
+
+mod internal_views;
+
+slotmap::new_key_type! {
+    pub struct ViewId;
+}
 
 use crate::{
     layout::{Axis, Flex},

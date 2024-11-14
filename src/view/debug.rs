@@ -9,9 +9,7 @@ use crate::{
 };
 
 use super::{
-    helpers::short_name,
-    state::{Debug, LayoutNodes, ViewNodes},
-    Interest, State, Ui, ViewId,
+    helpers::short_name, state::Debug, Interest, LayoutNodes, State, Ui, ViewId, ViewNodes,
 };
 
 #[derive(Debug)]

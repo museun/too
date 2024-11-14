@@ -6,11 +6,7 @@ use crate::{
     Animations, Attribute, Cell, Color, Pixel, Rgba, Surface,
 };
 
-use super::{
-    input::InputState,
-    state::{LayoutNodes, RenderNodes, ViewId, ViewNodes},
-    Palette,
-};
+use super::{input::InputState, LayoutNodes, Palette, ViewId, ViewNodes};
 
 pub struct CroppedSurface<'a> {
     pub rect: Rect,
@@ -286,5 +282,111 @@ impl<'a> TextShape<'a> {
                 self
             }
         }
+    }
+}
+
+#[derive(Default)]
+pub struct RenderNodes {
+    axis_stack: Vec<Axis>,
+}
+
+impl RenderNodes {
+    pub(super) const fn new() -> Self {
+        Self {
+            axis_stack: Vec::new(),
+        }
+    }
+
+    pub(super) fn start(&mut self) {
+        self.axis_stack.clear();
+    }
+
+    #[cfg_attr(feature = "profile", profiling::function)]
+    pub(super) fn draw_all(
+        &mut self,
+        nodes: &ViewNodes,
+        layout: &LayoutNodes,
+        input: &InputState,
+        palette: &Palette,
+        animation: &mut Animations,
+        surface: CroppedSurface,
+    ) {
+        // TODO sort nodes by layer
+        self.draw(
+            nodes,
+            layout,
+            input,
+            palette,
+            animation,
+            nodes.root(),
+            surface,
+        );
+    }
+
+    pub(super) fn current_axis(&self) -> Option<Axis> {
+        self.axis_stack.iter().nth_back(1).copied()
+    }
+
+    #[allow(clippy::too_many_arguments)]
+    pub(super) fn draw(
+        &mut self,
+        nodes: &ViewNodes,
+        layout: &LayoutNodes,
+        input: &InputState,
+        palette: &Palette,
+        animation: &mut Animations,
+        id: ViewId,
+        surface: CroppedSurface,
+    ) {
+        let Some(node) = layout.nodes.get(id) else {
+            return;
+        };
+
+        let rect = node.rect;
+        if rect.width() == 0 || rect.height() == 0 {
+            return;
+        }
+
+        let mut clip_rect = rect;
+
+        if let Some(parent) = node.clipped_by {
+            let Some(parent) = layout.nodes.get(parent) else {
+                return;
+            };
+            // if !rect.partial_contains_rect(parent.rect) {
+            //     return;
+            // }
+            clip_rect = parent.rect.intersection(rect);
+        }
+        if clip_rect.width() == 0 || clip_rect.height() == 0 {
+            return;
+        }
+
+        nodes.begin(id);
+
+        nodes
+            .scoped(id, |node| {
+                self.axis_stack.push(node.primary_axis());
+                let surface = CroppedSurface {
+                    rect,
+                    clip_rect,
+                    surface: surface.surface,
+                };
+                let render = Render {
+                    current: id,
+                    nodes,
+                    layout,
+                    palette,
+                    animation,
+                    surface,
+                    input,
+                    render: self,
+                };
+                node.draw(render);
+                self.axis_stack.pop();
+            })
+            .unwrap();
+
+        nodes.end(id);
     }
 }

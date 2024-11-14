@@ -8,10 +8,7 @@ use crate::{
     Animations, Event as TooEvent, Key, Modifiers, MouseButton,
 };
 
-use super::{
-    state::{LayoutNodes, ViewId, ViewNodes},
-    Erased,
-};
+use super::{Erased, LayoutNodes, ViewId, ViewNodes};
 
 mod interest;
 pub use interest::Interest;
@@ -212,12 +209,7 @@ impl InputState {
         Handled::Bubble
     }
 
-    fn send_mouse_move(
-        &self,
-        nodes: &ViewNodes,
-        layout: &LayoutNodes,
-        animation: &mut Animations,
-    ) {
+    fn send_mouse_move(&self, nodes: &ViewNodes, layout: &LayoutNodes, animation: &mut Animations) {
         let mouse = self.mouse.borrow();
         let event = ViewEvent::MouseMove {
             pos: mouse.pos,
@@ -475,12 +467,7 @@ impl InputState {
         Handled::Bubble
     }
 
-    fn notify_focus(
-        &self,
-        nodes: &ViewNodes,
-        layout: &LayoutNodes,
-        animation: &mut Animations,
-    ) {
+    fn notify_focus(&self, nodes: &ViewNodes, layout: &LayoutNodes, animation: &mut Animations) {
         let mut current = self.focus.get();
         let last = self.prev_focus.get();
         if current == last {
