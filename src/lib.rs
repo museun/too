@@ -109,8 +109,3 @@ where
         Self(value.to_compact_string())
     }
 }
-
-fn foo() {
-    let a = 1;
-    let t = format_str!("hello {a}");
-}

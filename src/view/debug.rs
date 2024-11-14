@@ -5,12 +5,14 @@ use unicode_width::UnicodeWidthStr;
 use crate::{
     layout::{Align, Flex},
     math::{rect, vec2, Rect},
-    Event, Str, Surface,
+    Event, Str,
 };
 
 use super::{
-    helpers::short_name, state::Debug, CroppedSurface, Interest, LayoutNodes, State, Ui, ViewId,
-    ViewNodes,
+    helpers::short_name,
+    state::Debug,
+    test::{DebugRasterizer, Shape},
+    Interest, LayoutNodes, State, Ui, ViewId, ViewNodes,
 };
 
 #[derive(Debug)]
@@ -428,22 +430,17 @@ fn render_pretty_tree(node: &DebugNode) -> String {
     Node::new(node, 1).render(1)
 }
 
-// pub fn render_tree<R: 'static>(surface: &mut Surface, mut app: impl FnMut(&Ui) -> R) -> String {
-//     let mut state = State::new();
-//     state.build(rect(surface.rect().size()), &mut app);
-//     state.render(&mut (), surface, &mut AnimationManager::new());
-
-//     let mut debug = DebugRenderer::new();
-//     surface.render(&mut debug).unwrap();
-//     debug.to_string()
-// }
-
 pub struct TreeOutput {
     tree: String,
     debug: Vec<String>,
+    shapes: Vec<(ViewId, Shape)>,
 }
 
 impl TreeOutput {
+    pub fn shapes(&self) -> &[(ViewId, Shape)] {
+        &self.shapes
+    }
+
     pub fn tree(&self) -> &str {
         &self.tree
     }
@@ -459,36 +456,45 @@ impl std::fmt::Display for TreeOutput {
     }
 }
 
-fn evaluate<R: 'static>(mut app: impl FnMut(&Ui) -> R) -> (DebugNode, Vec<String>) {
+fn evaluate<R: 'static>(
+    mut app: impl FnMut(&Ui) -> R,
+) -> (DebugNode, Vec<String>, Vec<(ViewId, Shape)>) {
     let mut state = State::default();
 
     let size = vec2(80, 25);
     state.event(&Event::Resize(size));
-
-    let mut surface = Surface::new(size);
-    // for i in 0..1 {
     state.build(rect(size), &mut app);
-    state.render(&mut CroppedSurface {
-        clip_rect: surface.rect(),
-        surface: &mut surface,
-    });
-    // }
+    let mut raster = DebugRasterizer::default();
+    state.render(&mut raster);
 
     let node = DebugNode::from_state(&state);
 
     let mut debug = vec![];
     Debug::for_each(|msg| debug.push(msg.to_owned()));
-    (node, debug)
+    (node, debug, raster.into_paint_list())
 }
 
 pub fn pretty_tree<R: 'static>(app: impl FnMut(&Ui) -> R) -> TreeOutput {
-    let (node, debug) = evaluate(app);
+    let (node, debug, shapes) = evaluate(app);
     let tree = node.pretty_tree();
-    TreeOutput { tree, debug }
+    TreeOutput {
+        tree,
+        debug,
+        shapes,
+    }
 }
 
 pub fn compact_tree<R: 'static>(app: impl FnMut(&Ui) -> R) -> TreeOutput {
-    let (node, debug) = evaluate(app);
+    let (node, debug, shapes) = evaluate(app);
     let tree = node.compact_tree();
-    TreeOutput { tree, debug }
+    TreeOutput {
+        tree,
+        debug,
+        shapes,
+    }
+}
+
+pub fn render_tree<R: 'static>(app: impl FnMut(&Ui) -> R) -> Vec<(ViewId, Shape)> {
+    let (.., shapes) = evaluate(app);
+    shapes
 }

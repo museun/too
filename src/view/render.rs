@@ -3,13 +3,13 @@ use std::ops::RangeInclusive;
 use crate::{
     layout::Axis,
     math::{Pos2, Rect, Vec2},
-    rasterizer::{self, Rasterizer, TextShape},
+    rasterizer::{Rasterizer, TextShape},
     Animations, Cell, Pixel, Rgba, Surface,
 };
 
 use super::{input::InputState, LayoutNodes, Palette, ViewId, ViewNodes};
 
-pub struct CroppedSurface<'a> {
+pub(crate) struct CroppedSurface<'a> {
     pub(crate) clip_rect: Rect,
     pub surface: &'a mut Surface,
 }
@@ -51,6 +51,7 @@ impl<'a> CroppedSurface<'a> {
         self.fill_with(bg.into())
     }
 
+    // TODO optimize this with line-vectored drawing
     pub fn fill_with(&mut self, pixel: impl Into<Pixel>) -> &mut Self {
         self.surface.fill(self.clip_rect, pixel);
         self

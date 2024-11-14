@@ -21,7 +21,8 @@ mod layout;
 pub use layout::{IntrinsicSize, Layout, LayoutNode, LayoutNodes};
 
 mod render;
-pub use render::{CroppedSurface, Render};
+pub(crate) use render::CroppedSurface;
+pub use render::Render;
 
 mod view_nodes;
 pub use view_nodes::{ViewNode, ViewNodes};

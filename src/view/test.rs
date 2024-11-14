@@ -11,13 +11,17 @@ use crate::{
 use super::Ui;
 
 #[derive(Default)]
-struct DebugRasterizer {
+pub(crate) struct DebugRasterizer {
     current: ViewId,
     paint_list: Vec<(ViewId, Shape)>,
     rect: Rect,
 }
 
 impl DebugRasterizer {
+    pub fn into_paint_list(self) -> Vec<(ViewId, Shape)> {
+        self.paint_list
+    }
+
     fn push_shape(&mut self, shape: Shape) {
         self.paint_list.push((self.current, shape));
     }

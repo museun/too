@@ -93,6 +93,8 @@ impl Surface {
     // PERF we can use 'set_line' if we patch any cells afterward
     #[cfg_attr(feature = "profile", profiling::function)]
     pub fn fill(&mut self, rect: Rect, pixel: impl Into<Pixel>) -> &mut Self {
+        // TODO optimize this with line-vectored drawing
+        // TODO if rect == self.rect just do a full clear
         let pixel = pixel.into();
         let rect = self.rect().intersection(rect);
         for y in rect.top()..rect.bottom() {
