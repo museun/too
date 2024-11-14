@@ -148,7 +148,11 @@ pub fn application<R: 'static>(
         state.build(surface.rect(), |ui| app(ui));
 
         if should_render || dt >= target {
-            state.render(&mut surface);
+            let mut rasterizer = CroppedSurface {
+                clip_rect: surface.rect(),
+                surface: &mut surface,
+            };
+            state.render(&mut rasterizer);
             surface.render(&mut term.writer())?;
             prev = now;
         }

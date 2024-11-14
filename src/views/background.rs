@@ -38,7 +38,7 @@ impl View for Background {
     // }
 
     fn draw(&mut self, mut render: Render) {
-        render.surface.fill(self.bg);
+        render.fill_bg(self.bg);
         self.default_draw(render);
     }
 }

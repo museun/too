@@ -1,40 +1,32 @@
-use std::ops::Range;
+use std::ops::RangeInclusive;
 
 use crate::{
     layout::Axis,
     math::{Pos2, Rect, Vec2},
-    Animations, Attribute, Cell, Color, Pixel, Rgba, Surface,
+    rasterizer::{Rasterizer, TextShape},
+    Animations, Cell, Pixel, Rgba, Surface,
 };
 
 use super::{input::InputState, LayoutNodes, Palette, ViewId, ViewNodes};
 
 pub struct CroppedSurface<'a> {
-    pub rect: Rect,
-    pub(super) clip_rect: Rect,
+    pub(crate) clip_rect: Rect,
     pub surface: &'a mut Surface,
 }
 
 impl<'a> CroppedSurface<'a> {
-    pub fn from_surface(surface: &'a mut Surface) -> Self {
-        Self::new(surface.rect(), surface.rect(), surface)
-    }
-
-    pub fn new(rect: Rect, clip_rect: Rect, surface: &'a mut Surface) -> Self {
-        let rect = surface.rect().intersection(rect);
-        Self {
-            rect,
-            clip_rect,
-            surface,
+    pub fn get_mut(&mut self, pos: impl Into<Pos2>) -> Option<&mut Cell> {
+        let offset = self.clip_rect.left_top();
+        let pos = pos.into() + offset;
+        if !self.clip_rect.contains(pos) {
+            return None;
         }
+        self.surface.get_mut(pos)
     }
 
     #[inline]
     pub fn set(&mut self, pos: impl Into<Pos2>, cell: impl Into<Cell>) -> bool {
-        let offset = self.rect.left_top();
-        if offset.x >= self.rect().right() || offset.y >= self.rect().bottom() {
-            return false;
-        }
-
+        let offset = self.clip_rect.left_top();
         let pos = pos.into() + offset;
         if !self.clip_rect.contains(pos) {
             return false;
@@ -44,11 +36,7 @@ impl<'a> CroppedSurface<'a> {
     }
 
     pub fn patch(&mut self, pos: impl Into<Pos2>, patch: impl FnOnce(&mut Cell)) {
-        let offset = self.rect.left_top();
-        if offset.x >= self.rect().right() || offset.y >= self.rect().bottom() {
-            return;
-        }
-
+        let offset = self.clip_rect.left_top();
         let pos = pos.into() + offset;
         if !self.clip_rect.contains(pos) {
             return;
@@ -85,27 +73,6 @@ impl<'a> CroppedSurface<'a> {
         self.surface.fill(rect, pixel.into());
         self
     }
-
-    pub fn expand(&mut self, size: impl Into<Vec2>) -> CroppedSurface<'_> {
-        CroppedSurface {
-            rect: self.rect.expand2(size.into()).intersection(self.rect),
-            clip_rect: self.clip_rect,
-            surface: self.surface,
-        }
-    }
-
-    pub fn shrink(&mut self, size: impl Into<Vec2>) -> CroppedSurface<'_> {
-        self.expand(-size.into())
-    }
-
-    // crop?
-    pub const fn rect(&self) -> Rect {
-        self.rect
-    }
-
-    pub fn local_rect(&self) -> Rect {
-        self.rect.translate(-self.rect.left_top().to_vec2())
-    }
 }
 
 pub struct Render<'a, 'b> {
@@ -115,26 +82,27 @@ pub struct Render<'a, 'b> {
 
     pub palette: &'a Palette,
     pub animation: &'a mut Animations,
-    pub surface: CroppedSurface<'b>,
+    pub(super) rasterizer: &'b mut dyn Rasterizer,
+
+    pub(super) rect: Rect,
+    pub(super) clip_rect: Rect,
 
     pub(super) render: &'a mut RenderNodes,
     pub(super) input: &'a InputState,
 }
 
+// TODO determine if this should always be in local space or absolute space
 impl<'a, 'b> Render<'a, 'b> {
     pub fn draw(&mut self, id: ViewId) {
         self.render.draw(
+            id,
             self.nodes,
             self.layout,
             self.input,
             self.palette,
             self.animation,
-            id,
-            CroppedSurface {
-                rect: self.surface.rect,
-                clip_rect: self.surface.clip_rect,
-                surface: self.surface.surface,
-            },
+            self.rasterizer,
+            self.rect,
         );
     }
 
@@ -147,11 +115,15 @@ impl<'a, 'b> Render<'a, 'b> {
     }
 
     pub fn rect(&self) -> Rect {
-        self.surface.rect()
+        self.rect
+    }
+
+    pub fn offset(&self) -> Pos2 {
+        self.rect.left_top()
     }
 
     pub fn local_rect(&self) -> Rect {
-        self.surface.local_rect()
+        self.rect.translate(-self.rect.left_top().to_vec2())
     }
 
     pub fn is_focused(&self) -> bool {
@@ -170,18 +142,6 @@ impl<'a, 'b> Render<'a, 'b> {
         self.render.current_axis().unwrap()
     }
 
-    pub fn fill_bg(&mut self, color: impl Into<Rgba>) -> &mut Self {
-        todo!();
-    }
-
-    pub fn fill_with(&mut self, pixel: impl Into<Pixel>) -> &mut Self {
-        todo!();
-    }
-
-    pub fn crop(&mut self, rect: Rect) -> &mut Self {
-        todo!();
-    }
-
     pub fn shrink_left(&mut self, left: i32) -> &mut Self {
         todo!();
     }
@@ -198,90 +158,88 @@ impl<'a, 'b> Render<'a, 'b> {
         todo!();
     }
 
-    pub fn shrink(&mut self, size: Vec2) -> &mut Self {
-        todo!();
+    pub fn shrink(&mut self, size: impl Into<Vec2>, render: impl FnOnce(&mut Self)) {
+        self.crop(self.rect.shrink2(size.into()), render)
     }
 
-    pub fn horizontal_line(&mut self, y: i32, range: Range<i32>, pixel: impl Into<Pixel>) {
-        todo!();
+    pub fn local_space(&mut self, render: impl FnOnce(&mut Self)) {
+        self.crop(self.local_rect(), render);
     }
 
-    pub fn vertical_line(&mut self, x: i32, range: Range<i32>, pixel: impl Into<Pixel>) {
-        todo!();
+    pub fn crop(&mut self, rect: Rect, render: impl FnOnce(&mut Self)) {
+        let old = self.rasterizer.rect();
+
+        let offset = self.rect.left_top().to_vec2();
+        let rect = self.rect.intersection(rect.translate(offset));
+        self.rasterizer.set_rect(rect);
+        render(self);
+
+        self.rasterizer.set_rect(old);
+    }
+
+    pub fn fill_bg(&mut self, color: impl Into<Rgba>) -> &mut Self {
+        self.rasterizer.fill_bg(color.into());
+        self
+    }
+
+    pub fn fill_with(&mut self, pixel: impl Into<Pixel>) -> &mut Self {
+        self.rasterizer.fill_with(pixel.into());
+        self
+    }
+
+    pub fn horizontal_line(
+        &mut self,
+        y: i32,
+        range: RangeInclusive<i32>,
+        pixel: impl Into<Pixel>,
+    ) -> &mut Self {
+        self.rasterizer.horizontal_line(y, range, pixel.into());
+        self
+    }
+
+    pub fn vertical_line(
+        &mut self,
+        x: i32,
+        range: RangeInclusive<i32>,
+        pixel: impl Into<Pixel>,
+    ) -> &mut Self {
+        self.rasterizer.vertical_line(x, range, pixel.into());
+        self
     }
 
     pub fn line(
         &mut self,
         axis: Axis,
-        cross: i32,
-        range: Range<i32>,
+        offset: impl Into<Pos2>,
+        range: RangeInclusive<i32>,
         pixel: impl Into<Pixel>,
     ) -> &mut Self {
-        todo!();
-    }
-
-    pub fn text<'t>(&mut self, shape: impl Into<TextShape<'t>>) -> &mut Self {
-        todo!();
-    }
-
-    pub fn patch(&mut self, pos: Pos2, patch: impl Fn(&mut Cell)) -> &mut Self {
-        todo!();
-    }
-
-    pub fn pixel(&mut self, pos: Pos2, pixel: impl Into<Pixel>) -> &mut Self {
-        todo!();
-    }
-}
-
-pub struct TextShape<'a> {
-    label: &'a str,
-    fg: Color,
-    bg: Color,
-    attribute: Option<Attribute>,
-}
-
-impl<'a> From<&'a str> for TextShape<'a> {
-    fn from(value: &'a str) -> Self {
-        Self::new(value)
-    }
-}
-
-impl<'a> TextShape<'a> {
-    pub const fn new(label: &'a str) -> Self {
-        Self {
-            label,
-            fg: Color::Reuse,
-            bg: Color::Reset,
-            attribute: None,
-        }
-    }
-
-    pub fn fg(mut self, fg: impl Into<Rgba>) -> Self {
-        self.fg = Color::Set(fg.into());
+        self.rasterizer
+            .line(axis, offset.into(), range, pixel.into());
         self
     }
 
-    pub fn bg(mut self, bg: impl Into<Rgba>) -> Self {
-        self.bg = Color::Set(bg.into());
+    pub fn text<'t>(&mut self, text: impl Into<TextShape<'t>>) -> &mut Self {
+        self.rasterizer.text(text.into());
         self
     }
 
-    pub fn attribute(mut self, attribute: Attribute) -> Self {
-        match &mut self.attribute {
-            Some(attr) => *attr |= attribute,
-            None => self.attribute = Some(attribute),
+    pub fn patch(&mut self, pos: impl Into<Pos2>, patch: impl Fn(&mut Cell)) -> &mut Self {
+        if let Some(cell) = self.rasterizer.get_mut(pos.into()) {
+            patch(cell);
         }
         self
     }
 
-    pub fn maybe_attribute(mut self, attribute: Option<Attribute>) -> Self {
-        match attribute {
-            Some(attr) => self.attribute(attr),
-            None => {
-                self.attribute.take();
-                self
-            }
+    pub fn set(&mut self, pos: impl Into<Pos2>, cell: impl Into<Cell>) -> &mut Self {
+        let pos = pos.into();
+        let cell = cell.into();
+        match cell {
+            Cell::Grapheme(g) => self.rasterizer.grapheme(pos, g),
+            Cell::Pixel(p) => self.rasterizer.pixel(pos, p),
+            _ => {}
         }
+        self
     }
 }
 
@@ -301,28 +259,6 @@ impl RenderNodes {
         self.axis_stack.clear();
     }
 
-    #[cfg_attr(feature = "profile", profiling::function)]
-    pub(super) fn draw_all(
-        &mut self,
-        nodes: &ViewNodes,
-        layout: &LayoutNodes,
-        input: &InputState,
-        palette: &Palette,
-        animation: &mut Animations,
-        surface: CroppedSurface,
-    ) {
-        // TODO sort nodes by layer
-        self.draw(
-            nodes,
-            layout,
-            input,
-            palette,
-            animation,
-            nodes.root(),
-            surface,
-        );
-    }
-
     pub(super) fn current_axis(&self) -> Option<Axis> {
         self.axis_stack.iter().nth_back(1).copied()
     }
@@ -330,13 +266,14 @@ impl RenderNodes {
     #[allow(clippy::too_many_arguments)]
     pub(super) fn draw(
         &mut self,
+        id: ViewId,
         nodes: &ViewNodes,
         layout: &LayoutNodes,
         input: &InputState,
         palette: &Palette,
         animation: &mut Animations,
-        id: ViewId,
-        surface: CroppedSurface,
+        surface: &mut dyn Rasterizer,
+        rect: Rect,
     ) {
         let Some(node) = layout.nodes.get(id) else {
             return;
@@ -367,20 +304,23 @@ impl RenderNodes {
         nodes
             .scoped(id, |node| {
                 self.axis_stack.push(node.primary_axis());
-                let surface = CroppedSurface {
-                    rect,
-                    clip_rect,
-                    surface: surface.surface,
-                };
+                // let surface = CroppedSurface {
+                //     rect,
+                //     clip_rect,
+                //     surface: surface.surface,
+                // };
+                surface.set_rect(clip_rect);
                 let render = Render {
                     current: id,
                     nodes,
                     layout,
                     palette,
                     animation,
-                    surface,
+                    rasterizer: surface,
                     input,
                     render: self,
+                    rect,
+                    clip_rect,
                 };
                 node.draw(render);
                 self.axis_stack.pop();

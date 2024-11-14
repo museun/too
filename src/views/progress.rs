@@ -172,9 +172,7 @@ impl View for Progress {
         } else {
             style.unfilled_color
         };
-        render
-            .surface
-            .fill_with(Pixel::new(style.unfilled).fg(color));
+        render.fill_with(Pixel::new(style.unfilled).fg(color));
 
         let x = normalize(self.value, self.range.clone());
 
@@ -192,7 +190,7 @@ impl View for Progress {
         let pixel = Pixel::new(style.filled).fg(color);
         for x in 0..x as i32 {
             let pos: Pos2 = axis.pack(x, cross);
-            render.surface.set(pos, pixel);
+            render.set(pos, pixel);
         }
     }
 }

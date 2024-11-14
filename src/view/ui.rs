@@ -1,11 +1,10 @@
-use compact_str::ToCompactString;
 use std::cell::{Ref, RefCell};
 
 use crate::{
     layout::{Align2, Flex},
     math::{Margin, Pos2, Rect, Size},
     views::{self, Constrain},
-    Border, Rgba,
+    Border, Rgba, Str,
 };
 
 use super::{
@@ -296,7 +295,7 @@ impl<'a> Ui<'a> {
         self.adhoc(views::radio(value, existing, label))
     }
 
-    pub fn label(&self, data: impl ToCompactString) -> Response {
+    pub fn label(&self, data: impl Into<Str>) -> Response {
         self.show(views::label(data))
     }
 
@@ -371,7 +370,7 @@ impl<'a> Ui<'a> {
     pub fn frame<R>(
         &self,
         border: Border,
-        title: impl ToCompactString,
+        title: impl Into<Str>,
         show: impl FnOnce(&Ui) -> R,
     ) -> Response<R>
     where
@@ -381,12 +380,12 @@ impl<'a> Ui<'a> {
             .flatten_right()
     }
 
-    pub fn collapsible<R: 'static>(
-        &self,
-        state: &mut bool,
-        title: &str,
-        show: impl FnOnce(&Ui) -> R,
-    ) -> Response<Option<R>> {
-        self.adhoc(views::collapsible(state, title, show))
-    }
+    // pub fn collapsible<R: 'static>(
+    //     &self,
+    //     state: &mut bool,
+    //     title: &str,
+    //     show: impl FnOnce(&Ui) -> R,
+    // ) -> Response<Option<R>> {
+    //     self.adhoc(views::collapsible(state, title, show))
+    // }
 }

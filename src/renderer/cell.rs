@@ -1,7 +1,7 @@
 use compact_str::{CompactString, ToCompactString};
 use unicode_width::{UnicodeWidthChar, UnicodeWidthStr};
 
-use crate::Rgba;
+use crate::{Rgba, Str};
 
 #[derive(Clone, PartialEq, Eq, Debug)]
 pub enum Cell {
@@ -288,9 +288,9 @@ impl Grapheme {
         }
     }
 
-    pub fn new(data: impl ToCompactString) -> Self {
+    pub fn new(data: impl Into<Str>) -> Self {
         Self {
-            cluster: data.to_compact_string(),
+            cluster: data.into().0,
             fg: Color::Reset,
             bg: Color::Reuse,
             attribute: Attribute::RESET,

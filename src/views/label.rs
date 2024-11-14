@@ -1,12 +1,12 @@
-use compact_str::{CompactString, ToCompactString};
-use unicode_segmentation::UnicodeSegmentation;
-use unicode_width::UnicodeWidthStr;
+use compact_str::CompactString;
+use unicode_width::UnicodeWidthStr as _;
 
 use crate::{
     layout::Align,
-    math::{pos2, Size, Space},
+    math::{Size, Space},
+    rasterizer::TextShape,
     view::{Builder, Layout, Palette, Render, StyleKind, View},
-    Attribute, Grapheme, Rgba,
+    Attribute, Rgba, Str,
 };
 
 #[derive(Copy, Clone, Debug, PartialEq)]
@@ -42,14 +42,14 @@ impl LabelStyle {
 
 pub type LabelClass = fn(&Palette) -> LabelStyle;
 
-pub fn label(label: impl ToCompactString) -> Label {
+pub fn label(label: impl Into<Str>) -> Label {
     Label::new(label)
 }
 
 impl Label {
-    pub fn new(label: impl ToCompactString) -> Self {
+    pub fn new(label: impl Into<Str>) -> Self {
         Label {
-            label: label.to_compact_string(),
+            label: label.into().0,
             class: StyleKind::Deferred(LabelStyle::default),
             main: Align::Min,
             attribute: None,
@@ -141,14 +141,10 @@ impl View for Label {
             StyleKind::Direct(style) => style,
         };
 
-        let local = render.local_rect();
-
-        for (x, g) in self.label.graphemes(true).enumerate() {
-            let mut cell = Grapheme::new(g).fg(style.foreground);
-            if let Some(attr) = self.attribute {
-                cell = cell.attribute(attr)
-            }
-            render.surface.set(pos2(x as i32, 0), cell);
-        }
+        render.text(
+            TextShape::new(&self.label)
+                .fg(style.foreground)
+                .maybe_attribute(self.attribute),
+        );
     }
 }

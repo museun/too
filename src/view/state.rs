@@ -2,15 +2,11 @@ use std::cell::{Ref, RefCell};
 
 use compact_str::{CompactString, ToCompactString};
 
-use crate::{
-    layout::{Anchor2, LinearLayout},
-    math::Rect,
-    Animations, Rgba, Surface, Text,
-};
+use crate::{math::Rect, rasterizer::Rasterizer, Animations, Str};
 
 use super::{
-    helpers::Queue, input::InputState, render::RenderNodes, style::Palette, ui::Ui, CroppedSurface,
-    LayoutNode, LayoutNodes, ViewId, ViewNodes,
+    helpers::Queue, input::InputState, render::RenderNodes, style::Palette, ui::Ui, LayoutNode,
+    LayoutNodes, ViewId, ViewNodes,
 };
 
 pub struct State {
@@ -46,11 +42,11 @@ impl State {
         }
     }
 
-    pub fn debug(&self, msg: impl ToCompactString) {
+    pub fn debug(&self, msg: impl Into<Str>) {
         if matches!(DEBUG.with(|c| c.mode.get()), DebugMode::Off) {
             return;
         }
-        let msg = msg.to_compact_string();
+        let msg = msg.into();
         let msg = msg.trim();
         if msg.is_empty() {
             return;
@@ -99,73 +95,64 @@ impl State {
         let root = self.nodes.root;
         self.layout.nodes[root].rect = rect;
 
-        let resp = {
-            #[cfg(feature = "profile")]
-            // stop it
-            profiling::scope!("build ui");
-            self.begin();
-            let resp = show(&Ui::new(self, rect));
-            self.end();
-            resp
-        };
+        self.begin();
+        let resp = show(&Ui::new(self, rect));
+        self.end();
 
-        self.layout.compute_all(
-            &self.nodes, //
-            &self.input,
-            rect,
-        );
-
+        self.layout.compute_all(&self.nodes, &self.input, rect);
         resp
     }
 
     #[cfg_attr(feature = "profile", profiling::function)]
-    pub fn render(&mut self, surface: &mut Surface) {
+    pub fn render(&mut self, rasterizer: &mut impl Rasterizer) {
         self.frame_count += 1;
 
         let root = self.root();
         let rect = self.layout.rect(root).unwrap();
-        surface.clear(rect, self.palette.get_mut().background);
+        rasterizer.clear(self.palette.get_mut().background);
 
-        self.render.draw_all(
-            &self.nodes, //
+        self.render.draw(
+            root,
+            &self.nodes,
             &self.layout,
             &self.input,
-            &self.palette.borrow(),
+            self.palette.get_mut(),
             &mut self.animations,
-            CroppedSurface::new(rect, rect, surface),
+            rasterizer,
+            rect,
         );
 
-        DEBUG.with(|c| {
-            let mut debug = c.queue.borrow_mut();
-            if debug.is_empty() {
-                return;
-            }
+        // DEBUG.with(|c| {
+        //     let mut debug = c.queue.borrow_mut();
+        //     if debug.is_empty() {
+        //         return;
+        //     }
 
-            let mut layout = LinearLayout::vertical()
-                .wrap(false)
-                .anchor(Anchor2::LEFT_TOP)
-                .layout(surface.rect());
+        //     let mut layout = LinearLayout::vertical()
+        //         .wrap(false)
+        //         .anchor(Anchor2::LEFT_TOP)
+        //         .layout(surface.rect());
 
-            match c.mode.get() {
-                DebugMode::PerFrame => {
-                    for msg in debug.drain() {
-                        let text = Text::new(msg).fg(Rgba::hex("#F00")).bg(Rgba::hex("#000"));
-                        if let Some(rect) = layout.allocate(text.size()) {
-                            text.draw(rect, surface);
-                        }
-                    }
-                }
-                DebugMode::Rolling => {
-                    for msg in debug.iter() {
-                        let text = Text::new(msg).fg(Rgba::hex("#F00")).bg(Rgba::hex("#000"));
-                        if let Some(rect) = layout.allocate(text.size()) {
-                            text.draw(rect, surface);
-                        }
-                    }
-                }
-                DebugMode::Off => {}
-            }
-        });
+        //     match c.mode.get() {
+        //         DebugMode::PerFrame => {
+        //             for msg in debug.drain() {
+        //                 let text = Text::new(msg).fg(Rgba::hex("#F00")).bg(Rgba::hex("#000"));
+        //                 if let Some(rect) = layout.allocate(text.size()) {
+        //                     text.draw(rect, surface);
+        //                 }
+        //             }
+        //         }
+        //         DebugMode::Rolling => {
+        //             for msg in debug.iter() {
+        //                 let text = Text::new(msg).fg(Rgba::hex("#F00")).bg(Rgba::hex("#000"));
+        //                 if let Some(rect) = layout.allocate(text.size()) {
+        //                     text.draw(rect, surface);
+        //                 }
+        //             }
+        //         }
+        //         DebugMode::Off => {}
+        //     }
+        // });
     }
 
     fn begin(&mut self) {
@@ -205,8 +192,8 @@ thread_local! {
     static DEBUG: Debug = const { Debug::new() }
 }
 
-pub fn debug(msg: impl ToCompactString) {
-    DEBUG.with(|c| c.push(msg))
+pub fn debug(msg: impl Into<Str>) {
+    DEBUG.with(|c| c.push(msg.into().0))
 }
 
 impl Debug {

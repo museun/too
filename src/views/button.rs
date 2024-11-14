@@ -1,13 +1,14 @@
-use compact_str::{CompactString, ToCompactString};
+use compact_str::CompactString;
 
 use crate::{
     layout::Align,
     math::{Margin, Size, Space},
+    rasterizer::TextShape,
     view::{
         Builder, EventCtx, Handled, Interest, Layout, Palette, Render, StyleKind, Ui, View,
         ViewEvent,
     },
-    Rgba, Text,
+    Rgba, Str, Text,
 };
 
 #[derive(Copy, Clone, Default, Debug, PartialEq)]
@@ -96,7 +97,7 @@ impl ButtonStyle {
 
 pub type ButtonClass = fn(&Palette, ButtonState) -> ButtonStyle;
 
-pub fn button(label: impl ToCompactString) -> Button {
+pub fn button(label: impl Into<Str>) -> Button {
     Button::new(label)
 }
 
@@ -113,9 +114,9 @@ pub struct Button {
 }
 
 impl Button {
-    pub fn new(label: impl ToCompactString) -> Self {
+    pub fn new(label: impl Into<Str>) -> Self {
         Button {
-            label: label.to_compact_string(),
+            label: label.into().0,
             margin: Margin::symmetric(1, 0),
             state: ButtonState::None,
             disabled: false,
@@ -227,14 +228,11 @@ impl View for Button {
             StyleKind::Direct(style) => style,
         };
 
-        render.surface.fill(style.background);
-
-        let surface = render.surface.shrink(self.margin);
-        Text::new(&self.label)
-            .main(self.main)
-            .cross(self.cross)
-            .fg(style.text_color)
-            .draw(surface.rect(), surface.surface);
+        render
+            .fill_bg(style.background)
+            .shrink(self.margin, |render| {
+                render.text(TextShape::new(&self.label).fg(style.text_color));
+            });
     }
 }
 

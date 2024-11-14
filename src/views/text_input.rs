@@ -311,7 +311,7 @@ impl View for InputView {
             StyleKind::Direct(style) => style,
         };
 
-        render.surface.fill(if self.enabled {
+        render.fill_bg(if self.enabled {
             style.background
         } else {
             style.disabled_background
@@ -346,18 +346,22 @@ impl InputView {
         for grapheme in placeholder.graphemes(true) {
             const TRUNCATION: char = '…';
             if (w - start - grapheme.width() as i32) <= 0 {
-                render.surface.set(
-                    pos2(start, 0),
-                    Pixel::new(TRUNCATION)
-                        .fg(fg)
-                        .attribute(style.placeholder_attribute),
-                );
+                render.local_space(|render| {
+                    render.set(
+                        pos2(start, 0),
+                        Pixel::new(TRUNCATION)
+                            .fg(fg)
+                            .attribute(style.placeholder_attribute),
+                    );
+                });
                 break;
             }
             let cell = Grapheme::new(grapheme)
                 .fg(fg)
                 .attribute(style.placeholder_attribute);
-            render.surface.set(pos2(start, 0), cell);
+            render.local_space(|render| {
+                render.set(pos2(start, 0), cell);
+            });
             start += grapheme.len() as i32;
         }
 
@@ -385,7 +389,9 @@ impl InputView {
             let cell = Grapheme::new(grapheme)
                 .fg(fg)
                 .attribute(style.text_attribute);
-            render.surface.set(pos2(x, 0), cell);
+            render.local_space(|render| {
+                render.set(pos2(x, 0), cell);
+            });
             x += grapheme.width() as i32;
         }
 
@@ -395,7 +401,9 @@ impl InputView {
     fn draw_cursors(offset: i32, style: &TextInputStyle, state: &Inner, render: &mut Render) {
         if state.buf.is_empty() {
             let cell = Pixel::new(' ').bg(style.cursor);
-            render.surface.set(pos2(0, 0), cell);
+            render.local_space(|render| {
+                render.set(pos2(0, 0), cell);
+            });
             return;
         }
 
@@ -405,16 +413,23 @@ impl InputView {
 
         if state.has_selection() {
             for x in selection.min(cursor)..selection.max(cursor) {
-                render.surface.patch(pos2(x, 0), |cell| {
-                    cell.set_bg(style.selection);
+                render.local_space(|render| {
+                    render.patch(pos2(x, 0), |cell| {
+                        cell.set_bg(style.selection);
+                    });
                 });
             }
-            render.surface.patch(pos2(selection, 0), |cell| {
-                cell.set_bg(style.cursor);
+
+            render.local_space(|render| {
+                render.patch(pos2(selection, 0), |cell| {
+                    cell.set_bg(style.cursor);
+                });
             });
         } else {
-            render.surface.patch(pos2(cursor, 0), |cell| {
-                cell.set_bg(style.cursor);
+            render.local_space(|render| {
+                render.patch(pos2(cursor, 0), |cell| {
+                    cell.set_bg(style.cursor);
+                });
             });
         }
     }

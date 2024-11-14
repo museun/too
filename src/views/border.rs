@@ -1,13 +1,13 @@
-use compact_str::{CompactString, ToCompactString};
+use compact_str::CompactString;
 use unicode_segmentation::UnicodeSegmentation as _;
 use unicode_width::UnicodeWidthStr as _;
 
 use crate::{
     layout::Align,
-    math::{Size, Space},
+    math::{pos2, Size, Space},
     measure_text,
     view::{Builder, Interest, Layout, Palette, Render, StyleKind, View},
-    Border, Grapheme, Pixel, Rgba,
+    Border, Grapheme, Pixel, Rgba, Str,
 };
 
 pub type BorderClass = fn(&Palette, bool, bool) -> BorderStyle;
@@ -63,8 +63,8 @@ impl BorderView {
         self
     }
 
-    pub fn title(mut self, title: impl ToCompactString) -> Self {
-        self.title = Some(title.to_compact_string());
+    pub fn title(mut self, title: impl Into<Str>) -> Self {
+        self.title = Some(title.into().0);
         self
     }
 
@@ -128,7 +128,7 @@ impl View for BorderView {
     }
 
     fn draw(&mut self, mut render: Render) {
-        let rect = render.surface.rect();
+        let rect = render.rect();
         let (w, h) = (rect.width() - 1, rect.height() - 1);
 
         let is_hovered = render.is_hovered();
@@ -149,36 +149,28 @@ impl View for BorderView {
         };
 
         let pixel = Pixel::new(self.border.top).fg(color);
-        for x in 1..=w {
-            render.surface.set((x, 0), pixel);
-        }
+        render.horizontal_line(0, 1..=w, pixel);
 
         let pixel = Pixel::new(self.border.bottom).fg(color);
-        for x in 1..=w {
-            render.surface.set((x, h), pixel);
-        }
+        render.horizontal_line(h, 1..=w, pixel);
 
         let pixel = Pixel::new(self.border.left).fg(color);
-        for y in 1..=h {
-            render.surface.set((0, y), pixel);
-        }
+        render.vertical_line(0, 1..=h, pixel);
 
         let pixel = Pixel::new(self.border.right).fg(color);
-        for y in 1..=h {
-            render.surface.set((w, y), pixel);
-        }
+        render.vertical_line(w, 1..=h, pixel);
 
         let pixel = Pixel::new(self.border.left_top).fg(color);
-        render.surface.set((0, 0), pixel);
+        render.set(pos2(0, 0), pixel);
 
         let pixel = Pixel::new(self.border.right_top).fg(color);
-        render.surface.set((w, 0), pixel);
+        render.set(pos2(w, 0), pixel);
 
         let pixel = Pixel::new(self.border.left_bottom).fg(color);
-        render.surface.set((0, h), pixel);
+        render.set(pos2(0, h), pixel);
 
         let pixel = Pixel::new(self.border.right_bottom).fg(color);
-        render.surface.set((w, h), pixel);
+        render.set(pos2(w, h), pixel);
 
         if let Some(title) = &self.title {
             let tw = measure_text(title);
@@ -198,7 +190,7 @@ impl View for BorderView {
                     continue;
                 }
                 let cell = Grapheme::new(grapheme).fg(fg);
-                render.surface.set((start + x, 0.0), cell);
+                render.set((start + x, 0.0), cell);
                 start += grapheme.width() as f32
             }
         }
@@ -216,10 +208,10 @@ pub fn border(border: Border) -> BorderView {
     }
 }
 
-pub fn frame(border: Border, title: impl ToCompactString) -> BorderView {
+pub fn frame(border: Border, title: impl Into<Str>) -> BorderView {
     BorderView {
         border,
-        title: Some(title.to_compact_string()),
+        title: Some(title.into().0),
         align: Align::Min,
         class: StyleKind::deferred(BorderStyle::default),
     }

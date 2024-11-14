@@ -98,7 +98,7 @@ impl From<[i32; 4]> for Margin {
 
 impl From<Margin> for Vec2 {
     fn from(value: Margin) -> Self {
-        let Size { width, height } = value.sum();
+        let Size { width, height } = value.sum() * 0.5;
         Vec2::new(width.round() as i32, height.round() as i32)
     }
 }

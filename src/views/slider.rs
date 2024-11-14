@@ -228,9 +228,7 @@ impl View for SliderView {
             style.track_color
         };
 
-        render
-            .surface
-            .fill_with(Pixel::new(style.track).fg(track_color));
+        render.fill_with(Pixel::new(style.track).fg(track_color));
 
         let extent: f32 = self.axis.main(render.rect().size());
         let value = normalize(self.value, self.range.clone());
@@ -243,8 +241,7 @@ impl View for SliderView {
             style.knob_color
         };
 
-        render
-            .surface
-            .set(pos, Pixel::new(style.knob).fg(knob_color));
+        let pixel = Pixel::new(style.knob).fg(knob_color);
+        render.set(pos, pixel);
     }
 }

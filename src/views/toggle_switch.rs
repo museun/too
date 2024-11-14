@@ -223,7 +223,7 @@ impl View for ToggleSwitchView {
     }
 
     fn draw(&mut self, mut render: Render) {
-        let rect = render.surface.rect();
+        let rect = render.rect();
 
         let selected = self.value;
 
@@ -238,7 +238,7 @@ impl View for ToggleSwitchView {
             style.track_color
         };
 
-        render.surface.fill_with(Pixel::new(style.track).fg(color));
+        render.fill_with(Pixel::new(style.track).fg(color));
 
         let extent = self.axis.main::<f32>(rect.size()) - 1.0;
 
@@ -263,7 +263,7 @@ impl View for ToggleSwitchView {
         };
 
         let pos: Pos2 = self.axis.pack(x, 0.0);
-        render.surface.set(pos, Pixel::new(knob).fg(color));
+        render.set(pos, Pixel::new(knob).fg(color));
     }
 }
 

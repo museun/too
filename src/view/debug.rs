@@ -5,11 +5,12 @@ use unicode_width::UnicodeWidthStr;
 use crate::{
     layout::{Align, Flex},
     math::{rect, vec2, Rect},
-    Event, Surface,
+    Event, Str, Surface,
 };
 
 use super::{
-    helpers::short_name, state::Debug, Interest, LayoutNodes, State, Ui, ViewId, ViewNodes,
+    helpers::short_name, state::Debug, CroppedSurface, Interest, LayoutNodes, State, Ui, ViewId,
+    ViewNodes,
 };
 
 #[derive(Debug)]
@@ -126,10 +127,10 @@ fn render_pretty_tree(node: &DebugNode) -> String {
     }
 
     impl DebugLabel {
-        fn new(s: impl compact_str::ToCompactString, align: Align) -> Self {
+        fn new(s: impl Into<Str>, align: Align) -> Self {
             Self::Label {
                 align,
-                text: s.to_compact_string(),
+                text: s.into().0,
             }
         }
 
@@ -467,7 +468,10 @@ fn evaluate<R: 'static>(mut app: impl FnMut(&Ui) -> R) -> (DebugNode, Vec<String
     let mut surface = Surface::new(size);
     // for i in 0..1 {
     state.build(rect(size), &mut app);
-    state.render(&mut surface);
+    state.render(&mut CroppedSurface {
+        clip_rect: surface.rect(),
+        surface: &mut surface,
+    });
     // }
 
     let node = DebugNode::from_state(&state);

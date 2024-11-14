@@ -160,6 +160,6 @@ impl View for Separator {
             pixel = pixel.bg(bg)
         }
 
-        render.surface.fill_with(pixel);
+        render.fill_with(pixel);
     }
 }

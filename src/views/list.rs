@@ -162,16 +162,15 @@ impl List {
         let rect = render.local_rect();
         let extent = self.axis.cross(rect.right_bottom() - 1);
 
-        // TODO track
-
         let track = style.track.unwrap_or(' ');
         let track_color = style.track_color.unwrap_or(render.palette.outline);
 
         let bar_rect = Rect::from_min_size(self.axis.pack(0, extent), rect.size());
-        render
-            .surface
-            .fill_rect(bar_rect, style.background)
-            .fill_rect_with(bar_rect, Pixel::new(track).fg(track_color));
+
+        render.crop(bar_rect, |render| {
+            let pixel = Pixel::new(track).fg(track_color).bg(style.background);
+            render.fill_with(pixel);
+        });
 
         let pos: Pos2 = self.axis.pack(self.knob_index(rect), extent);
         let hovered =
@@ -189,7 +188,9 @@ impl List {
             style.knob_color
         };
 
-        render.surface.set(pos, Pixel::new(knob).fg(color));
+        render.local_space(|render| {
+            render.set(pos, Pixel::new(knob).fg(color));
+        });
     }
 
     fn knob_offset(&self, size: Vec2) -> i32 {

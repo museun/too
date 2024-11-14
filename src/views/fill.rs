@@ -49,7 +49,7 @@ impl View for Fill {
 
     fn draw(&mut self, mut render: Render) {
         if let Some(bg) = self.bg {
-            render.surface.fill(bg);
+            render.fill_bg(bg);
         }
     }
 }
