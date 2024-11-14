@@ -33,7 +33,7 @@ pub struct TextInputStyle {
 }
 
 impl TextInputStyle {
-    pub fn default(palette: &Palette, focused: bool) -> Self {
+    pub fn default(palette: &Palette, _focused: bool) -> Self {
         Self {
             background: palette.surface,
             placeholder: palette.secondary,
@@ -160,7 +160,7 @@ impl View for InputView {
         }
     }
 
-    fn update(&mut self, args: Self::Args<'_>, ui: &Ui) -> Self::Response {
+    fn update(&mut self, args: Self::Args<'_>, _ui: &Ui) -> Self::Response {
         self.enabled = args.enabled;
         self.class = args.class;
 
@@ -301,7 +301,7 @@ impl View for InputView {
         Axis::Horizontal
     }
 
-    fn layout(&mut self, layout: Layout, space: Space) -> Size {
+    fn layout(&mut self, _layout: Layout, space: Space) -> Size {
         space.fit(Size::new(f32::INFINITY, 1.0))
     }
 

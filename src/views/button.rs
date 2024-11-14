@@ -34,9 +34,6 @@ impl ButtonStyle {
         primary: Rgba,
         mut text_color: Rgba,
     ) -> ButtonStyle {
-        let background = primary;
-        let is_dark = background.is_dark();
-
         let background = match state {
             ButtonState::Hovered => palette.accent,
             ButtonState::Held => palette.secondary,
@@ -45,7 +42,7 @@ impl ButtonStyle {
                 text_color = palette.outline;
                 palette.surface
             }
-            ButtonState::None => background,
+            ButtonState::None => primary,
         };
 
         ButtonStyle {
@@ -201,7 +198,7 @@ impl View for Button {
         Interest::MOUSE_INSIDE
     }
 
-    fn event(&mut self, event: ViewEvent, ctx: EventCtx) -> Handled {
+    fn event(&mut self, event: ViewEvent, _ctx: EventCtx) -> Handled {
         if matches!(self.state, ButtonState::Disabled) {
             return Handled::Bubble;
         }
@@ -217,7 +214,7 @@ impl View for Button {
         Handled::Sink
     }
 
-    fn layout(&mut self, layout: Layout, space: Space) -> Size {
+    fn layout(&mut self, _layout: Layout, space: Space) -> Size {
         // FIXME this should use this function
         #[allow(deprecated)]
         space.fit(crate::measure_text(&self.label) + self.margin)

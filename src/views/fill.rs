@@ -43,7 +43,7 @@ impl View for Fill {
         args
     }
 
-    fn layout(&mut self, layout: Layout, space: Space) -> Size {
+    fn layout(&mut self, _layout: Layout, space: Space) -> Size {
         space.fit(self.size)
     }
 

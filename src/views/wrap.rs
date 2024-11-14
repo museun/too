@@ -87,7 +87,7 @@ impl View for WrapView {
         }
     }
 
-    fn update(&mut self, args: Self::Args<'_>, ui: &Ui) -> Self::Response {
+    fn update(&mut self, args: Self::Args<'_>, _ui: &Ui) -> Self::Response {
         self.wrap = args;
     }
 
@@ -190,14 +190,6 @@ struct WrapState {
 }
 
 impl WrapState {
-    pub const fn new() -> Self {
-        Self {
-            main: Vec::new(),
-            runs: Vec::new(),
-            cross: Vec::new(),
-        }
-    }
-
     fn resize(&mut self, len: usize) {
         self.main.resize(len, 0.0);
     }

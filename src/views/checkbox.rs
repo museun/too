@@ -24,7 +24,7 @@ impl CheckboxStyle {
         }
     }
 
-    pub fn ascii(palette: &Palette, checked: bool) -> Self {
+    pub fn ascii(palette: &Palette, _checked: bool) -> Self {
         Self {
             checked: "🗹",
             unchecked: "☐",

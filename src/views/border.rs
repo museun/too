@@ -20,7 +20,7 @@ pub struct BorderStyle {
 }
 
 impl BorderStyle {
-    pub fn default(palette: &Palette, hovered: bool, focused: bool) -> Self {
+    pub fn default(palette: &Palette, _hovered: bool, _focused: bool) -> Self {
         Self {
             title: palette.foreground,
             border: palette.outline,

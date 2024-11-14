@@ -113,12 +113,6 @@ pub struct Label {
     attribute: Option<Attribute>,
 }
 
-#[derive(Copy, Clone, Debug)]
-pub struct Measure {
-    pub truncate: Option<usize>,
-    pub size: Size,
-}
-
 impl<'v> Builder<'v> for Label {
     type View = Self;
 }
@@ -131,7 +125,7 @@ impl View for Label {
         args
     }
 
-    fn layout(&mut self, layout: Layout, space: Space) -> Size {
+    fn layout(&mut self, _layout: Layout, space: Space) -> Size {
         space.fit(Size::new(self.label.width() as f32, 1.0))
     }
 

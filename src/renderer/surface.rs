@@ -31,7 +31,6 @@ impl Surface {
             return None;
         }
 
-        let (width, x) = (self.size.x as usize, pos.x as usize);
         let index = Self::pos_to_index(pos, self.size.x);
         self.back.get_mut(index)
     }

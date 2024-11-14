@@ -41,7 +41,7 @@ impl Rasterizer for DebugRasterizer {
         self.rect
     }
 
-    fn clear(&mut self, color: Rgba) {}
+    fn clear(&mut self, _color: Rgba) {}
 
     fn fill_bg(&mut self, color: Rgba) {
         self.push_shape(Shape::FillBg {
@@ -90,7 +90,7 @@ impl Rasterizer for DebugRasterizer {
         });
     }
 
-    fn get_mut(&mut self, pos: Pos2) -> Option<&mut Cell> {
+    fn get_mut(&mut self, _pos: Pos2) -> Option<&mut Cell> {
         None
     }
 }

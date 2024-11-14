@@ -28,7 +28,7 @@ pub struct ToggleStyle {
 }
 
 impl ToggleStyle {
-    pub fn default(palette: &Palette, axis: Axis, toggled: bool) -> Self {
+    pub fn default(palette: &Palette, axis: Axis, _toggled: bool) -> Self {
         Self {
             track: axis.main((Elements::MEDIUM_RECT, Elements::LARGE_RECT)),
             track_color: palette.outline,
@@ -182,7 +182,7 @@ impl View for ToggleSwitchView {
 
     fn event(&mut self, event: ViewEvent, ctx: EventCtx) -> Handled {
         match event {
-            ViewEvent::MouseClicked { pos, .. } => {
+            ViewEvent::MouseClicked { .. } => {
                 self.value = !self.value;
                 self.changed = true;
 

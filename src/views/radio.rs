@@ -22,7 +22,7 @@ pub struct RadioStyle {
 }
 
 impl RadioStyle {
-    pub fn default(palette: &Palette, selected: bool) -> Self {
+    pub fn default(palette: &Palette, _selected: bool) -> Self {
         Self {
             selected: None,
             unselected: None,

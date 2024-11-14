@@ -166,7 +166,7 @@ impl View for SliderView {
         }
     }
 
-    fn update(&mut self, args: Self::Args<'_>, ui: &Ui) -> Self::Response {
+    fn update(&mut self, args: Self::Args<'_>, _ui: &Ui) -> Self::Response {
         self.range = args.range.clone();
         self.clickable = args.clickable;
         self.axis = args.axis;
@@ -210,7 +210,7 @@ impl View for SliderView {
         Handled::Sink
     }
 
-    fn layout(&mut self, layout: Layout, space: Space) -> Size {
+    fn layout(&mut self, _layout: Layout, space: Space) -> Size {
         let main = self.axis.main((20.0, 1.0));
         let size = self.axis.pack(main, 1.0);
         space.fit(size)

@@ -1,70 +1,15 @@
 use std::{borrow::Cow, ops::RangeInclusive};
 
-use unicode_segmentation::UnicodeSegmentation;
-
 use crate::{
     layout::Axis,
     math::{pos2, Pos2, Rect},
-    view::{CroppedSurface, ViewId},
+    view::ViewId,
     Attribute, Cell, Color, Grapheme, Pixel, Rgba,
 };
 
-impl<'a> Rasterizer for CroppedSurface<'a> {
-    fn set_rect(&mut self, rect: Rect) {
-        self.clip_rect = rect;
-    }
-
-    fn rect(&self) -> Rect {
-        self.clip_rect
-    }
-
-    fn fill_bg(&mut self, color: Rgba) {
-        self.fill(color);
-    }
-
-    fn fill_with(&mut self, pixel: Pixel) {
-        self.fill_with(pixel);
-    }
-
-    fn line(&mut self, axis: Axis, offset: Pos2, range: RangeInclusive<i32>, pixel: Pixel) {
-        let cross: i32 = axis.cross(offset);
-
-        let start: Pos2 = axis.pack(*range.start(), cross);
-        let end: Pos2 = axis.pack(*range.end(), cross);
-
-        for y in start.y..=end.y {
-            for x in start.x..=end.x {
-                self.set(pos2(x, y), pixel);
-            }
-        }
-    }
-
-    fn text(&mut self, shape: TextShape<'_>) {
-        for (x, g) in shape.label.graphemes(true).enumerate() {
-            let mut cell = Grapheme::new(g).fg(shape.fg);
-            if let Some(attr) = shape.attribute {
-                cell = cell.attribute(attr)
-            }
-            self.set(pos2(x as i32, 0), cell);
-        }
-    }
-
-    fn pixel(&mut self, pos: Pos2, pixel: Pixel) {
-        self.set(pos, pixel);
-    }
-
-    fn grapheme(&mut self, pos: Pos2, grapheme: Grapheme) {
-        self.set(pos, grapheme);
-    }
-
-    fn get_mut(&mut self, pos: Pos2) -> Option<&mut Cell> {
-        self.get_mut(pos)
-    }
-}
-
 pub trait Rasterizer {
-    fn begin(&mut self, id: ViewId) {}
-    fn end(&mut self, id: ViewId) {}
+    fn begin(&mut self, _id: ViewId) {}
+    fn end(&mut self, _id: ViewId) {}
 
     fn set_rect(&mut self, rect: Rect);
     fn rect(&self) -> Rect;

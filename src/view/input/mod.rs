@@ -132,9 +132,8 @@ impl InputState {
                 button, down, pos, ..
             } => {
                 self.mouse.borrow_mut().pos = pos;
-                if self.mouse_button_changed(button, down, nodes, layout) {
-                    let resp =
-                        self.send_mouse_button_changed(button, down, nodes, layout, animation);
+                if self.mouse_button_changed(button, down) {
+                    let resp = self.send_mouse_button_changed(button, nodes, layout, animation);
                     if resp.is_bubble() && (button == MouseButton::Primary && down) {
                         self.set_focus(None);
                         self.notify_focus(nodes, layout, animation);
@@ -284,13 +283,7 @@ impl InputState {
         }
     }
 
-    fn mouse_button_changed(
-        &self,
-        button: MouseButton,
-        down: bool,
-        nodes: &ViewNodes,
-        layout: &LayoutNodes,
-    ) -> bool {
+    fn mouse_button_changed(&self, button: MouseButton, down: bool) -> bool {
         let mut mouse = self.mouse.borrow_mut();
         let state = mouse.buttons.entry(button).or_insert(ButtonState::Up);
         match (state.is_down(), down) {
@@ -367,7 +360,6 @@ impl InputState {
     fn send_mouse_button_changed(
         &self,
         button: MouseButton,
-        down: bool,
         nodes: &ViewNodes,
         layout: &LayoutNodes,
         animation: &mut Animations,
@@ -520,7 +512,7 @@ impl InputState {
         resp
     }
 
-    fn mouse_hit_test(&self, nodes: &ViewNodes, layout: &LayoutNodes) {
+    fn mouse_hit_test(&self, _nodes: &ViewNodes, layout: &LayoutNodes) {
         let mut intersections = self.intersections.borrow_mut();
         intersections.hit.clear();
         let mouse = self.mouse.borrow();

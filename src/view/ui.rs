@@ -8,8 +8,8 @@ use crate::{
 };
 
 use super::{
-    debug::DebugNode, input::InputState, internal_views, Adhoc, Builder, LayoutNodes, Palette,
-    Response, State, View, ViewId, ViewNodes,
+    input::InputState, internal_views, Adhoc, Builder, LayoutNodes, Palette, Response, State, View,
+    ViewId, ViewNodes,
 };
 
 pub struct Ui<'a> {

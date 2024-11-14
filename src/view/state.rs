@@ -6,9 +6,8 @@ use crate::{
     backend::Event,
     layout::{Anchor2, LinearLayout},
     math::{Rect, Vec2},
-    measure_text,
     rasterizer::Rasterizer,
-    Animations, Rgba, Str, TextShape,
+    Animations, Str, TextShape,
 };
 
 use super::{
@@ -133,7 +132,6 @@ impl State {
             self.palette.get_mut(),
             &mut self.animations,
             rasterizer,
-            rect,
         );
 
         DEBUG.with(|c| {
@@ -152,7 +150,7 @@ impl State {
                     for msg in debug.drain() {
                         let text = TextShape::new(&msg).fg("#F00").bg("#000");
                         #[allow(deprecated)]
-                        let size = Vec2::from(measure_text(&text.label));
+                        let size = Vec2::from(crate::measure_text(&text.label));
                         if let Some(rect) = layout.allocate(size) {
                             rasterizer.set_rect(rect);
                             rasterizer.text(text);
@@ -161,9 +159,9 @@ impl State {
                 }
                 DebugMode::Rolling => {
                     for msg in debug.iter() {
-                        let text = TextShape::new(&msg).fg("#F00").bg("#000");
+                        let text = TextShape::new(msg).fg("#F00").bg("#000");
                         #[allow(deprecated)]
-                        let size = Vec2::from(measure_text(&text.label));
+                        let size = Vec2::from(crate::measure_text(&text.label));
                         if let Some(rect) = layout.allocate(size) {
                             rasterizer.set_rect(rect);
                             rasterizer.text(text);
@@ -244,9 +242,5 @@ impl Debug {
             return;
         }
         self.queue.borrow_mut().push(msg.into());
-    }
-
-    fn iter(&mut self) -> impl ExactSizeIterator<Item = &str> + use<'_> {
-        self.queue.get_mut().iter().map(<_>::as_ref)
     }
 }

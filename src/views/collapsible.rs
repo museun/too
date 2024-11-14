@@ -16,7 +16,7 @@ pub struct CollapsibleStyle {
 }
 
 impl CollapsibleStyle {
-    pub fn default(palette: &Palette, expanded: bool) -> Self {
+    pub fn default(palette: &Palette, _expanded: bool) -> Self {
         Self {
             expanded: "▼",
             collapsed: "▶",
@@ -25,7 +25,7 @@ impl CollapsibleStyle {
         }
     }
 
-    pub fn interactive(palette: &Palette, expanded: bool) -> Self {
+    pub fn interactive(palette: &Palette, _expanded: bool) -> Self {
         Self {
             expanded: "▼",
             collapsed: "▶",

@@ -21,7 +21,7 @@ impl View for KeyArea {
         args
     }
 
-    fn update(&mut self, args: Self::Args<'_>, ui: &Ui) -> Self::Response {
+    fn update(&mut self, _args: Self::Args<'_>, _ui: &Ui) -> Self::Response {
         Self::Response {
             key: self.key.take(),
             modifiers: self.modifiers.take(),
@@ -32,7 +32,7 @@ impl View for KeyArea {
         Interest::FOCUS_INPUT
     }
 
-    fn event(&mut self, event: ViewEvent, ctx: EventCtx) -> Handled {
+    fn event(&mut self, event: ViewEvent, _ctx: EventCtx) -> Handled {
         let ViewEvent::KeyInput { key, modifiers } = event else {
             return Handled::Bubble;
         };

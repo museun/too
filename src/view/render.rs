@@ -1,81 +1,16 @@
 use std::ops::RangeInclusive;
 
+use unicode_segmentation::UnicodeSegmentation as _;
+
 use crate::{
     layout::Axis,
-    math::{Pos2, Rect, Vec2},
+    math::{pos2, Pos2, Rect, Vec2},
     rasterizer::{Rasterizer, TextShape},
     renderer::Surface,
-    Animations, Cell, Pixel, Rgba,
+    Animations, Cell, Grapheme, Pixel, Rgba,
 };
 
 use super::{input::InputState, LayoutNodes, Palette, ViewId, ViewNodes};
-
-pub(crate) struct CroppedSurface<'a> {
-    pub(crate) clip_rect: Rect,
-    pub surface: &'a mut Surface,
-}
-
-impl<'a> CroppedSurface<'a> {
-    pub fn get_mut(&mut self, pos: impl Into<Pos2>) -> Option<&mut Cell> {
-        let offset = self.clip_rect.left_top();
-        let pos = pos.into() + offset;
-        if !self.clip_rect.contains(pos) {
-            return None;
-        }
-        self.surface.get_mut(pos)
-    }
-
-    #[inline]
-    pub fn set(&mut self, pos: impl Into<Pos2>, cell: impl Into<Cell>) -> bool {
-        let offset = self.clip_rect.left_top();
-        let pos = pos.into() + offset;
-        if !self.clip_rect.contains(pos) {
-            return false;
-        }
-        self.surface.set(pos, cell);
-        true
-    }
-
-    pub fn patch(&mut self, pos: impl Into<Pos2>, patch: impl FnOnce(&mut Cell)) {
-        let offset = self.clip_rect.left_top();
-        let pos = pos.into() + offset;
-        if !self.clip_rect.contains(pos) {
-            return;
-        }
-
-        if let Some(cell) = self.surface.get_mut(pos) {
-            patch(cell);
-        }
-    }
-
-    pub fn fill(&mut self, bg: impl Into<Rgba>) -> &mut Self {
-        self.fill_with(bg.into())
-    }
-
-    // TODO optimize this with line-vectored drawing
-    pub fn fill_with(&mut self, pixel: impl Into<Pixel>) -> &mut Self {
-        self.surface.fill(self.clip_rect, pixel);
-        self
-    }
-
-    pub fn fill_rect(&mut self, rect: impl Into<Rect>, bg: impl Into<Rgba>) -> &mut Self {
-        let rect = rect.into();
-        // TODO ensure these can't overflow
-        let rect = rect.translate(self.clip_rect.left_top().to_vec2());
-        let rect = rect.intersection(self.clip_rect);
-        self.surface.fill(rect, bg.into());
-        self
-    }
-
-    pub fn fill_rect_with(&mut self, rect: impl Into<Rect>, pixel: impl Into<Pixel>) -> &mut Self {
-        let rect = rect.into();
-        // TODO ensure these can't overflow
-        let rect = rect.translate(self.clip_rect.left_top().to_vec2());
-        let rect = rect.intersection(self.clip_rect);
-        self.surface.fill(rect, pixel.into());
-        self
-    }
-}
 
 pub struct Render<'a, 'b> {
     pub current: ViewId,
@@ -87,7 +22,6 @@ pub struct Render<'a, 'b> {
     pub(super) rasterizer: &'b mut dyn Rasterizer,
 
     pub(super) rect: Rect,
-    pub(super) clip_rect: Rect,
 
     pub(super) render: &'a mut RenderNodes,
     pub(super) input: &'a InputState,
@@ -104,7 +38,6 @@ impl<'a, 'b> Render<'a, 'b> {
             self.palette,
             self.animation,
             self.rasterizer,
-            self.rect,
         );
     }
 
@@ -275,7 +208,6 @@ impl RenderNodes {
         palette: &Palette,
         animation: &mut Animations,
         rasterizer: &mut dyn Rasterizer,
-        rect: Rect,
     ) {
         let Some(node) = layout.nodes.get(id) else {
             return;
@@ -322,8 +254,7 @@ impl RenderNodes {
                     rasterizer,
                     input,
                     render: self,
-                    rect,
-                    clip_rect,
+                    rect: clip_rect,
                 };
                 node.draw(render);
                 self.axis_stack.pop();
@@ -332,5 +263,97 @@ impl RenderNodes {
 
         nodes.end(id);
         rasterizer.end(id);
+    }
+}
+
+pub(crate) struct CroppedSurface<'a> {
+    pub(crate) clip_rect: Rect,
+    pub surface: &'a mut Surface,
+}
+
+impl<'a> CroppedSurface<'a> {
+    pub fn get_mut(&mut self, pos: impl Into<Pos2>) -> Option<&mut Cell> {
+        let offset = self.clip_rect.left_top();
+        let pos = pos.into() + offset;
+        if !self.clip_rect.contains(pos) {
+            return None;
+        }
+        self.surface.get_mut(pos)
+    }
+
+    #[inline]
+    pub fn set(&mut self, pos: impl Into<Pos2>, cell: impl Into<Cell>) -> bool {
+        let offset = self.clip_rect.left_top();
+        let pos = pos.into() + offset;
+        if !self.clip_rect.contains(pos) {
+            return false;
+        }
+        self.surface.set(pos, cell);
+        true
+    }
+
+    #[inline]
+    pub fn fill(&mut self, bg: impl Into<Rgba>) -> &mut Self {
+        self.fill_with(bg.into())
+    }
+
+    // TODO optimize this with line-vectored drawing
+    #[inline]
+    pub fn fill_with(&mut self, pixel: impl Into<Pixel>) -> &mut Self {
+        self.surface.fill(self.clip_rect, pixel);
+        self
+    }
+}
+
+impl<'a> Rasterizer for CroppedSurface<'a> {
+    fn set_rect(&mut self, rect: Rect) {
+        self.clip_rect = rect;
+    }
+
+    fn rect(&self) -> Rect {
+        self.clip_rect
+    }
+
+    fn fill_bg(&mut self, color: Rgba) {
+        self.fill(color);
+    }
+
+    fn fill_with(&mut self, pixel: Pixel) {
+        self.fill_with(pixel);
+    }
+
+    fn line(&mut self, axis: Axis, offset: Pos2, range: RangeInclusive<i32>, pixel: Pixel) {
+        let cross: i32 = axis.cross(offset);
+
+        let start: Pos2 = axis.pack(*range.start(), cross);
+        let end: Pos2 = axis.pack(*range.end(), cross);
+
+        for y in start.y..=end.y {
+            for x in start.x..=end.x {
+                self.set(pos2(x, y), pixel);
+            }
+        }
+    }
+
+    fn text(&mut self, shape: TextShape<'_>) {
+        for (x, g) in shape.label.graphemes(true).enumerate() {
+            let mut cell = Grapheme::new(g).fg(shape.fg);
+            if let Some(attr) = shape.attribute {
+                cell = cell.attribute(attr)
+            }
+            self.set(pos2(x as i32, 0), cell);
+        }
+    }
+
+    fn pixel(&mut self, pos: Pos2, pixel: Pixel) {
+        self.set(pos, pixel);
+    }
+
+    fn grapheme(&mut self, pos: Pos2, grapheme: Grapheme) {
+        self.set(pos, grapheme);
+    }
+
+    fn get_mut(&mut self, pos: Pos2) -> Option<&mut Cell> {
+        self.get_mut(pos)
     }
 }
