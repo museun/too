@@ -47,10 +47,6 @@ impl Margin {
         )
     }
 
-    pub fn size(&self) -> Size {
-        self.sum() * Size::new(0.5, 1.0)
-    }
-
     pub const fn left_top(&self) -> Pos2 {
         Pos2::new(self.left, self.top)
     }
@@ -68,10 +64,6 @@ impl Margin {
         let rect = rect.into();
         Rect::from_min_max(rect.min + self.left_top(), rect.max - self.right_bottom())
     }
-
-    // pub fn expand_space(&self, space: Space) -> (Pos2, Space) {
-    //     (self.left_top(), space - self.sum())
-    // }
 }
 
 impl From<i32> for Margin {
@@ -106,7 +98,7 @@ impl From<[i32; 4]> for Margin {
 
 impl From<Margin> for Vec2 {
     fn from(value: Margin) -> Self {
-        let Size { width, height } = value.size();
+        let Size { width, height } = value.sum();
         Vec2::new(width.round() as i32, height.round() as i32)
     }
 }

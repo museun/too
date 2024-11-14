@@ -41,7 +41,7 @@ impl Space {
     }
 
     pub fn shrink(self, size: Size) -> Self {
-        let min = (self.min + size).max(Size::ZERO);
+        let min = (self.min - size).max(Size::ZERO);
         let max = (self.max - size).max(Size::ZERO);
         Self::new(min, max)
     }

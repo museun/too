@@ -51,12 +51,14 @@ pub const fn pos2(x: i32, y: i32) -> Pos2 {
 
 impl std::ops::Add for Pos2 {
     type Output = Self;
+    #[track_caller]
     fn add(self, rhs: Self) -> Self::Output {
         pos2(self.x + rhs.x, self.y + rhs.y)
     }
 }
 
 impl std::ops::AddAssign for Pos2 {
+    #[track_caller]
     fn add_assign(&mut self, rhs: Self) {
         *self = *self + rhs
     }
@@ -64,12 +66,14 @@ impl std::ops::AddAssign for Pos2 {
 
 impl std::ops::Sub for Pos2 {
     type Output = Self;
+    #[track_caller]
     fn sub(self, rhs: Self) -> Self::Output {
         pos2(self.x - rhs.x, self.y - rhs.y)
     }
 }
 
 impl std::ops::SubAssign for Pos2 {
+    #[track_caller]
     fn sub_assign(&mut self, rhs: Self) {
         *self = *self - rhs
     }
@@ -77,12 +81,14 @@ impl std::ops::SubAssign for Pos2 {
 
 impl std::ops::Add<i32> for Pos2 {
     type Output = Self;
+    #[track_caller]
     fn add(self, rhs: i32) -> Self::Output {
         pos2(self.x + rhs, self.y + rhs)
     }
 }
 
 impl std::ops::AddAssign<i32> for Pos2 {
+    #[track_caller]
     fn add_assign(&mut self, rhs: i32) {
         *self = *self + rhs
     }

@@ -106,7 +106,7 @@ impl View for BorderView {
             margin.top = 1;
         }
 
-        let sum = margin.size();
+        let sum = margin.sum();
         let offset = margin.left_top();
         let child_space = space.shrink(sum);
 

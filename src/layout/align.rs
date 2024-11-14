@@ -24,7 +24,9 @@ impl Align {
 impl Align {
     pub const LEFT: Self = Self::Min;
     pub const TOP: Self = Self::Min;
+
     pub const CENTER: Self = Self::Center;
+
     pub const RIGHT: Self = Self::Max;
     pub const BOTTOM: Self = Self::Max;
 
