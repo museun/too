@@ -82,15 +82,6 @@ impl Palette {
     }
 }
 
-pub struct Knob;
-impl Knob {
-    pub const LARGE: char = Elements::LARGE_RECT;
-    pub const MEDIUM: char = Elements::MEDIUM_RECT;
-    pub const SMALL: char = Elements::SMALL_RECT;
-    pub const ROUND: char = Elements::CIRCLE;
-    pub const DIAMOND: char = Elements::DIAMOND;
-}
-
 pub struct Elements;
 impl Elements {
     pub const LARGE_RECT: char = '█';

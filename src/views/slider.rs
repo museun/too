@@ -5,8 +5,8 @@ use crate::{
     layout::Axis,
     math::{denormalize, inverse_lerp, lerp, normalize, Pos2, Size, Space},
     view::{
-        Builder, Elements, EventCtx, Handled, Interest, Knob, Layout, Palette, Render, StyleKind,
-        Ui, View, ViewEvent,
+        Builder, Elements, EventCtx, Handled, Interest, Layout, Palette, Render, StyleKind, Ui,
+        View, ViewEvent,
     },
     Pixel, Rgba,
 };
@@ -30,7 +30,10 @@ impl SliderStyle {
             knob_color: palette.primary,
             track_hovered: None,
             knob_hovered: None,
-            knob: axis.main((Knob::MEDIUM, Knob::LARGE)),
+            knob: axis.main((
+                Elements::MEDIUM_RECT, //
+                Elements::LARGE_RECT,
+            )),
             track: axis.main((
                 Elements::THICK_HORIZONTAL_LINE,
                 Elements::THICK_VERTICAL_LINE,
@@ -40,7 +43,7 @@ impl SliderStyle {
 
     pub fn small_rounded(palette: &Palette, axis: Axis) -> Self {
         Self {
-            knob: Knob::ROUND,
+            knob: Elements::CIRCLE,
             track: axis.main((Elements::HORIZONTAL_LINE, Elements::VERTICAL_LINE)),
             ..Self::default(palette, axis)
         }
@@ -48,7 +51,7 @@ impl SliderStyle {
 
     pub fn small_diamond(palette: &Palette, axis: Axis) -> Self {
         Self {
-            knob: Knob::DIAMOND,
+            knob: Elements::DIAMOND,
             track: axis.main((Elements::HORIZONTAL_LINE, Elements::VERTICAL_LINE)),
             ..Self::default(palette, axis)
         }
@@ -56,7 +59,7 @@ impl SliderStyle {
 
     pub fn small_square(palette: &Palette, axis: Axis) -> Self {
         Self {
-            knob: Knob::SMALL,
+            knob: Elements::SMALL_RECT,
             track: axis.main((Elements::HORIZONTAL_LINE, Elements::VERTICAL_LINE)),
             ..Self::default(palette, axis)
         }
@@ -64,7 +67,7 @@ impl SliderStyle {
 
     pub fn large(palette: &Palette, axis: Axis) -> Self {
         Self {
-            knob: Knob::LARGE,
+            knob: Elements::LARGE_RECT,
             track: Elements::MEDIUM_RECT,
             ..Self::default(palette, axis)
         }
@@ -72,7 +75,7 @@ impl SliderStyle {
 
     pub fn large_filled(palette: &Palette, axis: Axis) -> Self {
         Self {
-            knob: Knob::LARGE,
+            knob: Elements::LARGE_RECT,
             track: Elements::LARGE_RECT,
             ..Self::default(palette, axis)
         }

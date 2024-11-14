@@ -5,8 +5,8 @@ use crate::{
     layout::Axis,
     math::{lerp, Pos2, Size, Space},
     view::{
-        Builder, Elements, EventCtx, Handled, Interest, Knob, Layout, Palette, Render, StyleKind,
-        Ui, View, ViewEvent,
+        Builder, Elements, EventCtx, Handled, Interest, Layout, Palette, Render, StyleKind, Ui,
+        View, ViewEvent,
     },
     Pixel, Rgba,
 };
@@ -33,9 +33,9 @@ impl ToggleStyle {
             track: axis.main((Elements::MEDIUM_RECT, Elements::LARGE_RECT)),
             track_color: palette.outline,
             track_hovered: None,
-            on_knob: Knob::LARGE,
+            on_knob: Elements::LARGE_RECT,
             on_knob_color: palette.primary,
-            off_knob: Knob::LARGE,
+            off_knob: Elements::LARGE_RECT,
             off_knob_color: palette.secondary,
             on_knob_hovered: None,
             off_knob_hovered: None,
@@ -52,8 +52,8 @@ impl ToggleStyle {
                 Elements::THICK_HORIZONTAL_LINE,
                 Elements::THICK_VERTICAL_LINE,
             )),
-            on_knob: Knob::ROUND,
-            off_knob: Knob::ROUND,
+            on_knob: Elements::CIRCLE,
+            off_knob: Elements::CIRCLE,
             ..Self::default(palette, axis, toggled)
         }
     }
@@ -64,8 +64,8 @@ impl ToggleStyle {
                 Elements::THICK_HORIZONTAL_LINE,
                 Elements::THICK_VERTICAL_LINE,
             )),
-            on_knob: Knob::DIAMOND,
-            off_knob: Knob::DIAMOND,
+            on_knob: Elements::DIAMOND,
+            off_knob: Elements::DIAMOND,
             ..Self::default(palette, axis, toggled)
         }
     }
@@ -76,8 +76,8 @@ impl ToggleStyle {
                 Elements::THICK_HORIZONTAL_LINE,
                 Elements::THICK_VERTICAL_LINE,
             )),
-            on_knob: Knob::MEDIUM,
-            off_knob: Knob::MEDIUM,
+            on_knob: Elements::MEDIUM_RECT,
+            off_knob: Elements::MEDIUM_RECT,
             ..Self::default(palette, axis, toggled)
         }
     }
