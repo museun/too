@@ -5,7 +5,6 @@ use unicode_width::UnicodeWidthStr as _;
 use crate::{
     layout::Align,
     math::{pos2, Size, Space},
-    measure_text,
     view::{Builder, Interest, Layout, Palette, Render, StyleKind, View},
     Border, Grapheme, Pixel, Rgba, Str,
 };
@@ -117,10 +116,11 @@ impl View for BorderView {
             layout.set_position(child, offset);
         }
 
+        #[allow(deprecated)]
         let title_size = self
             .title
             .as_deref()
-            .map(measure_text)
+            .map(crate::measure_text)
             .unwrap_or(Size::ZERO);
 
         let max = size.max(title_size) + Size::new(1.0, 0.0);
@@ -148,32 +148,22 @@ impl View for BorderView {
             (false, false) => style.border,
         };
 
-        let pixel = Pixel::new(self.border.top).fg(color);
-        render.horizontal_line(0, 1..=w, pixel);
+        render
+            .horizontal_line(0, 1..=w, Pixel::new(self.border.top).fg(color))
+            .horizontal_line(h, 1..=w, Pixel::new(self.border.bottom).fg(color))
+            .vertical_line(0, 1..=h, Pixel::new(self.border.left).fg(color))
+            .vertical_line(w, 1..=h, Pixel::new(self.border.right).fg(color))
+            .set(pos2(0, 0), Pixel::new(self.border.left_top).fg(color))
+            .set(pos2(w, 0), Pixel::new(self.border.right_top).fg(color))
+            .set(pos2(0, h), Pixel::new(self.border.left_bottom).fg(color))
+            .set(pos2(w, h), Pixel::new(self.border.right_bottom).fg(color));
 
-        let pixel = Pixel::new(self.border.bottom).fg(color);
-        render.horizontal_line(h, 1..=w, pixel);
-
-        let pixel = Pixel::new(self.border.left).fg(color);
-        render.vertical_line(0, 1..=h, pixel);
-
-        let pixel = Pixel::new(self.border.right).fg(color);
-        render.vertical_line(w, 1..=h, pixel);
-
-        let pixel = Pixel::new(self.border.left_top).fg(color);
-        render.set(pos2(0, 0), pixel);
-
-        let pixel = Pixel::new(self.border.right_top).fg(color);
-        render.set(pos2(w, 0), pixel);
-
-        let pixel = Pixel::new(self.border.left_bottom).fg(color);
-        render.set(pos2(0, h), pixel);
-
-        let pixel = Pixel::new(self.border.right_bottom).fg(color);
-        render.set(pos2(w, h), pixel);
-
+        // XXX this is actually a valid use of `measure_text`
+        // we don't really want to delegate to the label type because we do that
+        // weird intersperse border-behind-title things
         if let Some(title) = &self.title {
-            let tw = measure_text(title);
+            #[allow(deprecated)]
+            let tw = crate::measure_text(title);
 
             let w = w as f32;
             let x = match self.align {
