@@ -1,6 +1,6 @@
 use crate::{
     view::{Adhoc, Palette, Response, StyleKind, Ui},
-    Rgba,
+    Rgba, Str,
 };
 
 use super::label::LabelStyle;
@@ -38,7 +38,7 @@ impl CheckboxStyle {
 #[must_use = "a view does nothing unless `ui.adhoc()` is called"]
 pub struct Checkbox<'a> {
     value: &'a mut bool,
-    label: &'a str,
+    label: Str,
     class: StyleKind<CheckboxClass, CheckboxStyle>,
 }
 
@@ -89,10 +89,10 @@ impl<'a> Adhoc<'a> for Checkbox<'a> {
     }
 }
 
-pub fn checkbox<'a>(value: &'a mut bool, label: &'a str) -> Checkbox<'a> {
+pub fn checkbox(value: &mut bool, label: impl Into<Str>) -> Checkbox<'_> {
     Checkbox {
         value,
-        label,
+        label: label.into(),
         class: StyleKind::deferred(CheckboxStyle::ascii),
     }
 }

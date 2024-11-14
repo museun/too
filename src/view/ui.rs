@@ -272,23 +272,23 @@ impl<'a> Ui<'a> {
         self.show(views::toggle_switch(value))
     }
 
-    pub fn button(&self, label: &str) -> Response<views::ButtonResponse> {
+    pub fn button(&self, label: impl Into<Str>) -> Response<views::ButtonResponse> {
         self.show(views::button(label).margin((1, 0)))
     }
 
-    pub fn checkbox(&self, value: &mut bool, label: &str) -> Response<bool> {
+    pub fn checkbox(&self, value: &mut bool, label: impl Into<Str>) -> Response<bool> {
         self.adhoc(views::checkbox(value, label))
     }
 
-    pub fn todo_value(&self, value: &mut bool, label: &str) -> Response<bool> {
+    pub fn todo_value(&self, value: &mut bool, label: impl Into<Str>) -> Response<bool> {
         self.adhoc(views::todo_value(value, label))
     }
 
-    pub fn selected(&self, value: &mut bool, label: &str) -> Response<bool> {
+    pub fn selected(&self, value: &mut bool, label: impl Into<Str>) -> Response<bool> {
         self.adhoc(views::selected(value, label))
     }
 
-    pub fn radio<V>(&self, value: V, existing: &mut V, label: &str) -> Response<bool>
+    pub fn radio<V>(&self, value: V, existing: &mut V, label: impl Into<Str>) -> Response<bool>
     where
         V: PartialEq,
     {

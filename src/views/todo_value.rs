@@ -1,6 +1,6 @@
 use crate::{
     view::{Adhoc, Palette, Response, StyleKind},
-    Attribute, Rgba,
+    Attribute, Rgba, Str,
 };
 
 use super::label::LabelStyle;
@@ -27,7 +27,7 @@ impl TodoStyle {
 #[must_use = "a view does nothing unless `ui.adhoc()` is called"]
 pub struct TodoValue<'a> {
     value: &'a mut bool,
-    label: &'a str,
+    label: Str,
     class: StyleKind<TodoClass, TodoStyle>,
 }
 
@@ -81,10 +81,10 @@ impl<'a> Adhoc<'a> for TodoValue<'a> {
     }
 }
 
-pub fn todo_value<'a>(value: &'a mut bool, label: &'a str) -> TodoValue<'a> {
+pub fn todo_value(value: &mut bool, label: impl Into<Str>) -> TodoValue<'_> {
     TodoValue {
         value,
-        label,
+        label: label.into(),
         class: StyleKind::Deferred(TodoStyle::default),
     }
 }

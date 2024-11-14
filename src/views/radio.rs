@@ -1,6 +1,6 @@
 use crate::{
     view::{Adhoc, Palette, Response, StyleKind},
-    Rgba,
+    Rgba, Str,
 };
 
 use super::label::{label, LabelStyle};
@@ -46,7 +46,7 @@ impl RadioStyle {
 pub struct Radio<'a, V> {
     value: V,
     existing: &'a mut V,
-    label: &'a str,
+    label: Str,
     class: StyleKind<RadioClass, RadioStyle>,
 }
 
@@ -95,14 +95,14 @@ where
     }
 }
 
-pub fn radio<'a, V>(value: V, existing: &'a mut V, label: &'a str) -> Radio<'a, V>
+pub fn radio<V>(value: V, existing: &mut V, label: impl Into<Str>) -> Radio<'_, V>
 where
     V: PartialEq,
 {
     Radio {
         value,
         existing,
-        label,
+        label: label.into(),
         class: StyleKind::deferred(RadioStyle::default),
     }
 }

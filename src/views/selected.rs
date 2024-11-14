@@ -1,6 +1,6 @@
 use crate::{
     view::{Adhoc, Palette, Response, StyleKind},
-    Rgba,
+    Rgba, Str,
 };
 
 use super::label::{label, LabelStyle};
@@ -42,7 +42,7 @@ pub type SelectedClass = fn(&Palette, bool) -> SelectedStyle;
 #[must_use = "a view does nothing unless `ui.adhoc()` is called"]
 pub struct Selected<'a> {
     value: &'a mut bool,
-    label: &'a str,
+    label: Str,
     class: StyleKind<SelectedClass, SelectedStyle>,
 }
 
@@ -96,10 +96,10 @@ impl<'v> Adhoc<'v> for Selected<'v> {
     }
 }
 
-pub fn selected<'a>(value: &'a mut bool, label: &'a str) -> Selected<'a> {
+pub fn selected(value: &mut bool, label: impl Into<Str>) -> Selected<'_> {
     Selected {
         value,
-        label,
+        label: label.into(),
         class: StyleKind::Deferred(SelectedStyle::default),
     }
 }
