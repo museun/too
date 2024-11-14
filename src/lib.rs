@@ -1,5 +1,6 @@
 #![cfg_attr(debug_assertions, allow(dead_code, unused_variables,))]
 use compact_str::{CompactString, ToCompactString};
+use layout::Anchor2;
 use std::{
     ops::Deref,
     time::{Duration, Instant},
@@ -97,6 +98,7 @@ where
 pub struct Config {
     pub palette: Palette,
     pub debug: DebugMode,
+    pub debug_anchor: Anchor2,
     pub animation: Animations,
     pub fps: f32,
     pub ctrl_c_quits: bool,
@@ -109,6 +111,7 @@ impl Default for Config {
         Self {
             palette: Palette::dark(),
             debug: DebugMode::PerFrame,
+            debug_anchor: Anchor2::RIGHT_TOP,
             animation: Animations::default(),
             fps: 60.0,
             ctrl_c_quits: true,
@@ -142,6 +145,7 @@ pub fn application<R: 'static>(
 
     let mut state = State::new(config.palette, config.animation);
     state.set_debug_mode(config.debug);
+    state.set_debug_anchor(config.debug_anchor);
 
     let target = Duration::from_secs_f32(1.0 / config.fps.max(1.0));
     let max_budget = (target / 2).max(Duration::from_millis(1));

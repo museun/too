@@ -18,6 +18,7 @@ pub struct Ui<'a> {
     pub(in crate::view) input: &'a InputState,
     pub(in crate::view) palette: &'a RefCell<Palette>,
     pub(in crate::view) client_rect: Rect,
+    pub(in crate::view) frame_count: u64,
 }
 
 impl<'a> Ui<'a> {
@@ -28,13 +29,8 @@ impl<'a> Ui<'a> {
             input: &state.input,
             palette: &state.palette,
             client_rect,
+            frame_count: state.frame_count,
         }
-    }
-
-    // FIXME remove this
-    #[doc(hidden)]
-    pub fn node_tree_representation(&self) -> String {
-        DebugNode::new(self.nodes.root(), self.nodes, self.layout).compact_tree()
     }
 }
 
@@ -77,6 +73,10 @@ impl<'a> Ui<'a> {
     pub fn current_available_rect(&self) -> Rect {
         let parent = self.nodes.parent();
         self.layout.get(parent).map(|c| c.rect).unwrap_or_default()
+    }
+
+    pub fn frame_count(&self) -> u64 {
+        self.frame_count
     }
 
     pub fn current(&self) -> ViewId {

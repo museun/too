@@ -9,6 +9,12 @@ pub struct Anchor2 {
     pub y: Anchor,
 }
 
+impl Default for Anchor2 {
+    fn default() -> Self {
+        Self::LEFT_TOP
+    }
+}
+
 impl Anchor2 {
     pub const LEFT_TOP: Self = Self {
         x: Anchor::LEFT,

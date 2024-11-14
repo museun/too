@@ -2,7 +2,14 @@ use std::cell::{Ref, RefCell};
 
 use compact_str::{CompactString, ToCompactString};
 
-use crate::{backend::Event, math::Rect, rasterizer::Rasterizer, Animations, Str};
+use crate::{
+    backend::Event,
+    layout::{Anchor2, LinearLayout},
+    math::{Rect, Vec2},
+    measure_text,
+    rasterizer::Rasterizer,
+    Animations, Rgba, Str, TextShape,
+};
 
 use super::{
     helpers::Queue, input::InputState, render::RenderNodes, style::Palette, ui::Ui, LayoutNode,
@@ -66,6 +73,10 @@ impl State {
         DEBUG.with(|c| c.mode.set(mode))
     }
 
+    pub fn set_debug_anchor(&self, anchor: Anchor2) {
+        DEBUG.with(|c| c.anchor.set(anchor))
+    }
+
     pub fn root(&self) -> ViewId {
         self.nodes.root()
     }
@@ -125,37 +136,43 @@ impl State {
             rect,
         );
 
-        // DEBUG.with(|c| {
-        //     let mut debug = c.queue.borrow_mut();
-        //     if debug.is_empty() {
-        //         return;
-        //     }
+        DEBUG.with(|c| {
+            let mut debug = c.queue.borrow_mut();
+            if debug.is_empty() {
+                return;
+            }
 
-        //     let mut layout = LinearLayout::vertical()
-        //         .wrap(false)
-        //         .anchor(Anchor2::LEFT_TOP)
-        //         .layout(surface.rect());
+            let mut layout = LinearLayout::vertical()
+                .wrap(false)
+                .anchor(c.anchor.get())
+                .layout(rect);
 
-        //     match c.mode.get() {
-        //         DebugMode::PerFrame => {
-        //             for msg in debug.drain() {
-        //                 let text = Text::new(msg).fg(Rgba::hex("#F00")).bg(Rgba::hex("#000"));
-        //                 if let Some(rect) = layout.allocate(text.size()) {
-        //                     text.draw(rect, surface);
-        //                 }
-        //             }
-        //         }
-        //         DebugMode::Rolling => {
-        //             for msg in debug.iter() {
-        //                 let text = Text::new(msg).fg(Rgba::hex("#F00")).bg(Rgba::hex("#000"));
-        //                 if let Some(rect) = layout.allocate(text.size()) {
-        //                     text.draw(rect, surface);
-        //                 }
-        //             }
-        //         }
-        //         DebugMode::Off => {}
-        //     }
-        // });
+            match c.mode.get() {
+                DebugMode::PerFrame => {
+                    for msg in debug.drain() {
+                        let text = TextShape::new(&msg).fg("#F00").bg("#000");
+                        #[allow(deprecated)]
+                        let size = Vec2::from(measure_text(&text.label));
+                        if let Some(rect) = layout.allocate(size) {
+                            rasterizer.set_rect(rect);
+                            rasterizer.text(text);
+                        }
+                    }
+                }
+                DebugMode::Rolling => {
+                    for msg in debug.iter() {
+                        let text = TextShape::new(&msg).fg("#F00").bg("#000");
+                        #[allow(deprecated)]
+                        let size = Vec2::from(measure_text(&text.label));
+                        if let Some(rect) = layout.allocate(size) {
+                            rasterizer.set_rect(rect);
+                            rasterizer.text(text);
+                        }
+                    }
+                }
+                DebugMode::Off => {}
+            }
+        });
     }
 
     fn begin(&mut self) {
@@ -185,10 +202,11 @@ pub enum DebugMode {
     Off,
 }
 
-#[derive(Debug, Default)]
+#[derive(Debug)]
 pub(in crate::view) struct Debug {
     queue: RefCell<Queue<CompactString>>,
     pub(in crate::view) mode: std::cell::Cell<DebugMode>,
+    pub(in crate::view) anchor: std::cell::Cell<Anchor2>,
 }
 
 thread_local! {
@@ -204,6 +222,7 @@ impl Debug {
         Self {
             queue: RefCell::new(Queue::new(25)),
             mode: std::cell::Cell::new(DebugMode::Rolling),
+            anchor: std::cell::Cell::new(Anchor2::RIGHT_TOP),
         }
     }
 
