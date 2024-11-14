@@ -77,22 +77,6 @@ impl<'a, 'b> Render<'a, 'b> {
         self.render.current_axis().unwrap()
     }
 
-    pub fn shrink_left(&mut self, left: i32) -> &mut Self {
-        todo!();
-    }
-
-    pub fn shrink_right(&mut self, right: i32) -> &mut Self {
-        todo!();
-    }
-
-    pub fn shrink_top(&mut self, top: i32) -> &mut Self {
-        todo!();
-    }
-
-    pub fn shrink_bottom(&mut self, bottom: i32) -> &mut Self {
-        todo!();
-    }
-
     pub fn shrink(&mut self, size: impl Into<Vec2>, render: impl FnOnce(&mut Self)) {
         self.crop(self.rect.shrink2(size.into()), render)
     }
