@@ -62,11 +62,11 @@ pub struct AnimationMut<'a> {
 ///
 /// This lets you add, retrieve and remove animations from the system
 #[derive(Default)]
-pub struct AnimationManager {
+pub struct Animations {
     animations: HashMap<Id, (Animation, f32), DefaultIntHasher>,
 }
 
-impl AnimationManager {
+impl Animations {
     pub fn new() -> Self {
         Self::default()
     }

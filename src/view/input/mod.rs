@@ -5,7 +5,7 @@ use std::{
 
 use crate::{
     math::{Pos2, Rect, Vec2},
-    AnimationManager, Event as TooEvent, Key, Modifiers, MouseButton,
+    Animations, Event as TooEvent, Key, Modifiers, MouseButton,
 };
 
 use super::{
@@ -90,7 +90,7 @@ pub struct InputState {
 }
 
 impl InputState {
-    pub fn begin(&self, nodes: &ViewNodes, layout: &LayoutNodes, animation: &mut AnimationManager) {
+    pub fn begin(&self, nodes: &ViewNodes, layout: &LayoutNodes, animation: &mut Animations) {
         self.notify_focus(nodes, layout, animation)
     }
 
@@ -118,7 +118,7 @@ impl InputState {
         &self,
         nodes: &ViewNodes,
         layout: &LayoutNodes,
-        animation: &mut AnimationManager,
+        animation: &mut Animations,
         event: &TooEvent,
     ) -> Handled {
         if let Some(modifiers) = event.modifiers() {
@@ -171,7 +171,7 @@ impl InputState {
         key: Key,
         nodes: &ViewNodes,
         layout: &LayoutNodes,
-        animation: &mut AnimationManager,
+        animation: &mut Animations,
     ) -> Handled {
         let Some(id) = self.focus.get() else {
             return Handled::Bubble;
@@ -202,7 +202,7 @@ impl InputState {
         pos: Pos2,
         nodes: &ViewNodes,
         layout: &LayoutNodes,
-        animation: &mut AnimationManager,
+        animation: &mut Animations,
     ) -> Handled {
         self.mouse.borrow_mut().pos = pos;
         self.send_mouse_move(nodes, layout, animation);
@@ -216,7 +216,7 @@ impl InputState {
         &self,
         nodes: &ViewNodes,
         layout: &LayoutNodes,
-        animation: &mut AnimationManager,
+        animation: &mut Animations,
     ) {
         let mouse = self.mouse.borrow();
         let event = ViewEvent::MouseMove {
@@ -239,7 +239,7 @@ impl InputState {
         &self,
         nodes: &ViewNodes,
         layout: &LayoutNodes,
-        animation: &mut AnimationManager,
+        animation: &mut Animations,
     ) {
         let intersections = &mut *self.intersections.borrow_mut();
 
@@ -270,7 +270,7 @@ impl InputState {
         &self,
         nodes: &ViewNodes,
         layout: &LayoutNodes,
-        animation: &mut AnimationManager,
+        animation: &mut Animations,
     ) {
         let intersections = &mut *self.intersections.borrow_mut();
 
@@ -319,7 +319,7 @@ impl InputState {
         button: MouseButton,
         nodes: &ViewNodes,
         layout: &LayoutNodes,
-        animation: &mut AnimationManager,
+        animation: &mut Animations,
     ) -> Handled {
         let mouse = self.mouse.borrow();
         let intersections = self.intersections.borrow();
@@ -377,7 +377,7 @@ impl InputState {
         down: bool,
         nodes: &ViewNodes,
         layout: &LayoutNodes,
-        animation: &mut AnimationManager,
+        animation: &mut Animations,
     ) -> Handled {
         let state = {
             let mut mouse = self.mouse.borrow_mut();
@@ -452,7 +452,7 @@ impl InputState {
         delta: Vec2,
         nodes: &ViewNodes,
         layout: &LayoutNodes,
-        animation: &mut AnimationManager,
+        animation: &mut Animations,
     ) -> Handled {
         let intersections = self.intersections.borrow();
 
@@ -479,7 +479,7 @@ impl InputState {
         &self,
         nodes: &ViewNodes,
         layout: &LayoutNodes,
-        animation: &mut AnimationManager,
+        animation: &mut Animations,
     ) {
         let mut current = self.focus.get();
         let last = self.prev_focus.get();
@@ -514,7 +514,7 @@ impl InputState {
         &self,
         nodes: &ViewNodes,
         layout: &LayoutNodes,
-        animation: &mut AnimationManager,
+        animation: &mut Animations,
         id: ViewId,
         node: &mut dyn Erased,
         event: ViewEvent,
@@ -566,7 +566,7 @@ impl InputState {
         &self,
         nodes: &ViewNodes,
         layout: &LayoutNodes,
-        animation: &mut AnimationManager,
+        animation: &mut Animations,
         id: ViewId,
         event: ViewEvent,
     ) -> Handled {
@@ -602,7 +602,7 @@ pub struct EventCtx<'a> {
     pub nodes: &'a ViewNodes,
     pub layout: &'a LayoutNodes,
     pub input: &'a InputState,
-    pub animation: &'a mut AnimationManager,
+    pub animation: &'a mut Animations,
 }
 
 impl<'a> EventCtx<'a> {

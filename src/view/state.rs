@@ -10,7 +10,7 @@ use slotmap::{SecondaryMap, SlotMap};
 use crate::{
     layout::{Anchor2, Axis, LinearLayout},
     math::{Pos2, Rect, Size, Space, Vec2},
-    AnimationManager, Rgba, Surface, Text,
+    Animations, Rgba, Surface, Text,
 };
 
 use super::{
@@ -78,19 +78,19 @@ pub struct State {
     pub(in crate::view) layout: LayoutNodes,
     pub(in crate::view) render: RenderNodes,
     pub(in crate::view) input: InputState,
-    pub(in crate::view) animations: AnimationManager,
+    pub(in crate::view) animations: Animations,
     pub(in crate::view) palette: RefCell<Palette>,
     pub(in crate::view) frame_count: u64,
 }
 
 impl Default for State {
     fn default() -> Self {
-        Self::new(Palette::default(), AnimationManager::default())
+        Self::new(Palette::default(), Animations::default())
     }
 }
 
 impl State {
-    pub fn new(palette: Palette, animations: AnimationManager) -> Self {
+    pub fn new(palette: Palette, animations: Animations) -> Self {
         let nodes = ViewNodes::new();
         let mut layout = LayoutNodes::new();
         layout.nodes.insert(nodes.root, LayoutNode::new(nodes.root));
@@ -505,7 +505,7 @@ impl RenderNodes {
         layout: &LayoutNodes,
         input: &InputState,
         palette: &Palette,
-        animation: &mut AnimationManager,
+        animation: &mut Animations,
         surface: CroppedSurface,
     ) {
         // TODO sort nodes by layer
@@ -531,7 +531,7 @@ impl RenderNodes {
         layout: &LayoutNodes,
         input: &InputState,
         palette: &Palette,
-        animation: &mut AnimationManager,
+        animation: &mut Animations,
         id: ViewId,
         surface: CroppedSurface,
     ) {

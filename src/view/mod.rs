@@ -27,7 +27,7 @@ pub use style::{Elements, Knob, Palette, StyleKind};
 use crate::{
     layout::{Axis, Flex},
     math::{Size, Space},
-    AnimationManager,
+    Animations,
 };
 
 pub trait Adhoc<'v>: Sized {
@@ -224,7 +224,7 @@ pub fn run<R: 'static>(app: impl FnMut(&Ui) -> R) -> std::io::Result<()> {
 pub struct Config {
     pub palette: Palette,
     pub debug: DebugMode,
-    pub animation: AnimationManager,
+    pub animation: Animations,
     pub fps: f32,
     pub ctrl_c_quits: bool,
     pub ctrl_z_switches: bool,
@@ -236,7 +236,7 @@ impl Default for Config {
         Self {
             palette: Palette::dark(),
             debug: DebugMode::PerFrame,
-            animation: AnimationManager::default(),
+            animation: Animations::default(),
             fps: 60.0,
             ctrl_c_quits: true,
             ctrl_z_switches: false,

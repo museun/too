@@ -3,7 +3,7 @@ use std::ops::Range;
 use crate::{
     layout::Axis,
     math::{Pos2, Rect, Vec2},
-    AnimationManager, Attribute, Cell, Color, Pixel, Rgba, Surface,
+    Animations, Attribute, Cell, Color, Pixel, Rgba, Surface,
 };
 
 use super::{
@@ -118,7 +118,7 @@ pub struct Render<'a, 'b> {
     pub layout: &'a LayoutNodes,
 
     pub palette: &'a Palette,
-    pub animation: &'a mut AnimationManager,
+    pub animation: &'a mut Animations,
     pub surface: CroppedSurface<'b>,
 
     pub(super) render: &'a mut RenderNodes,

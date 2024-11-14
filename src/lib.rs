@@ -21,7 +21,7 @@ mod text;
 pub use text::{MeasureText, Text};
 
 pub mod animation;
-pub use animation::AnimationManager;
+pub use animation::Animations;
 
 pub mod view;
 pub mod views;
