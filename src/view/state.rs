@@ -508,6 +508,7 @@ impl RenderNodes {
         animation: &mut AnimationManager,
         surface: CroppedSurface,
     ) {
+        // TODO sort nodes by layer
         self.draw(
             nodes,
             layout,

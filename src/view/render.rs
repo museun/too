@@ -1,7 +1,9 @@
+use std::ops::Range;
+
 use crate::{
     layout::Axis,
     math::{Pos2, Rect, Vec2},
-    AnimationManager, Cell, Pixel, Rgba, Surface,
+    AnimationManager, Attribute, Cell, Color, Pixel, Rgba, Surface,
 };
 
 use super::{
@@ -125,19 +127,18 @@ pub struct Render<'a, 'b> {
 
 impl<'a, 'b> Render<'a, 'b> {
     pub fn draw(&mut self, id: ViewId) {
-        let surface = CroppedSurface {
-            rect: self.surface.rect,
-            clip_rect: self.surface.clip_rect,
-            surface: self.surface.surface,
-        };
         self.render.draw(
-            self.nodes, //
+            self.nodes,
             self.layout,
             self.input,
             self.palette,
             self.animation,
             id,
-            surface,
+            CroppedSurface {
+                rect: self.surface.rect,
+                clip_rect: self.surface.clip_rect,
+                surface: self.surface.surface,
+            },
         );
     }
 
@@ -171,5 +172,119 @@ impl<'a, 'b> Render<'a, 'b> {
 
     pub fn parent_axis(&self) -> Axis {
         self.render.current_axis().unwrap()
+    }
+
+    pub fn fill_bg(&mut self, color: impl Into<Rgba>) -> &mut Self {
+        todo!();
+    }
+
+    pub fn fill_with(&mut self, pixel: impl Into<Pixel>) -> &mut Self {
+        todo!();
+    }
+
+    pub fn crop(&mut self, rect: Rect) -> &mut Self {
+        todo!();
+    }
+
+    pub fn shrink_left(&mut self, left: i32) -> &mut Self {
+        todo!();
+    }
+
+    pub fn shrink_right(&mut self, right: i32) -> &mut Self {
+        todo!();
+    }
+
+    pub fn shrink_top(&mut self, top: i32) -> &mut Self {
+        todo!();
+    }
+
+    pub fn shrink_bottom(&mut self, bottom: i32) -> &mut Self {
+        todo!();
+    }
+
+    pub fn shrink(&mut self, size: Vec2) -> &mut Self {
+        todo!();
+    }
+
+    pub fn horizontal_line(&mut self, y: i32, range: Range<i32>, pixel: impl Into<Pixel>) {
+        todo!();
+    }
+
+    pub fn vertical_line(&mut self, x: i32, range: Range<i32>, pixel: impl Into<Pixel>) {
+        todo!();
+    }
+
+    pub fn line(
+        &mut self,
+        axis: Axis,
+        cross: i32,
+        range: Range<i32>,
+        pixel: impl Into<Pixel>,
+    ) -> &mut Self {
+        todo!();
+    }
+
+    pub fn text<'t>(&mut self, shape: impl Into<TextShape<'t>>) -> &mut Self {
+        todo!();
+    }
+
+    pub fn patch(&mut self, pos: Pos2, patch: impl Fn(&mut Cell)) -> &mut Self {
+        todo!();
+    }
+
+    pub fn pixel(&mut self, pos: Pos2, pixel: impl Into<Pixel>) -> &mut Self {
+        todo!();
+    }
+}
+
+pub struct TextShape<'a> {
+    label: &'a str,
+    fg: Color,
+    bg: Color,
+    attribute: Option<Attribute>,
+}
+
+impl<'a> From<&'a str> for TextShape<'a> {
+    fn from(value: &'a str) -> Self {
+        Self::new(value)
+    }
+}
+
+impl<'a> TextShape<'a> {
+    pub const fn new(label: &'a str) -> Self {
+        Self {
+            label,
+            fg: Color::Reuse,
+            bg: Color::Reset,
+            attribute: None,
+        }
+    }
+
+    pub fn fg(mut self, fg: impl Into<Rgba>) -> Self {
+        self.fg = Color::Set(fg.into());
+        self
+    }
+
+    pub fn bg(mut self, bg: impl Into<Rgba>) -> Self {
+        self.bg = Color::Set(bg.into());
+        self
+    }
+
+    pub fn attribute(mut self, attribute: Attribute) -> Self {
+        match &mut self.attribute {
+            Some(attr) => *attr |= attribute,
+            None => self.attribute = Some(attribute),
+        }
+        self
+    }
+
+    pub fn maybe_attribute(mut self, attribute: Option<Attribute>) -> Self {
+        match attribute {
+            Some(attr) => self.attribute(attr),
+            None => {
+                self.attribute.take();
+                self
+            }
+        }
     }
 }
