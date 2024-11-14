@@ -1,8 +1,9 @@
 use crate::{
     math::{vec2, Vec2},
     renderer::DummyRenderer,
-    Backend, Command, Event, EventReader,
 };
+
+use super::{Backend, Command, Event, EventReader};
 
 /// A dummy backend that does nothing
 pub struct DummyBackend;

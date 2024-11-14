@@ -2,7 +2,7 @@ use std::cell::{Ref, RefCell};
 
 use compact_str::{CompactString, ToCompactString};
 
-use crate::{math::Rect, rasterizer::Rasterizer, Animations, Str};
+use crate::{backend::Event, math::Rect, rasterizer::Rasterizer, Animations, Str};
 
 use super::{
     helpers::Queue, input::InputState, render::RenderNodes, style::Palette, ui::Ui, LayoutNode,
@@ -75,8 +75,8 @@ impl State {
     }
 
     #[cfg_attr(feature = "profile", profiling::function)]
-    pub fn event(&mut self, event: &crate::Event) {
-        if let crate::Event::Resize(size) = event {
+    pub fn event(&mut self, event: &Event) {
+        if let Event::Resize(size) = event {
             DEBUG.with(|c| c.queue.borrow_mut().resize(size.y as usize))
         }
 

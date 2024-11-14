@@ -8,7 +8,7 @@ use crate::{
         Builder, EventCtx, Handled, Interest, Layout, Palette, Render, StyleKind, Ui, View,
         ViewEvent,
     },
-    Rgba, Str, Text,
+    Rgba, Str,
 };
 
 #[derive(Copy, Clone, Default, Debug, PartialEq)]
@@ -218,8 +218,9 @@ impl View for Button {
     }
 
     fn layout(&mut self, layout: Layout, space: Space) -> Size {
-        let size = Size::from(Text::new(&self.label).size());
-        space.fit(size + self.margin)
+        // FIXME this should use this function
+        #[allow(deprecated)]
+        space.fit(crate::measure_text(&self.label) + self.margin)
     }
 
     fn draw(&mut self, mut render: Render) {

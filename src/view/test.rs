@@ -1,11 +1,12 @@
 use std::{borrow::Cow, ops::RangeInclusive};
 
 use crate::{
+    backend::Event,
     layout::Axis,
     math::{vec2, Pos2, Rect, Vec2},
     rasterizer::{Rasterizer, TextShape},
     view::{Palette, State, ViewId},
-    Animations, Cell, Event, Grapheme, Modifiers, MouseButton, Pixel, Rgba,
+    Animations, Cell, Grapheme, Modifiers, MouseButton, Pixel, Rgba,
 };
 
 use super::Ui;

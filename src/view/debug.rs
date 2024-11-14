@@ -3,9 +3,10 @@ use slotmap::Key;
 use unicode_width::UnicodeWidthStr;
 
 use crate::{
+    backend::Event,
     layout::{Align, Flex},
     math::{rect, vec2, Rect},
-    Event, Str,
+    Str,
 };
 
 use super::{

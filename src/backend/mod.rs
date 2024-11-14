@@ -1,4 +1,4 @@
-use crate::{math::Vec2, Renderer};
+use crate::{math::Vec2, renderer::Renderer};
 
 mod event;
 pub use event::Event;

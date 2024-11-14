@@ -4,7 +4,8 @@ use crate::{
     layout::Axis,
     math::{Pos2, Rect, Vec2},
     rasterizer::{Rasterizer, TextShape},
-    Animations, Cell, Pixel, Rgba, Surface,
+    renderer::Surface,
+    Animations, Cell, Pixel, Rgba,
 };
 
 use super::{input::InputState, LayoutNodes, Palette, ViewId, ViewNodes};

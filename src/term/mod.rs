@@ -12,9 +12,10 @@ use crossterm::{
 };
 
 use crate::{
+    backend::{Backend, Command, CurrentScreen, Event, EventReader},
     math::{pos2, vec2, Vec2},
-    Backend, Command, CurrentScreen, Event, EventReader, Key, Keybind, Modifiers, MouseButton,
-    Renderer, TermRenderer,
+    renderer::{Renderer as _, TermRenderer},
+    Key, Keybind, Modifiers, MouseButton,
 };
 
 /// Configuration for [`Term`]

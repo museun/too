@@ -6,8 +6,8 @@ use super::{
 };
 
 use crate::{
+    backend::Event,
     math::{pos2, rect, Pos2, Rect, Vec2},
-    Event,
 };
 
 /// An owned view of a rect region that allows drawing

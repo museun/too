@@ -4,8 +4,9 @@ use std::{
 };
 
 use crate::{
+    backend::Event as TooEvent,
     math::{Pos2, Rect, Vec2},
-    Animations, Event as TooEvent, Key, Modifiers, MouseButton,
+    Animations, Key, Modifiers, MouseButton,
 };
 
 use super::{Erased, LayoutNodes, ViewId, ViewNodes};
