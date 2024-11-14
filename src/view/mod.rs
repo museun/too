@@ -45,15 +45,6 @@ slotmap::new_key_type! {
     pub struct ViewId;
 }
 
-pub fn debug_view(mut app: impl FnMut(&Ui)) -> std::io::Result<()> {
-    let s = debug::pretty_tree(|ui| app(ui));
-    println!("{s}");
-    for debug in s.debug() {
-        println!("{debug}")
-    }
-    Ok(())
-}
-
 pub fn run<R: 'static>(app: impl FnMut(&Ui) -> R) -> std::io::Result<()> {
     application(Config::default(), app)
 }
