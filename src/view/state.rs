@@ -24,6 +24,7 @@ pub struct State {
     pub(in crate::view) palette: RefCell<Palette>,
     pub(in crate::view) frame_count: u64,
     pub(in crate::view) dt: f32,
+    pub(in crate::view) size_changed: Option<Vec2>,
 }
 
 impl Default for State {
@@ -47,6 +48,7 @@ impl State {
             palette: RefCell::new(palette),
             frame_count: 0,
             dt: 1.0,
+            size_changed: None,
         }
     }
 
@@ -89,6 +91,10 @@ impl State {
     #[cfg_attr(feature = "profile", profiling::function)]
     pub fn event(&mut self, event: &Event) {
         if let Event::Resize(size) = event {
+            if self.size_changed.get_or_insert(*size) == size {
+                self.size_changed.take();
+            }
+
             DEBUG.with(|c| c.queue.borrow_mut().resize(size.y as usize))
         }
 

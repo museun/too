@@ -2,7 +2,7 @@ use std::cell::{Ref, RefCell};
 
 use crate::{
     layout::{Align2, Flex},
-    math::{Margin, Pos2, Rect, Size},
+    math::{Margin, Pos2, Rect, Size, Vec2},
     views::{self, Constrain},
     Border, Rgba, Str,
 };
@@ -20,6 +20,7 @@ pub struct Ui<'a> {
     pub(in crate::view) client_rect: Rect,
     pub(in crate::view) frame_count: u64,
     pub(in crate::view) dt: f32,
+    pub(in crate::view) size_changed: Option<Vec2>,
 }
 
 impl<'a> Ui<'a> {
@@ -32,6 +33,7 @@ impl<'a> Ui<'a> {
             client_rect,
             frame_count: state.frame_count,
             dt: state.dt,
+            size_changed: state.size_changed,
         }
     }
 }
@@ -83,6 +85,10 @@ impl<'a> Ui<'a> {
 
     pub fn dt(&self) -> f32 {
         self.dt
+    }
+
+    pub fn size_changed(&self) -> Option<Vec2> {
+        self.size_changed
     }
 
     pub fn current(&self) -> ViewId {
