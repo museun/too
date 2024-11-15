@@ -51,8 +51,8 @@ impl<'a> TextShape<'a> {
     pub const fn new(label: &'a str) -> Self {
         Self {
             label: Cow::Borrowed(label),
-            fg: Color::Reuse,
-            bg: Color::Reset,
+            fg: Color::Reset,
+            bg: Color::Reuse,
             attribute: None,
         }
     }

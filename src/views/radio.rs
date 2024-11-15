@@ -1,5 +1,6 @@
 use crate::{
-    view::{Adhoc, Palette, Response, StyleKind},
+    format_str,
+    view::{debug, Adhoc, Palette, Response, StyleKind},
     Rgba, Str,
 };
 
@@ -76,14 +77,14 @@ where
                     (true, false) => style.hovered_background.unwrap_or(style.background),
                 };
 
-                let text = if hovered {
+                let foreground = if hovered {
                     style.hovered_text.unwrap_or(style.text_color)
                 } else {
                     style.text_color
                 };
 
                 ui.background(fill, |ui| {
-                    ui.show(label(self.label).style(LabelStyle { foreground: text }))
+                    ui.show(label(self.label).style(LabelStyle { foreground }))
                 });
             })
             .flatten_left();

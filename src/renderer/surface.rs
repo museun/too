@@ -87,9 +87,8 @@ impl Surface {
         if rect == self.rect() {
             self.back.fill(Cell::Pixel(pixel));
         }
-        // TODO optimize this with line-vectored drawing
-        // TODO if rect == self.rect just do a full clear
 
+        // TODO optimize this with line-vectored drawing
         let rect = self.rect().intersection(rect);
         for y in rect.top()..rect.bottom() {
             // self.set_line(y, rect.left(), rect.right(), pixel)

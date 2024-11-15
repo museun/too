@@ -33,10 +33,6 @@ impl View for Background {
         args
     }
 
-    // fn layout(&mut self, layout: Layout, space: Space) -> Size {
-    //   space.max
-    // }
-
     fn draw(&mut self, mut render: Render) {
         render.fill_bg(self.bg);
         self.default_draw(render);
