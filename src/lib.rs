@@ -1,11 +1,8 @@
 #![cfg_attr(debug_assertions, allow(dead_code, unused_variables,))]
 use compact_str::{CompactString, ToCompactString};
 use layout::Anchor2;
-use std::{
-    ops::Deref,
-    time::{Duration, Instant},
-};
-use view::{CroppedSurface, DebugMode, Palette, State, Ui};
+use std::ops::Deref;
+use view::{DebugMode, Palette};
 
 pub mod backend;
 #[doc(inline)]
@@ -121,18 +118,23 @@ impl Default for Config {
     }
 }
 
-pub fn run<R: 'static>(app: impl FnMut(&Ui) -> R) -> std::io::Result<()> {
+#[cfg(feature = "terminal")]
+pub fn run<R: 'static>(app: impl FnMut(&crate::view::Ui) -> R) -> std::io::Result<()> {
     application(Config::default(), app)
 }
 
+#[cfg(feature = "terminal")]
 pub fn application<R: 'static>(
     config: Config,
-    mut app: impl FnMut(&Ui) -> R,
+    mut app: impl FnMut(&crate::view::Ui) -> R,
 ) -> std::io::Result<()> {
+    use std::time::{Duration, Instant};
+
     use crate::{
         backend::{Backend, Event, EventReader},
         renderer::Surface,
         term::{Config as TermConfig, Term},
+        view::{CroppedSurface, State},
     };
 
     let mut term = Term::setup(

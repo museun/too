@@ -250,8 +250,8 @@ impl RenderNodes {
     }
 }
 
-pub(crate) struct CroppedSurface<'a> {
-    pub(crate) clip_rect: Rect,
+pub struct CroppedSurface<'a> {
+    pub clip_rect: Rect,
     pub surface: &'a mut Surface,
 }
 

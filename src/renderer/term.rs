@@ -3,36 +3,14 @@ use std::io::Write;
 use super::Renderer;
 use crate::{math::Pos2, Attribute, Rgba};
 
-struct CountWrites<W: Write> {
-    out: W,
-    count: usize,
-    cap: usize,
-}
-
-impl<W: Write> std::io::Write for CountWrites<W> {
-    fn write(&mut self, buf: &[u8]) -> std::io::Result<usize> {
-        let n = self.out.write(buf)?;
-        self.count += n;
-        Ok(n)
-    }
-
-    fn flush(&mut self) -> std::io::Result<()> {
-        self.out.flush()?;
-        self.count = 0;
-        Ok(())
-    }
-}
-
 /// Renders to a `Backend` using ANSI escape sequences
 pub struct TermRenderer<W: Write> {
-    out: CountWrites<W>,
+    out: W,
 }
 
 impl<W: Write> TermRenderer<W> {
-    pub const fn new(cap: usize, out: W) -> Self {
-        Self {
-            out: CountWrites { out, count: 0, cap },
-        }
+    pub const fn new(out: W) -> Self {
+        Self { out }
     }
 }
 
@@ -45,7 +23,8 @@ macro_rules! csi {
 impl<W: Write> Renderer for TermRenderer<W> {
     #[inline(always)]
     fn begin(&mut self) -> std::io::Result<()> {
-        self.out.write_all(csi!("?2026h"))
+        self.out.write_all(csi!("?2026h"))?;
+        self.out.flush()
     }
 
     #[inline(always)]
