@@ -1,6 +1,5 @@
 use crate::{
-    format_str,
-    view::{debug, Adhoc, Palette, Response, StyleKind},
+    view::{Adhoc, Palette, Response, StyleKind},
     Rgba, Str,
 };
 

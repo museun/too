@@ -18,7 +18,6 @@ impl<W: Write> std::io::Write for CountWrites<W> {
 
     fn flush(&mut self) -> std::io::Result<()> {
         self.out.flush()?;
-        // debug(format_str!("count: {} / {}", self.count, self.cap));
         self.count = 0;
         Ok(())
     }

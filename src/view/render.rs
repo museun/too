@@ -275,18 +275,6 @@ impl<'a> CroppedSurface<'a> {
         self.surface.set(pos, cell);
         true
     }
-
-    #[inline]
-    pub fn fill(&mut self, bg: impl Into<Rgba>) -> &mut Self {
-        self.fill_with(bg.into())
-    }
-
-    // TODO optimize this with line-vectored drawing
-    #[inline]
-    pub fn fill_with(&mut self, pixel: impl Into<Pixel>) -> &mut Self {
-        self.surface.fill(self.clip_rect, pixel);
-        self
-    }
 }
 
 impl<'a> Rasterizer for CroppedSurface<'a> {
@@ -299,11 +287,11 @@ impl<'a> Rasterizer for CroppedSurface<'a> {
     }
 
     fn fill_bg(&mut self, color: Rgba) {
-        self.fill(color);
+        self.surface.fill(self.clip_rect, color);
     }
 
     fn fill_with(&mut self, pixel: Pixel) {
-        self.fill_with(pixel);
+        self.surface.fill(self.clip_rect, pixel);
     }
 
     fn line(&mut self, axis: Axis, offset: Pos2, range: RangeInclusive<i32>, pixel: Pixel) {

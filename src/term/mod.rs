@@ -112,7 +112,7 @@ pub struct Output {
 impl Output {
     fn resize(&mut self, hint: usize) {
         let fd = self.out.get_ref().try_clone().unwrap();
-        self.out = BufWriter::with_capacity(hint, fd);
+        let _ = std::mem::replace(&mut self.out, BufWriter::with_capacity(hint * 21, fd));
     }
 }
 

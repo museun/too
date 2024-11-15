@@ -145,7 +145,7 @@ impl Rgba {
     // this isn't linear
     #[must_use]
     pub fn from_float([r, g, b, a]: [f32; 4]) -> Self {
-        let scale = |d: f32| (255.0_f32 * d).round() as u8;
+        let scale = |d: f32| (255.0_f32 * d.clamp(0.0, 1.0)).round() as u8;
         Self(scale(r), scale(g), scale(b), scale(a))
     }
 

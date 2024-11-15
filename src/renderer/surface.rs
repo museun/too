@@ -86,6 +86,7 @@ impl Surface {
         let pixel = pixel.into();
         if rect == self.rect() {
             self.back.fill(Cell::Pixel(pixel));
+            return;
         }
 
         // TODO optimize this with line-vectored drawing
