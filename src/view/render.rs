@@ -78,7 +78,7 @@ impl<'a, 'b> Render<'a, 'b> {
     }
 
     pub fn shrink(&mut self, size: impl Into<Vec2>, render: impl FnOnce(&mut Self)) {
-        self.crop(self.rect.shrink2(size.into()), render)
+        self.crop(self.local_rect().shrink2(size.into()), render)
     }
 
     pub fn local_space(&mut self, render: impl FnOnce(&mut Self)) {
