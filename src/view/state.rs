@@ -124,7 +124,7 @@ impl State {
         let resp = show(&Ui::new(self, rect));
         self.end();
 
-        self.layout.compute_all(&self.nodes, &self.input, rect);
+        self.layout.compute_all(&self.nodes, &mut self.input, rect);
         resp
     }
 

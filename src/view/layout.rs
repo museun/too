@@ -12,7 +12,7 @@ use super::{input::InputState, Interest, ViewId, ViewNodes};
 pub struct Layout<'a> {
     pub nodes: &'a ViewNodes,
     pub layout: &'a mut LayoutNodes,
-    pub input: &'a InputState,
+    pub input: &'a mut InputState,
     pub current: ViewId,
 }
 
@@ -209,7 +209,7 @@ impl LayoutNodes {
     pub(super) fn compute(
         &mut self,
         nodes: &ViewNodes,
-        input: &InputState,
+        input: &mut InputState,
         id: ViewId,
         space: Space,
     ) -> Size {
@@ -279,7 +279,7 @@ impl LayoutNodes {
     }
 
     #[cfg_attr(feature = "profile", profiling::function)]
-    pub(super) fn compute_all(&mut self, nodes: &ViewNodes, input: &InputState, rect: Rect) {
+    pub(super) fn compute_all(&mut self, nodes: &ViewNodes, input: &mut InputState, rect: Rect) {
         let space = Space::from_size(rect.size().into()).loosen();
         self.compute(nodes, input, nodes.root(), space);
         self.resolve(nodes, rect);
