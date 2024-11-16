@@ -81,7 +81,6 @@ impl Surface {
     }
 
     // PERF we can use 'set_line' if we patch any cells afterward
-    #[cfg_attr(feature = "profile", profiling::function)]
     pub fn fill(&mut self, rect: Rect, pixel: impl Into<Pixel>) {
         let pixel = pixel.into();
         if rect == self.rect() {
@@ -224,7 +223,6 @@ impl Surface {
         Ok(())
     }
 
-    #[cfg_attr(feature = "profile", profiling::function)]
     fn diff<'a>(
         front: &'a mut [Cell],
         back: &'a mut [Cell],

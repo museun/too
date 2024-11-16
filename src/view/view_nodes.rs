@@ -59,6 +59,7 @@ impl ViewNodes {
         assert_eq!(old, id, "begin id: {id:?} did not match end id: {old:?}")
     }
 
+    #[track_caller]
     pub(in crate::view) fn begin_view<V>(&self, args: V::Args<'_>, ui: &Ui) -> (ViewId, V::Response)
     where
         V: View,
@@ -219,7 +220,12 @@ impl ViewNodes {
         let nodes = self.nodes.borrow();
         let node = nodes.get(id)?;
         let mut view = node.view.borrow_mut().take();
+        drop(nodes); // drop the borrow so we can recursively call this function
+
         let resp = act(&mut *view);
+
+        let nodes = self.nodes.borrow();
+        let node = nodes.get(id)?;
         node.view.borrow_mut().give(view);
         Some(resp)
     }

@@ -71,6 +71,12 @@ impl Label {
         self
     }
 
+    pub fn fg(self, fg: impl Into<Rgba>) -> Self {
+        self.style(LabelStyle {
+            foreground: fg.into(),
+        })
+    }
+
     pub fn italic(self) -> Self {
         self.attribute(Attribute::ITALIC)
     }

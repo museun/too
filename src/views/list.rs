@@ -523,7 +523,6 @@ impl View for List {
         }
 
         let current = render.nodes.get_current();
-
         for &child in &current.children {
             if !render.layout.contains(child) {
                 break;

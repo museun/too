@@ -87,11 +87,11 @@ pub type ToggleClass = fn(&Palette, Axis, bool) -> ToggleStyle;
 
 #[derive(Copy, Clone, Debug, PartialEq, Default)]
 pub struct ToggleResponse {
-    changed: bool,
+    pub(super) changed: bool,
 }
 
 impl ToggleResponse {
-    pub fn changed(&self) -> bool {
+    pub const fn changed(&self) -> bool {
         self.changed
     }
 }

@@ -1,4 +1,7 @@
-use std::cell::{Ref, RefCell};
+use std::{
+    cell::{Ref, RefCell},
+    collections::VecDeque,
+};
 
 use compact_str::{CompactString, ToCompactString};
 
@@ -11,8 +14,8 @@ use crate::{
 };
 
 use super::{
-    helpers::Queue, input::InputState, render::RenderNodes, style::Palette, ui::Ui, LayoutNode,
-    LayoutNodes, ViewId, ViewNodes,
+    helpers::Queue, input::InputState, render::RenderNodes, style::Palette, ui::Ui, Layer,
+    LayoutNode, LayoutNodes, ViewId, ViewNodes,
 };
 
 pub struct State {
@@ -133,16 +136,44 @@ impl State {
         let rect = self.layout.rect(root).unwrap();
         rasterizer.clear(self.palette.get_mut().background);
 
+        let mut pending = VecDeque::new();
+
         self.render.draw(
             root,
             &self.nodes,
             &self.layout,
             &self.input,
             self.palette.get_mut(),
+            &mut pending,
             &mut self.animations,
             rasterizer,
         );
 
+        // XXX should this clear?
+        for layer in [Layer::Middle, Layer::Top, Layer::Debug] {
+            self.render.current_layer = layer;
+            while let Some(id) = pending.pop_front() {
+                self.render.draw(
+                    id,
+                    &self.nodes,
+                    &self.layout,
+                    &self.input,
+                    self.palette.get_mut(),
+                    &mut pending,
+                    &mut self.animations,
+                    rasterizer,
+                );
+                if pending.back() == Some(&id) {
+                    break;
+                }
+            }
+        }
+
+        self.render_debug(rect, rasterizer);
+    }
+
+    #[cfg_attr(feature = "profile", profiling::function)]
+    fn render_debug(&self, rect: Rect, rasterizer: &mut impl Rasterizer) {
         DEBUG.with(|c| {
             let mut debug = c.queue.borrow_mut();
             if debug.is_empty() {
@@ -160,10 +191,11 @@ impl State {
                         let text = TextShape::new(&msg).fg("#F00").bg("#000");
                         #[allow(deprecated)]
                         let size = Vec2::from(crate::measure_text(&text.label));
-                        if let Some(rect) = layout.allocate(size) {
-                            rasterizer.set_rect(rect);
-                            rasterizer.text(text);
-                        }
+                        let Some(rect) = layout.allocate(size) else {
+                            break;
+                        };
+                        rasterizer.set_rect(rect);
+                        rasterizer.text(text);
                     }
                 }
                 DebugMode::Rolling => {
@@ -171,10 +203,11 @@ impl State {
                         let text = TextShape::new(msg).fg("#F00").bg("#000");
                         #[allow(deprecated)]
                         let size = Vec2::from(crate::measure_text(&text.label));
-                        if let Some(rect) = layout.allocate(size) {
-                            rasterizer.set_rect(rect);
-                            rasterizer.text(text);
-                        }
+                        let Some(rect) = layout.allocate(size) else {
+                            break;
+                        };
+                        rasterizer.set_rect(rect);
+                        rasterizer.text(text);
                     }
                 }
                 DebugMode::Off => {}
@@ -185,6 +218,7 @@ impl State {
     fn begin(&mut self) {
         self.nodes.start();
         self.render.start();
+        self.layout.begin();
         self.input.begin(
             &self.nodes, //
             &self.layout,

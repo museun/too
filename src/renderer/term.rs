@@ -23,8 +23,7 @@ macro_rules! csi {
 impl<W: Write> Renderer for TermRenderer<W> {
     #[inline(always)]
     fn begin(&mut self) -> std::io::Result<()> {
-        self.out.write_all(csi!("?2026h"))?;
-        self.out.flush()
+        self.out.write_all(csi!("?2026h"))
     }
 
     #[inline(always)]

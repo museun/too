@@ -6,6 +6,7 @@ use crate::{
     backend::Event,
     layout::{Align, Flex},
     math::{rect, vec2, Rect},
+    view::layout::Layer,
     Str,
 };
 
@@ -23,6 +24,7 @@ pub struct DebugNode {
     debug: Vec<String>,
     rect: Rect,
     flex: Flex,
+    layer: Layer,
     interest: Interest,
     children: Vec<Self>,
 }
@@ -61,6 +63,7 @@ impl DebugNode {
                 debug: format!("{view:#?}").split('\n').map(String::from).collect(),
                 children,
                 flex: view.flex(),
+                layer: layout.nodes[id].layer,
                 interest: view.interests(),
             });
         }
@@ -80,6 +83,7 @@ impl DebugNode {
             debug: format!("{view:#?}").split('\n').map(String::from).collect(),
             children,
             flex: view.flex(),
+            layer: layout.nodes[root].layer,
             interest: view.interests(),
         }
     }
@@ -194,6 +198,16 @@ fn render_pretty_tree(node: &DebugNode) -> String {
                 DebugLabel::Split {
                     min: format!("y: {:?}", node.rect.min.y).into(),
                     max: format!("h: {:?}", node.rect.height()).into(),
+                },
+                DebugLabel::Separator,
+                DebugLabel::Split {
+                    min: CompactString::const_new("Layer"),
+                    max: CompactString::const_new(match node.layer {
+                        Layer::Bottom => "Bottom",
+                        Layer::Middle => "Middle",
+                        Layer::Top => "Top",
+                        Layer::Debug => "Debug",
+                    }),
                 },
                 DebugLabel::Separator,
             ];
@@ -465,6 +479,7 @@ fn evaluate<R: 'static>(
     let size = vec2(80, 25);
     state.event(&Event::Resize(size));
     state.build(rect(size), &mut app);
+
     let mut raster = DebugRasterizer::default();
     state.render(&mut raster);
 

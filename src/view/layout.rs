@@ -29,6 +29,10 @@ impl<'a> Layout<'a> {
         self.nodes.get(id).unwrap().view.borrow().flex()
     }
 
+    pub fn set_layer(&mut self, layer: Layer) {
+        self.layout.set_layer(self.current, layer);
+    }
+
     pub fn size(&self, id: ViewId) -> Size {
         self.layout
             .get(id)
@@ -122,18 +126,12 @@ impl MouseInterest {
     }
 }
 
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct LayoutNodes {
     pub(super) nodes: SecondaryMap<ViewId, LayoutNode>,
     clip_stack: Vec<ViewId>,
     axis_stack: Vec<Axis>,
     pub(super) interest: MouseInterest,
-}
-
-impl std::fmt::Debug for LayoutNodes {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.debug_struct("LayoutNodes").finish()
-    }
 }
 
 impl LayoutNodes {
@@ -175,7 +173,8 @@ impl LayoutNodes {
     }
 
     pub fn new_layer(&mut self, nodes: &ViewNodes) {
-        self.interest.push_layer(nodes.current());
+        let id = nodes.current();
+        self.interest.push_layer(id);
     }
 
     pub fn remove(&mut self, id: ViewId) {
@@ -219,9 +218,7 @@ impl LayoutNodes {
         self.nodes.insert(id, LayoutNode::new(id));
         let (size, interest) = nodes
             .scoped(id, |node| {
-                let axis = node.primary_axis();
-
-                self.axis_stack.push(axis);
+                self.axis_stack.push(node.primary_axis());
                 let layout = Layout {
                     nodes,
                     layout: self,
@@ -230,9 +227,7 @@ impl LayoutNodes {
                 };
                 let size = node.layout(layout, space);
                 self.axis_stack.pop();
-
-                let interest = node.interests();
-                (size, interest)
+                (size, node.interests())
             })
             .unwrap();
 
@@ -270,6 +265,15 @@ impl LayoutNodes {
         size
     }
 
+    pub(super) fn set_layer(&mut self, current: ViewId, layer: Layer) {
+        self.nodes[current].layer = layer;
+    }
+
+    pub(crate) fn begin(&mut self) {
+        self.clip_stack.clear();
+        self.axis_stack.clear();
+    }
+
     pub(super) fn end(&mut self) {
         self.interest.clear();
     }
@@ -283,7 +287,7 @@ impl LayoutNodes {
 
     #[cfg_attr(feature = "profile", profiling::function)]
     pub(super) fn resolve(&mut self, nodes: &ViewNodes, rect: Rect) {
-        let mut queue = VecDeque::from_iter([(nodes.root(), rect.left_top())]);
+        let mut queue = VecDeque::from([(nodes.root(), rect.left_top())]);
         while let Some((id, pos)) = queue.pop_front() {
             let Some(layout) = self.nodes.get_mut(id) else {
                 continue;
@@ -309,10 +313,20 @@ impl LayoutNodes {
     }
 }
 
+#[derive(Copy, Clone, Default, Debug, PartialEq, PartialOrd)]
+pub enum Layer {
+    Bottom,
+    #[default]
+    Middle,
+    Top,
+    Debug,
+}
+
 #[derive(Default)]
 pub struct LayoutNode {
     pub id: ViewId,
     pub rect: Rect,
+    pub layer: Layer,
     pub new_layer: bool,
     pub clipping_enabled: bool,
     pub clipped_by: Option<ViewId>,
@@ -324,6 +338,7 @@ impl LayoutNode {
         Self {
             id,
             rect: Rect::ZERO,
+            layer: Layer::Middle,
             new_layer: false,
             clipping_enabled: false,
             clipped_by: None,

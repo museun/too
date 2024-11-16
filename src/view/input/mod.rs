@@ -6,7 +6,7 @@ use std::{
 use crate::{
     backend::Event as TooEvent,
     math::{Pos2, Rect, Vec2},
-    Animations, Key, Modifiers, MouseButton,
+    Animations, Key, Keybind, Modifiers, MouseButton,
 };
 
 use super::{Erased, LayoutNodes, ViewId, ViewNodes};
@@ -81,22 +81,28 @@ struct Mouse {
 #[derive(Debug, Default)]
 pub struct InputState {
     mouse: RefCell<Mouse>,
-    modifiers: Cell<Modifiers>,
+    modifiers: Modifiers,
     intersections: RefCell<Intersections>,
     focus: Cell<Option<ViewId>>,
-    prev_focus: Cell<Option<ViewId>>,
+    prev_focus: Option<ViewId>,
+    key_press: Option<Keybind>,
 }
 
 impl InputState {
-    pub fn begin(&self, nodes: &ViewNodes, layout: &LayoutNodes, animation: &mut Animations) {
+    pub fn begin(&mut self, nodes: &ViewNodes, layout: &LayoutNodes, animation: &mut Animations) {
         self.notify_focus(nodes, layout, animation)
     }
 
     pub fn end(&mut self) {
+        self.key_press.take();
         let mut mouse = self.mouse.borrow_mut();
         for state in mouse.buttons.values_mut() {
             state.settle();
         }
+    }
+
+    pub fn key_press(&self) -> Option<Keybind> {
+        self.key_press
     }
 
     pub fn mouse_pos(&self) -> Pos2 {
@@ -113,18 +119,19 @@ impl InputState {
 
     #[cfg_attr(feature = "profile", profiling::function)]
     pub fn update(
-        &self,
+        &mut self,
         nodes: &ViewNodes,
         layout: &LayoutNodes,
         animation: &mut Animations,
         event: &TooEvent,
     ) -> Handled {
         if let Some(modifiers) = event.modifiers() {
-            self.modifiers.set(modifiers);
+            self.modifiers = modifiers;
         }
 
         match *event {
             TooEvent::KeyPressed { key, .. } => {
+                self.key_press = Some(Keybind::new(key, self.modifiers));
                 self.update_key_event(key, nodes, layout, animation)
             }
             TooEvent::MouseMove { pos } => self.mouse_moved(pos, nodes, layout, animation),
@@ -164,7 +171,7 @@ impl InputState {
     }
 
     fn update_key_event(
-        &self,
+        &mut self,
         key: Key,
         nodes: &ViewNodes,
         layout: &LayoutNodes,
@@ -184,14 +191,13 @@ impl InputState {
 
         let event = ViewEvent::KeyInput {
             key,
-            modifiers: self.modifiers.get(),
+            modifiers: self.modifiers,
         };
 
-        nodes
-            .scoped(id, |node| {
-                self.send_event(nodes, layout, animation, id, node, event)
-            })
-            .unwrap()
+        let handled = nodes.scoped(id, |node| {
+            self.send_event(nodes, layout, animation, id, node, event)
+        });
+        handled.unwrap_or_default()
     }
 
     fn mouse_moved(
@@ -213,7 +219,7 @@ impl InputState {
         let mouse = self.mouse.borrow();
         let event = ViewEvent::MouseMove {
             pos: mouse.pos,
-            modifiers: self.modifiers.get(),
+            modifiers: self.modifiers,
         };
 
         for (id, interest) in layout.interest.iter() {
@@ -317,7 +323,7 @@ impl InputState {
             current: mouse.pos,
             delta,
             inside: true,
-            modifiers: self.modifiers.get(),
+            modifiers: self.modifiers,
             button,
         };
 
@@ -342,7 +348,7 @@ impl InputState {
             current: mouse.pos,
             delta,
             inside: false,
-            modifiers: self.modifiers.get(),
+            modifiers: self.modifiers,
             button,
         };
 
@@ -378,14 +384,14 @@ impl InputState {
                 pos: mouse.pos,
                 inside: true,
                 button,
-                modifiers: self.modifiers.get(),
+                modifiers: self.modifiers,
             }
         } else {
             ViewEvent::MouseClicked {
                 pos: mouse.pos,
                 inside: true,
                 button,
-                modifiers: self.modifiers.get(),
+                modifiers: self.modifiers,
             }
         };
 
@@ -410,14 +416,14 @@ impl InputState {
                 pos: mouse.pos,
                 inside: false,
                 button,
-                modifiers: self.modifiers.get(),
+                modifiers: self.modifiers,
             }
         } else {
             ViewEvent::MouseClicked {
                 pos: mouse.pos,
                 inside: false,
                 button,
-                modifiers: self.modifiers.get(),
+                modifiers: self.modifiers,
             }
         };
 
@@ -443,7 +449,7 @@ impl InputState {
 
         let event = ViewEvent::MouseScroll {
             delta,
-            modifiers: self.modifiers.get(),
+            modifiers: self.modifiers,
         };
         for &hit in &intersections.hit {
             if nodes
@@ -460,9 +466,14 @@ impl InputState {
         Handled::Bubble
     }
 
-    fn notify_focus(&self, nodes: &ViewNodes, layout: &LayoutNodes, animation: &mut Animations) {
+    fn notify_focus(
+        &mut self,
+        nodes: &ViewNodes,
+        layout: &LayoutNodes,
+        animation: &mut Animations,
+    ) {
         let mut current = self.focus.get();
-        let last = self.prev_focus.get();
+        let last = self.prev_focus;
         if current == last {
             return;
         }
@@ -487,7 +498,7 @@ impl InputState {
             });
         }
 
-        self.prev_focus.set(current);
+        self.prev_focus = current;
     }
 
     fn send_event(

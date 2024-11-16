@@ -4,7 +4,7 @@ use crate::{
     layout::{Align2, Flex},
     math::{Margin, Pos2, Rect, Size, Vec2},
     views::{self, Constrain},
-    Border, Rgba, Str,
+    Border, Keybind, Rgba, Str,
 };
 
 use super::{
@@ -13,14 +13,15 @@ use super::{
 };
 
 pub struct Ui<'a> {
-    pub(in crate::view) nodes: &'a ViewNodes,
-    pub(in crate::view) layout: &'a LayoutNodes,
-    pub(in crate::view) input: &'a InputState,
-    pub(in crate::view) palette: &'a RefCell<Palette>,
-    pub(in crate::view) client_rect: Rect,
-    pub(in crate::view) frame_count: u64,
-    pub(in crate::view) dt: f32,
-    pub(in crate::view) size_changed: Option<Vec2>,
+    nodes: &'a ViewNodes,
+    layout: &'a LayoutNodes,
+    input: &'a InputState,
+    palette: &'a RefCell<Palette>,
+    client_rect: Rect,
+
+    size_changed: Option<Vec2>,
+    frame_count: u64,
+    dt: f32,
 }
 
 impl<'a> Ui<'a> {
@@ -91,6 +92,20 @@ impl<'a> Ui<'a> {
         self.size_changed
     }
 
+    pub fn key_pressed(&self, keybind: impl Into<Keybind>) -> bool {
+        let prev = match self.input.key_press() {
+            Some(prev) => prev,
+            None => return false,
+        };
+
+        let keybind = keybind.into();
+        // TODO normalize this. 'a' and 'A' should be separate w/ modifiers here
+        if keybind == prev {
+            return true;
+        }
+        false
+    }
+
     pub fn current(&self) -> ViewId {
         self.nodes.current()
     }
@@ -111,14 +126,7 @@ impl<'a> Ui<'a> {
         self.input.set_focus(id.into());
     }
 
-    pub fn scope<R>(&self, show: impl FnOnce(&Ui) -> R) -> Response<R>
-    where
-        R: 'static,
-    {
-        self.show_children(internal_views::Scope, show)
-            .flatten_right()
-    }
-
+    // TODO this is a bad name, this means input layer not render layer
     pub fn layer<R>(&self, show: impl FnOnce(&Ui) -> R) -> Response<R>
     where
         R: 'static,
@@ -127,11 +135,11 @@ impl<'a> Ui<'a> {
             .flatten_right()
     }
 
-    pub fn clip<R>(&self, show: impl FnOnce(&Ui) -> R) -> Response<R>
+    pub fn new_layer<R>(&self, layer: super::Layer, show: impl FnOnce(&Ui) -> R) -> Response<R>
     where
         R: 'static,
     {
-        self.show_children(internal_views::Clip, show)
+        self.show_children(internal_views::Float(layer), show)
             .flatten_right()
     }
 
@@ -139,8 +147,7 @@ impl<'a> Ui<'a> {
     where
         R: 'static,
     {
-        self.show_children(internal_views::Float, show)
-            .flatten_right()
+        self.new_layer(super::Layer::Top, show)
     }
 }
 
@@ -278,6 +285,17 @@ impl<'a> Ui<'a> {
 
     pub fn slider(&self, value: &mut f32) -> Response {
         self.show(views::slider(value))
+    }
+
+    pub fn toggle<R>(
+        &self,
+        state: bool,
+        show: impl FnOnce(&Ui) -> R,
+    ) -> Response<(views::ToggleResponse, R)>
+    where
+        R: 'static,
+    {
+        self.show_children(views::toggle(state), show)
     }
 
     pub fn toggle_switch(&self, value: &mut bool) -> Response<views::ToggleResponse> {

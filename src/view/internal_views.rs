@@ -19,52 +19,14 @@ impl View for Root {
     }
 
     fn layout(&mut self, mut layout: Layout, space: Space) -> Size {
+        layout.set_layer(super::Layer::Bottom);
         layout.new_layer();
         self.default_layout(layout, space.loosen());
         space.max
     }
 }
 
-#[derive(Debug)]
-pub struct Float;
-impl<'v> Builder<'v> for Float {
-    type View = Self;
-}
-
-impl View for Float {
-    type Args<'v> = Self;
-    type Response = ();
-
-    fn create(args: Self::Args<'_>) -> Self {
-        args
-    }
-
-    fn layout(&mut self, mut layout: Layout, space: Space) -> Size {
-        layout.new_layer();
-        self.default_layout(layout, Space::tight(space.size()))
-    }
-}
-
-#[derive(Debug)]
-pub struct Clip;
-impl<'v> Builder<'v> for Clip {
-    type View = Self;
-}
-
-impl View for Clip {
-    type Args<'v> = Self;
-    type Response = ();
-
-    fn create(args: Self::Args<'_>) -> Self {
-        args
-    }
-
-    fn layout(&mut self, mut layout: Layout, space: Space) -> Size {
-        layout.enable_clipping();
-        self.default_layout(layout, Space::tight(space.size()))
-    }
-}
-
+// TODO this is a bad name, this means input layer not render layer
 #[derive(Debug)]
 pub struct Layer;
 impl<'v> Builder<'v> for Layer {
@@ -86,16 +48,21 @@ impl View for Layer {
 }
 
 #[derive(Debug)]
-pub struct Scope;
-impl<'v> Builder<'v> for Scope {
+pub struct Float(pub super::Layer);
+impl<'v> Builder<'v> for Float {
     type View = Self;
 }
 
-impl View for Scope {
+impl View for Float {
     type Args<'v> = Self;
     type Response = ();
 
     fn create(args: Self::Args<'_>) -> Self {
         args
+    }
+
+    fn layout(&mut self, mut layout: Layout, space: Space) -> Size {
+        layout.set_layer(self.0);
+        space.constrain_min(self.default_layout(layout, space))
     }
 }

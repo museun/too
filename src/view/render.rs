@@ -1,4 +1,4 @@
-use std::ops::RangeInclusive;
+use std::{collections::VecDeque, ops::RangeInclusive};
 
 use unicode_segmentation::UnicodeSegmentation as _;
 
@@ -10,7 +10,7 @@ use crate::{
     Animations, Cell, Grapheme, Pixel, Rgba,
 };
 
-use super::{input::InputState, LayoutNodes, Palette, ViewId, ViewNodes};
+use super::{input::InputState, Layer, LayoutNodes, Palette, ViewId, ViewNodes};
 
 pub struct Render<'a, 'b> {
     pub current: ViewId,
@@ -19,10 +19,10 @@ pub struct Render<'a, 'b> {
 
     pub palette: &'a Palette,
     pub animation: &'a mut Animations,
-    pub(super) rasterizer: &'b mut dyn Rasterizer,
 
     pub(super) rect: Rect,
-
+    pub(super) pending: &'a mut VecDeque<ViewId>,
+    pub(super) rasterizer: &'b mut dyn Rasterizer,
     pub(super) render: &'a mut RenderNodes,
     pub(super) input: &'a InputState,
 }
@@ -36,6 +36,7 @@ impl<'a, 'b> Render<'a, 'b> {
             self.layout,
             self.input,
             self.palette,
+            self.pending,
             self.animation,
             self.rasterizer,
         );
@@ -165,12 +166,14 @@ impl<'a, 'b> Render<'a, 'b> {
 #[derive(Default)]
 pub struct RenderNodes {
     axis_stack: Vec<Axis>,
+    pub(super) current_layer: Layer,
 }
 
 impl RenderNodes {
     pub(super) const fn new() -> Self {
         Self {
             axis_stack: Vec::new(),
+            current_layer: Layer::Bottom,
         }
     }
 
@@ -190,6 +193,7 @@ impl RenderNodes {
         layout: &LayoutNodes,
         input: &InputState,
         palette: &Palette,
+        pending: &mut VecDeque<ViewId>,
         animation: &mut Animations,
         rasterizer: &mut dyn Rasterizer,
     ) {
@@ -197,24 +201,26 @@ impl RenderNodes {
             return;
         };
 
-        let rect = node.rect;
-        if rect.width() == 0 || rect.height() == 0 {
+        if node.rect.width() == 0 || node.rect.height() == 0 {
             return;
         }
 
-        let mut clip_rect = rect;
+        if node.layer > self.current_layer {
+            pending.push_back(id);
+            return;
+        }
 
+        self.current_layer = node.layer;
+
+        let mut rect = node.rect;
         if let Some(parent) = node.clipped_by {
             let Some(parent) = layout.nodes.get(parent) else {
                 return;
             };
-            // if !rect.partial_contains_rect(parent.rect) {
-            //     return;
-            // }
-            clip_rect = parent.rect.intersection(rect);
-        }
-        if clip_rect.width() == 0 || clip_rect.height() == 0 {
-            return;
+            rect = parent.rect.intersection(rect);
+            if rect.width() == 0 || rect.height() == 0 {
+                return;
+            }
         }
 
         rasterizer.begin(id);
@@ -223,12 +229,7 @@ impl RenderNodes {
         nodes
             .scoped(id, |node| {
                 self.axis_stack.push(node.primary_axis());
-                // let surface = CroppedSurface {
-                //     rect,
-                //     clip_rect,
-                //     surface: surface.surface,
-                // };
-                rasterizer.set_rect(clip_rect);
+                rasterizer.set_rect(rect);
                 let render = Render {
                     current: id,
                     nodes,
@@ -237,8 +238,9 @@ impl RenderNodes {
                     animation,
                     rasterizer,
                     input,
+                    pending,
                     render: self,
-                    rect: clip_rect,
+                    rect,
                 };
                 node.draw(render);
                 self.axis_stack.pop();
