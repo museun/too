@@ -110,6 +110,14 @@ impl<'a> Ui<'a> {
         self.nodes.current()
     }
 
+    pub fn children(&self) -> Ref<'_, [ViewId]> {
+        self.get_node_children(self.current()).unwrap()
+    }
+
+    pub fn get_node_children(&self, id: ViewId) -> Option<Ref<'_, [ViewId]>> {
+        Some(Ref::map(self.nodes.get(id)?, |node| &*node.children))
+    }
+
     pub fn cursor_pos(&self) -> Pos2 {
         self.input.mouse_pos()
     }
