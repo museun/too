@@ -84,16 +84,13 @@ pub use wrap::{horizontal_wrap, vertical_wrap, Wrap};
 // tree view (why not)
 // drop down
 // split view
-// scrollable
 // link (hyperlink support. OSC 8 https://github.com/Alhadis/OSC8-Adoption/)
 // panel (docking)
 //
 // stack (? z-index layering)
 //
-// enabled (this will show/hide an view)
 //
 // floating window
-//
 //
 // canvas
 // animate

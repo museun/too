@@ -54,6 +54,7 @@ struct ScrollState {
     scrollable: bool,
     pos: usize,
     knob_held: bool,
+    stick_to_bottom: bool,
 }
 
 pub type ScrollClass = fn(&Palette, Axis) -> ScrollStyle;
@@ -545,6 +546,7 @@ pub const fn list() -> List {
             scrollable: false,
             pos: 0,
             knob_held: false,
+            stick_to_bottom: false,
         },
         class: StyleKind::deferred(ScrollStyle::default),
     }

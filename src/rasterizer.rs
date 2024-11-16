@@ -4,7 +4,7 @@ use crate::{
     layout::Axis,
     math::{pos2, Pos2, Rect},
     view::ViewId,
-    Attribute, Cell, Color, Grapheme, Pixel, Rgba,
+    Attribute, Cell, Color, Grapheme, Pixel, Rgba, Str,
 };
 
 #[derive(Clone, PartialEq)]
@@ -116,6 +116,12 @@ pub struct TextShape<'a> {
 impl<'a> From<&'a str> for TextShape<'a> {
     fn from(value: &'a str) -> Self {
         Self::new(value)
+    }
+}
+
+impl<'a> From<&'a Str> for TextShape<'a> {
+    fn from(value: &'a Str) -> Self {
+        Self::new(&*value)
     }
 }
 

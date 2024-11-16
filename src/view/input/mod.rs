@@ -1,4 +1,3 @@
-use compact_str::CompactString;
 use std::{cell::Cell, collections::HashMap};
 
 use crate::{

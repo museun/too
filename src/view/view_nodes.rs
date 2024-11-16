@@ -6,7 +6,10 @@ use std::{
 
 use slotmap::SlotMap;
 
-use super::{internal_views::Root, Erased, Ui, View, ViewId};
+use super::{
+    internal_views::{self, Root},
+    Erased, Ui, View, ViewId,
+};
 
 pub struct ViewNodes {
     nodes: RefCell<SlotMap<ViewId, ViewNode>>,
@@ -138,7 +141,7 @@ impl ViewNodes {
     }
 
     fn remove_view(&self, root: ViewId) {
-        let mut queue = VecDeque::from_iter([root]);
+        let mut queue = VecDeque::from([root]);
 
         let mut nodes = self.nodes.borrow_mut();
         let mut removed = self.removed.borrow_mut();

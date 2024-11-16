@@ -83,6 +83,12 @@ impl Deref for Str {
     }
 }
 
+impl From<&Str> for Str {
+    fn from(value: &Str) -> Self {
+        value.clone()
+    }
+}
+
 impl<T> From<T> for Str
 where
     T: ToCompactString,
