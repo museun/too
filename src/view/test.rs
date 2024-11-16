@@ -4,7 +4,7 @@ use crate::{
     backend::Event,
     layout::Axis,
     math::{vec2, Pos2, Rect, Vec2},
-    rasterizer::{Rasterizer, TextShape},
+    rasterizer::{Rasterizer, Shape, TextShape},
     view::{Palette, State, ViewId},
     Animations, Cell, Grapheme, Modifiers, MouseButton, Pixel, Rgba,
 };
@@ -93,31 +93,6 @@ impl Rasterizer for DebugRasterizer {
     fn get_mut(&mut self, _pos: Pos2) -> Option<&mut Cell> {
         None
     }
-}
-
-#[derive(Clone, Debug, PartialEq)]
-pub enum Shape {
-    FillBg {
-        rect: Rect,
-        color: Rgba,
-    },
-    FillWith {
-        rect: Rect,
-        pixel: Pixel,
-    },
-    Line {
-        start: Pos2,
-        end: Pos2,
-        pixel: Pixel,
-    },
-    Text {
-        rect: Rect,
-        shape: TextShape<'static>,
-    },
-    Set {
-        pos: Pos2,
-        cell: Cell,
-    },
 }
 
 pub enum TestInput {

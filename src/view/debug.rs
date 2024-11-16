@@ -7,14 +7,12 @@ use crate::{
     layout::{Align, Flex},
     math::{rect, vec2, Rect},
     view::layout::Layer,
-    Str,
+    Shape, Str,
 };
 
 use super::{
-    helpers::short_name,
-    state::Debug,
-    test::{DebugRasterizer, Shape},
-    Interest, LayoutNodes, State, Ui, ViewId, ViewNodes,
+    helpers::short_name, state::Debug, test::DebugRasterizer, Interest, LayoutNodes, State, Ui,
+    ViewId, ViewNodes,
 };
 
 #[derive(Debug)]
@@ -478,7 +476,9 @@ fn evaluate<R: 'static>(
 
     let size = vec2(80, 25);
     state.event(&Event::Resize(size));
-    state.build(rect(size), &mut app);
+    for i in 0..2 {
+        state.build(rect(size), &mut app);
+    }
 
     let mut raster = DebugRasterizer::default();
     state.render(&mut raster);

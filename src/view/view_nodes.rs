@@ -66,7 +66,6 @@ impl ViewNodes {
     {
         let parent = self.current();
         let (id, resp) = self.update_view::<V>(parent, args, ui);
-        self.stack.borrow_mut().push(id);
         (id, resp)
     }
 
@@ -75,15 +74,20 @@ impl ViewNodes {
         V: View,
     {
         let Some(id) = self.append_view(parent) else {
-            return self.allocate_view::<V>(parent, args);
+            let (id, resp) = self.allocate_view::<V>(parent, args);
+            self.stack.borrow_mut().push(id);
+            return (id, resp);
         };
 
         let type_id = self.nodes.borrow()[id].view.borrow().type_id();
         if type_id != TypeId::of::<V>() {
             self.remove_view(id);
-            return self.allocate_view::<V>(parent, args);
+            let (id, resp) = self.allocate_view::<V>(parent, args);
+            self.stack.borrow_mut().push(id);
+            return (id, resp);
         }
 
+        self.stack.borrow_mut().push(id);
         self.nodes.borrow_mut()[id].next = 0;
 
         let resp = self

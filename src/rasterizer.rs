@@ -7,6 +7,78 @@ use crate::{
     Attribute, Cell, Color, Grapheme, Pixel, Rgba,
 };
 
+#[derive(Clone, PartialEq)]
+pub enum Shape {
+    FillBg {
+        rect: Rect,
+        color: Rgba,
+    },
+    FillWith {
+        rect: Rect,
+        pixel: Pixel,
+    },
+    Line {
+        start: Pos2,
+        end: Pos2,
+        pixel: Pixel,
+    },
+    Text {
+        rect: Rect,
+        shape: TextShape<'static>,
+    },
+    Set {
+        pos: Pos2,
+        cell: Cell,
+    },
+}
+
+impl std::fmt::Debug for Shape {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        struct CompactRect<'a>(&'a Rect);
+        impl<'a> std::fmt::Debug for CompactRect<'a> {
+            fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+                write!(
+                    f,
+                    "{{ x: {}, y: {}, w: {}, h: {} }}",
+                    self.0.min.x,
+                    self.0.min.y,
+                    self.0.width(),
+                    self.0.height()
+                )
+            }
+        }
+
+        match self {
+            Self::FillBg { rect, color } => f
+                .debug_struct("FillBg")
+                .field("rect", &CompactRect(rect))
+                .field("color", color)
+                .finish(),
+            Self::FillWith { rect, pixel } => f
+                .debug_struct("FillWith")
+                .field("rect", &CompactRect(rect))
+                .field("pixel", pixel)
+                .finish(),
+            Self::Line { start, end, pixel } => f
+                .debug_struct("Line")
+                .field("start", start)
+                .field("end", end)
+                .field("pixel", pixel)
+                .finish(),
+            Self::Text { rect, shape } => f
+                .debug_struct("Text")
+                .field("rect", &CompactRect(rect))
+                .field("shape", shape)
+                .finish(),
+            Self::Set { pos, cell } => f
+                .debug_struct("Set")
+                .field("pos", pos)
+                .field("cell", cell)
+                .finish(),
+        }
+    }
+}
+
 pub trait Rasterizer {
     fn begin(&mut self, _id: ViewId) {}
     fn end(&mut self, _id: ViewId) {}

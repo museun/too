@@ -63,6 +63,7 @@ impl View for Float {
 
     fn layout(&mut self, mut layout: Layout, space: Space) -> Size {
         layout.set_layer(self.0);
+        layout.new_layer();
         space.constrain_min(self.default_layout(layout, space))
     }
 }

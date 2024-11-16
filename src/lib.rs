@@ -24,7 +24,7 @@ pub mod view;
 pub mod views;
 
 mod rasterizer;
-pub use rasterizer::{Rasterizer, TextShape};
+pub use rasterizer::{Rasterizer, Shape, TextShape};
 
 // TODO get rid of this
 use crate::math::Size;

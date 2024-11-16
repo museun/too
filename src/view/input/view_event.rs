@@ -1,5 +1,6 @@
 use crate::{
     math::{Pos2, Vec2},
+    view::ViewId,
     Key, Modifiers, MouseButton,
 };
 
@@ -39,6 +40,10 @@ pub enum ViewEvent {
     },
     MouseEntered,
     MouseLeave,
+
     FocusGained,
     FocusLost,
+
+    SelectionAdded(ViewId),
+    SelectionRemoved(ViewId),
 }

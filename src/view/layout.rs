@@ -78,12 +78,12 @@ impl<'a> IntrinsicSize<'a> {
 }
 
 #[derive(Default, Debug)]
-pub struct MouseInterest {
+pub struct EventInterest {
     layers: Vec<Vec<(ViewId, Interest)>>,
     stack: Vec<(ViewId, usize)>,
 }
 
-impl MouseInterest {
+impl EventInterest {
     pub const fn new() -> Self {
         Self {
             layers: Vec::new(),
@@ -131,7 +131,7 @@ pub struct LayoutNodes {
     pub(super) nodes: SecondaryMap<ViewId, LayoutNode>,
     clip_stack: Vec<ViewId>,
     axis_stack: Vec<Axis>,
-    pub(super) interest: MouseInterest,
+    pub(super) interest: EventInterest,
 }
 
 impl LayoutNodes {
@@ -201,7 +201,7 @@ impl LayoutNodes {
             nodes: SecondaryMap::new(),
             clip_stack: Vec::new(),
             axis_stack: Vec::new(),
-            interest: MouseInterest::new(),
+            interest: EventInterest::new(),
         }
     }
 
@@ -232,7 +232,7 @@ impl LayoutNodes {
             .unwrap();
 
         let new_layer = self.interest.current_layer_root() == Some(id);
-        if interest.is_mouse_any() {
+        if !interest.is_none() {
             self.interest.insert(id, interest);
         }
         if new_layer {

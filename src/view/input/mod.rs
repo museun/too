@@ -1,3 +1,4 @@
+use compact_str::CompactString;
 use std::{cell::Cell, collections::HashMap};
 
 use crate::{
@@ -75,19 +76,89 @@ struct Mouse {
     buttons: HashMap<MouseButton, ButtonState>,
 }
 
+#[derive(Debug)]
+struct Notify<T: Copy + PartialEq = ViewId> {
+    current: Cell<Option<T>>,
+    prev: Option<T>,
+
+    gained: fn(T) -> ViewEvent,
+    lost: fn(T) -> ViewEvent,
+}
+
+impl<T: Copy + PartialEq> Notify<T> {
+    fn get(&self) -> Option<T> {
+        self.current.get()
+    }
+
+    fn set(&self, value: Option<T>) {
+        self.current.set(value);
+    }
+}
+
+#[derive(Debug)]
+struct Focus {
+    notify: Notify,
+}
+
+impl Default for Focus {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+impl Focus {
+    const fn new() -> Self {
+        Self {
+            notify: Notify {
+                current: Cell::new(None),
+                prev: None,
+                gained: |_| ViewEvent::FocusGained,
+                lost: |_| ViewEvent::FocusLost,
+            },
+        }
+    }
+}
+
+#[derive(Debug)]
+struct Selection {
+    notify: Notify,
+}
+
+impl Default for Selection {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+impl Selection {
+    const fn new() -> Self {
+        Self {
+            notify: Notify {
+                current: Cell::new(None),
+                prev: None,
+                gained: ViewEvent::SelectionAdded,
+                lost: ViewEvent::SelectionRemoved,
+            },
+        }
+    }
+}
+
 #[derive(Debug, Default)]
 pub struct InputState {
     mouse: Mouse,
     modifiers: Modifiers,
     intersections: Intersections,
-    focus: Cell<Option<ViewId>>,
-    prev_focus: Option<ViewId>,
+
+    focus: Focus,
+    selection: Selection,
+
     key_press: Option<Keybind>,
 }
 
 impl InputState {
     pub fn begin(&mut self, nodes: &ViewNodes, layout: &LayoutNodes, animation: &mut Animations) {
-        self.notify_focus(nodes, layout, animation)
+        self.notify_focus(nodes, layout, animation);
+        self.notify_selection(nodes, layout, animation);
     }
 
     pub fn end(&mut self) {
@@ -106,11 +177,19 @@ impl InputState {
     }
 
     pub fn focus(&self) -> Option<ViewId> {
-        self.focus.get()
+        self.focus.notify.get()
     }
 
     pub fn set_focus(&self, id: Option<ViewId>) {
-        self.focus.set(id);
+        self.focus.notify.set(id)
+    }
+
+    pub fn selection(&self) -> Option<ViewId> {
+        self.selection.notify.get()
+    }
+
+    pub fn set_selection(&self, id: Option<ViewId>) {
+        self.selection.notify.set(id)
     }
 
     #[cfg_attr(feature = "profile", profiling::function)]
@@ -130,21 +209,28 @@ impl InputState {
                 self.key_press = Some(Keybind::new(key, self.modifiers));
                 self.update_key_event(key, nodes, layout, animation)
             }
+
             TooEvent::MouseMove { pos } => self.mouse_moved(pos, nodes, layout, animation),
+
             TooEvent::MouseButtonChanged {
                 button, down, pos, ..
             } => {
                 self.mouse.pos = pos;
                 if self.mouse_button_changed(button, down) {
                     let resp = self.send_mouse_button_changed(button, nodes, layout, animation);
+                    // TODO don't do this here
                     if resp.is_bubble() && (button == MouseButton::Primary && down) {
                         self.set_focus(None);
                         self.notify_focus(nodes, layout, animation);
+
+                        self.set_selection(None);
+                        self.notify_selection(nodes, layout, animation);
                     }
                     return resp;
                 }
                 Handled::Bubble
             }
+
             TooEvent::MouseDrag { pos, button, .. } => {
                 let (start, delta) = {
                     let previous = std::mem::replace(&mut self.mouse.pos, pos);
@@ -154,10 +240,10 @@ impl InputState {
                     }
                     (start, pos - previous)
                 };
-
                 let delta = delta.to_vec2();
                 self.send_mouse_drag(start, delta, button, nodes, layout, animation)
             }
+
             TooEvent::MouseScroll { delta, .. } => {
                 self.mouse_scrolled(delta, nodes, layout, animation)
             }
@@ -172,7 +258,7 @@ impl InputState {
         layout: &LayoutNodes,
         animation: &mut Animations,
     ) -> Handled {
-        let Some(id) = self.focus.get() else {
+        let Some(id) = self.focus.notify.get() else {
             return Handled::Bubble;
         };
 
@@ -362,7 +448,6 @@ impl InputState {
         let state = *self.mouse.buttons.entry(button).or_insert(ButtonState::Up);
 
         let mut resp = Handled::Bubble;
-
         let event = if state.is_down() {
             ViewEvent::MouseHeld {
                 pos: self.mouse.pos,
@@ -380,17 +465,13 @@ impl InputState {
         };
 
         for &hit in &self.intersections.hit {
-            if !nodes
+            let new = nodes
                 .scoped(hit, |node| {
-                    let new = self.send_event(nodes, layout, animation, hit, node, event);
-                    if new.is_sink() {
-                        resp = new;
-                        return false;
-                    }
-                    true
+                    self.send_event(nodes, layout, animation, hit, node, event)
                 })
-                .unwrap_or(true)
-            {
+                .unwrap();
+            if new.is_sink() {
+                resp = new;
                 break;
             }
         }
@@ -448,15 +529,67 @@ impl InputState {
         Handled::Bubble
     }
 
+    fn notify_selection(
+        &mut self,
+        nodes: &ViewNodes,
+        layout: &LayoutNodes,
+        animation: &mut Animations,
+    ) {
+        let mut current = self.selection.notify.get();
+        let previous = self.selection.notify.prev;
+        if current == previous {
+            return;
+        }
+
+        if let Some(entered) = current {
+            let ev = ViewEvent::SelectionAdded(entered);
+
+            for (id, interest) in layout.interest.iter() {
+                if !interest.is_selection_change() {
+                    continue;
+                }
+
+                let resp = nodes.scoped(id, |node| {
+                    self.send_event(nodes, layout, animation, id, node, ev)
+                });
+
+                if let Some(Handled::Sink) = resp {
+                    break;
+                } else if resp.is_none() {
+                    // if the node doesn't exist clear the notification
+                    self.selection.notify.set(None);
+                    current = None;
+                }
+            }
+        }
+
+        if let Some(left) = previous {
+            let ev = ViewEvent::SelectionRemoved(left);
+            for (id, interest) in layout.interest.iter() {
+                if !interest.is_selection_change() {
+                    continue;
+                }
+                let resp = nodes.scoped(id, |node| {
+                    self.send_event(nodes, layout, animation, id, node, ev)
+                });
+                if let Some(Handled::Sink) = resp {
+                    break;
+                }
+            }
+        }
+
+        self.selection.notify.prev = current;
+    }
+
     fn notify_focus(
         &mut self,
         nodes: &ViewNodes,
         layout: &LayoutNodes,
         animation: &mut Animations,
     ) {
-        let mut current = self.focus.get();
-        let last = self.prev_focus;
-        if current == last {
+        let mut current = self.focus.notify.get();
+        let previous = self.focus.notify.prev;
+        if current == previous {
             return;
         }
 
@@ -468,19 +601,20 @@ impl InputState {
                 })
                 .is_none()
             {
-                self.focus.set(None);
+                // if the node doesn't exist clear the notification
+                self.focus.notify.set(None);
                 current = None;
             }
         }
 
-        if let Some(left) = last {
+        if let Some(left) = previous {
             let ev = ViewEvent::FocusLost;
             nodes.scoped(left, |node| {
                 self.send_event(nodes, layout, animation, left, node, ev);
             });
         }
 
-        self.prev_focus = current;
+        self.focus.notify.prev = current;
     }
 
     fn send_event(
@@ -499,7 +633,7 @@ impl InputState {
             animation,
             input: self,
         };
-        nodes.begin(id);
+        nodes.begin(id); // TODO this should be done implicitly by the node scope
         let resp = node.event(event, ctx);
         nodes.end(id);
         resp
@@ -560,7 +694,7 @@ impl InputState {
     }
 
     pub(crate) fn is_focused(&self, current: ViewId) -> bool {
-        self.focus.get() == Some(current)
+        self.focus.notify.get() == Some(current)
     }
 
     pub(crate) fn is_hovered(&self, current: ViewId) -> bool {
@@ -579,7 +713,7 @@ pub struct EventCtx<'a> {
 impl<'a> EventCtx<'a> {
     pub fn event(&mut self, id: ViewId, event: ViewEvent) -> Handled {
         self.input
-            .dispatch(self.nodes, self.layout, self.animation, id, event)
+            .dispatch(self.nodes, self.layout, self.animation, id, event) // this'll panic with BorrowMutError on the nodes.get(id)
     }
 
     pub fn cursor_pos(&self) -> Pos2 {

@@ -210,6 +210,8 @@ impl RenderNodes {
             return;
         }
 
+        // debug(format_str!("drawing: {id:?}"));
+
         self.current_layer = node.layer;
 
         let mut rect = node.rect;

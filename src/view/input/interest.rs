@@ -3,12 +3,13 @@ pub struct Interest(u8);
 
 impl std::fmt::Debug for Interest {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        const FIELDS: [&str; 5] = [
+        const FIELDS: [&str; 6] = [
             "MOUSE_INSIDE",
             "MOUSE_OUTSIDE",
             "MOUSE_MOVE",
             "FOCUS",
             "FOCUS_INPUT",
+            "SELECTION_CHANGE",
         ];
 
         let mut seen = false;
@@ -41,6 +42,8 @@ impl Interest {
     pub const FOCUS: Self = Self(1 << 3);
     pub const FOCUS_INPUT: Self = Self(1 << 4);
 
+    pub const SELECTION_CHANGE: Self = Self(1 << 5);
+
     pub const MOUSE: Self = Self(1 << 0 | 1 << 1 | 1 << 2);
 }
 
@@ -71,6 +74,10 @@ impl Interest {
 
     pub const fn is_focus_input(&self) -> bool {
         self.0 & (1 << 4) != 0
+    }
+
+    pub const fn is_selection_change(&self) -> bool {
+        self.0 & (1 << 5) != 0
     }
 }
 
