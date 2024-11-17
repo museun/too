@@ -11,12 +11,17 @@ use crate::{
 
 use super::{input::InputState, Layer, LayoutNodes, Palette, ViewId, ViewNodes};
 
+/// The render context
 pub struct Render<'a, 'b> {
+    /// The current view's id
     pub current: ViewId,
+    /// Immutable access to the view nodes tree.
     pub nodes: &'a ViewNodes,
+    /// Immutable access to the layout nodes tree.
     pub layout: &'a LayoutNodes,
-
+    /// The current palette
     pub palette: &'a Palette,
+    /// Mutable access to the animation context
     pub animation: &'a mut Animations,
 
     pub(super) rect: Rect,
@@ -28,6 +33,7 @@ pub struct Render<'a, 'b> {
 
 // TODO determine if this should always be in local space or absolute space
 impl<'a, 'b> Render<'a, 'b> {
+    /// Draw a specific view
     pub fn draw(&mut self, id: ViewId) {
         self.render.draw(
             id,
@@ -41,50 +47,72 @@ impl<'a, 'b> Render<'a, 'b> {
         );
     }
 
-    pub fn current(&self) -> ViewId {
-        self.nodes.current()
-    }
-
+    /// Get the current mouse position
     pub fn mouse_pos(&self) -> Pos2 {
         self.input.mouse_pos()
     }
 
+    /// Get the drawble rect for the view
     pub fn rect(&self) -> Rect {
         self.rect
     }
 
+    /// Get the offset from the screen rect for this view
     pub fn offset(&self) -> Pos2 {
         self.rect.left_top()
     }
 
+    /// Get the local rect for this view (translated so the origin is your top-left corner)
     pub fn local_rect(&self) -> Rect {
         self.rect.translate(-self.rect.left_top().to_vec2())
     }
 
+    /// Is the current view focused?
     pub fn is_focused(&self) -> bool {
-        self.input.is_focused(self.current())
+        self.input.is_focused(self.current)
     }
 
+    /// Is the current view hovered?
     pub fn is_hovered(&self) -> bool {
-        self.input.is_hovered(self.current())
+        self.input.is_hovered(self.current)
     }
 
+    /// Is the current view's parent focused?
+    pub fn is_parent_focused(&self) -> bool {
+        self.input.is_focused(self.nodes.parent())
+    }
+
+    /// Is the current view's parent hovered?
     pub fn is_parent_hovered(&self) -> bool {
         self.input.is_hovered(self.nodes.parent())
     }
 
+    /// Get the axis of the parent view
     pub fn parent_axis(&self) -> Axis {
         self.render.current_axis().unwrap()
     }
 
+    /// Shrink the view to this size, giving you a closure to the new render context
+    ///
+    /// When the closure returns, the size will be reset to the default rect for this view
     pub fn shrink(&mut self, size: impl Into<Vec2>, render: impl FnOnce(&mut Self)) {
         self.crop(self.local_rect().shrink2(size.into()), render)
     }
 
+    /// Scope the render context to the local rect
+    ///
+    /// When this closure reutrns, the rect will be reset to the default rect for this view
     pub fn local_space(&mut self, render: impl FnOnce(&mut Self)) {
         self.crop(self.local_rect(), render);
     }
 
+    /// Crop this render context to a new rect, giving you a closure to the new render context
+    ///
+    /// The provided rect cannot exceed the rect given to you by the initial render context.
+    ///
+    /// The new render context will be localized to the rect. e.g. origin will be the top-left of this new rect
+    ///
+    /// When the closure returns, the rect will be reset to the default rect for this view
     pub fn crop(&mut self, rect: Rect, render: impl FnOnce(&mut Self)) {
         let old = self.rasterizer.rect();
 
@@ -96,16 +124,19 @@ impl<'a, 'b> Render<'a, 'b> {
         self.rasterizer.set_rect(old);
     }
 
+    /// Fill this render context with a specific color
     pub fn fill_bg(&mut self, color: impl Into<Rgba>) -> &mut Self {
         self.rasterizer.fill_bg(color.into());
         self
     }
 
+    /// Fill this render context with a specific pixel
     pub fn fill_with(&mut self, pixel: impl Into<Pixel>) -> &mut Self {
         self.rasterizer.fill_with(pixel.into());
         self
     }
 
+    /// Draw a horizontal line at the `y` offset between `x0..=x1` using the provided pixel
     pub fn horizontal_line(
         &mut self,
         y: i32,
@@ -116,6 +147,7 @@ impl<'a, 'b> Render<'a, 'b> {
         self
     }
 
+    /// Draw a vertical line at the `x` offset between `y0..=y1` using the provided pixel
     pub fn vertical_line(
         &mut self,
         x: i32,
@@ -126,6 +158,7 @@ impl<'a, 'b> Render<'a, 'b> {
         self
     }
 
+    /// Draws a line in a specific orientation starting an offset `x0,x1..=y0,y1` using the provided pixel
     pub fn line(
         &mut self,
         axis: Axis,
@@ -138,11 +171,17 @@ impl<'a, 'b> Render<'a, 'b> {
         self
     }
 
+    /// Draws a [`TextShape`] into the region
     pub fn text<'t>(&mut self, text: impl Into<TextShape<'t>>) -> &mut Self {
         self.rasterizer.text(text.into());
         self
     }
 
+    /// Update a specific cell.
+    ///
+    /// This gives you a closure with the cell at that position, if it exists.
+    ///
+    /// You can use this for changing existing properties on a cell
     pub fn patch(&mut self, pos: impl Into<Pos2>, patch: impl Fn(&mut Cell)) -> &mut Self {
         if let Some(cell) = self.rasterizer.get_mut(pos.into()) {
             patch(cell);
@@ -150,6 +189,7 @@ impl<'a, 'b> Render<'a, 'b> {
         self
     }
 
+    /// Sets a cell as a specific position
     pub fn set(&mut self, pos: impl Into<Pos2>, cell: impl Into<Cell>) -> &mut Self {
         let pos = pos.into();
         let cell = cell.into();
@@ -253,6 +293,7 @@ impl RenderNodes {
     }
 }
 
+/// A [`Surface`] cropped to a specific [`Rect`]
 pub struct CroppedSurface<'a> {
     pub clip_rect: Rect,
     pub surface: &'a mut Surface,

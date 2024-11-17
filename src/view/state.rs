@@ -22,6 +22,38 @@ use super::{
 };
 
 // TODO what of this should actually be public?
+/// State is the entire state for a [`Ui`]
+///
+/// An event loop is provided for the terminal with [`run`](crate::run()) and [`application`](crate::application)
+///
+/// You can have multiple state, they are built with a [`Rect`] as their constraining bounds.
+///
+/// ## State life cycles
+/// ```rust,no_run
+/// let mut state = State::new(Palette::default(), Animations::default());
+///
+/// // provide a way to read events from a backend
+/// if let Some(event) = read_event() {
+///     state.event(&event);
+/// }
+///
+/// // then before building (creating/updating) the ui tree, drive any frame-specific timers forward:
+/// state.update(frame_time.dt());
+///
+/// // then as many times as you want, build the Ui tree
+/// state.build(some_rect, |ui|{
+///     display_user_ui(ui);
+/// });
+///
+/// // finally, at the end of a frame render it out
+/// state.render(&mut my_rasterizer);
+/// ```
+/// ### Summary
+/// you should process things in this order:
+/// - events
+/// - frame time state
+/// - building the ui
+/// - rendering
 pub struct State {
     pub(in crate::view) nodes: ViewNodes,
     pub(in crate::view) layout: LayoutNodes,
@@ -41,6 +73,7 @@ impl Default for State {
 }
 
 impl State {
+    /// Create a new state with a [`Palette`] and provided [`Animations`] manager
     pub fn new(palette: Palette, animations: Animations) -> Self {
         let nodes = ViewNodes::new();
         let mut layout = LayoutNodes::new();
@@ -59,18 +92,22 @@ impl State {
         }
     }
 
+    /// Set the current palette
     pub fn set_palette(&self, palette: Palette) {
         *self.palette.borrow_mut() = palette
     }
 
+    /// Gets the current palette
     pub fn palette(&self) -> Ref<'_, Palette> {
         self.palette.borrow()
     }
 
+    /// Get the root id for the current State Ui tree
     pub fn root(&self) -> ViewId {
         self.nodes.root()
     }
 
+    /// Process any [Event]s
     #[cfg_attr(feature = "profile", profiling::function)]
     pub fn event(&mut self, event: &Event) {
         if let Event::Resize(size) = event {
@@ -90,11 +127,19 @@ impl State {
         );
     }
 
+    /// Update any animations with the frame delta
     pub fn update(&mut self, dt: f32) {
         self.animations.update(dt);
         self.dt = dt;
     }
 
+    /// Build the ui state contained in the provided [`Rect`]
+    ///
+    /// This takes in a closure and is the only way of getting access to the [`Ui`] type.
+    ///
+    /// You should do this after you've processed [events](State::event) and [driven](State::update) any animations forward.
+    ///
+    /// Once you build the state, you can [render](State::render) it
     #[cfg_attr(feature = "profile", profiling::function)]
     pub fn build<R: 'static>(&mut self, rect: Rect, mut show: impl FnMut(&Ui) -> R) -> R {
         let root = self.nodes.root;
@@ -108,6 +153,7 @@ impl State {
         resp
     }
 
+    /// Render the current state to a [`Rasterizer`]
     #[cfg_attr(feature = "profile", profiling::function)]
     pub fn render(&mut self, rasterizer: &mut impl Rasterizer) {
         self.frame_count += 1;
@@ -205,14 +251,21 @@ impl State {
     }
 }
 
+/// Controls the behavior of the [`struct@Debug`]  overlay
 #[derive(Copy, Clone, Debug, Default, PartialEq, PartialOrd, Eq, Ord, Hash)]
 pub enum DebugMode {
+    /// Should the queue be cleared every frame?
     PerFrame,
     #[default]
+    /// Should the queue be retained across frames -- but rotated at the max screen height
     Rolling,
+    /// Should the overlay do nothing?
     Off,
 }
 
+/// A debug overlay
+///
+/// When this is enabled, any [`debug()`] calls will be rendered ontop of everything else.
 #[derive(Debug)]
 pub struct Debug {
     // TODO this should all be in the same `Lock`
@@ -230,6 +283,18 @@ thread_local! {
 #[cfg(feature = "sync")]
 static DEBUG: std::sync::LazyLock<Debug> = std::sync::LazyLock::new(Debug::new);
 
+/// Prints a debug message to the debug overlay.
+///
+/// ### Note
+/// - If the message is empty (or spaces) it will be ignored.
+/// - The debug queue is bounded by a size, and it acts as a FIFO queue -- so the most recent messages should always be available.
+///
+/// Depending on the [`DebugMode`] debug messages may be recycled every frame.
+///
+/// You can change the behavior with [`Debug::set_debug_mode()`]
+///
+/// ### Performance
+/// You should favor [`crate::format_str!`] over [`std::format!`] for this
 pub fn debug(msg: impl Into<Str>) {
     let msg = msg.into();
     let msg = msg.trim();
@@ -255,6 +320,7 @@ impl Debug {
         return f(&DEBUG);
     }
 
+    /// Visits each message currently in the queue
     pub fn for_each(mut f: impl FnMut(&str)) {
         Self::with(|c| {
             for msg in c.queue.borrow().iter() {
@@ -263,19 +329,30 @@ impl Debug {
         });
     }
 
+    /// Sets the mode for the queue from here until the next mode change
+    ///
+    /// | Mode | Effect |
+    /// | --- | --- |
+    /// | PerFrame | Reset the queue every frame |
+    /// | Rolling | Rotates the buffer across frames |
+    /// | Off | Disable all debug overlay messages |
     pub fn set_debug_mode(debug_mode: DebugMode) {
         Self::with(|c| *c.mode.borrow_mut() = debug_mode);
     }
 
+    /// Set where the debug overlay should be drawn.
+    ///
+    /// See [`Anchor2`] for options
     pub fn set_debug_anchor(anchor: Anchor2) {
         Self::with(|c| *c.anchor.borrow_mut() = anchor);
     }
 
+    /// Is the debug overlay enabled? (E.g. is it on?)
     pub fn is_enabled() -> bool {
         !matches!(Self::with(|c| *c.mode.borrow()), DebugMode::Off)
     }
 
-    pub fn resize(size: usize) {
+    pub(crate) fn resize(size: usize) {
         Self::with(|c| c.queue.borrow_mut().resize(size));
     }
 

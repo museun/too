@@ -186,7 +186,7 @@ impl View for ToggleSwitchView {
                 self.value = !self.value;
                 self.changed = true;
 
-                ctx.animation.add_once(ctx.current(), || {
+                ctx.animation.add_once(ctx.current, || {
                     Animation::new()
                         .oneshot(true)
                         .with(easing::sine_in_out)
@@ -202,7 +202,7 @@ impl View for ToggleSwitchView {
                 self.value = !self.value;
                 self.changed = true;
 
-                ctx.animation.add_once(ctx.current(), || {
+                ctx.animation.add_once(ctx.current, || {
                     Animation::new()
                         .oneshot(true)
                         .with(easing::sine_in_out)

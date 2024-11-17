@@ -7,7 +7,7 @@ mod response;
 pub use response::Response;
 
 mod input;
-pub use input::{EventCtx, Handled, Interest, ViewEvent};
+pub use input::{EventCtx, Handled, InputState, Interest, ViewEvent};
 
 mod ui;
 pub use ui::Ui;
@@ -36,6 +36,9 @@ mod erased;
 use erased::Erased;
 
 slotmap::new_key_type! {
+    /// An opaque ID for a [`View`](crate::view::View) in the current UI tree
+    ///
+    /// Nothing is guaranteed about this type.
     pub struct ViewId;
 }
 

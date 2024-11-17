@@ -1,3 +1,6 @@
+//! A simplistic testing interface for your applications.
+//!
+//! This lets you assert how an application will render for specific inputs.
 use std::{borrow::Cow, ops::RangeInclusive};
 
 use crate::{
@@ -12,6 +15,9 @@ use crate::{
 
 use super::Ui;
 
+/// A debug rasterizer
+///
+/// This simply collections all rasterizations into a paint list
 #[derive(Default)]
 pub struct DebugRasterizer {
     current: ViewId,
@@ -20,6 +26,7 @@ pub struct DebugRasterizer {
 }
 
 impl DebugRasterizer {
+    /// Get the paint list for the rasterization phase
     pub fn into_paint_list(self) -> Vec<(ViewId, Shape)> {
         self.paint_list
     }
@@ -96,6 +103,7 @@ impl Rasterizer for DebugRasterizer {
     }
 }
 
+/// User input you can synthesize for your application
 pub enum TestInput {
     Held { pos: Pos2 },
     Click { pos: Pos2 },

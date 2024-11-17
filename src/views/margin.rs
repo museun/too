@@ -39,7 +39,7 @@ impl View for MarginView {
         let mut size = Size::ZERO;
         for &child in &node.children {
             size = layout.compute(child, space) + margin;
-            layout.layout.set_position(child, offset);
+            layout.set_position(child, offset);
         }
         size
     }

@@ -15,6 +15,11 @@ pub use interest::Interest;
 mod view_event;
 pub use view_event::ViewEvent;
 
+/// A response to an event
+///
+/// If a view consumes the event, it should return `Sink`
+///
+/// otherwise it should return `Bubble` so it can be processed by other views
 #[derive(Copy, Clone, Default, Debug, PartialEq)]
 pub enum Handled {
     Sink,
@@ -102,6 +107,9 @@ struct Selection {
     notify: Notify,
 }
 
+/// The input state tree.
+///
+/// This is updated by [`State::event`](crate::view::State::event)
 #[derive(Debug, Default)]
 pub struct InputState {
     mouse: Mouse,
@@ -115,44 +123,69 @@ pub struct InputState {
 }
 
 impl InputState {
-    pub fn begin(&mut self, nodes: &ViewNodes, layout: &LayoutNodes, animation: &mut Animations) {
+    pub(super) fn begin(
+        &mut self,
+        nodes: &ViewNodes,
+        layout: &LayoutNodes,
+        animation: &mut Animations,
+    ) {
         self.notify_focus(nodes, layout, animation);
         self.notify_selection(nodes, layout, animation);
     }
 
-    pub fn end(&mut self) {
+    pub(super) fn end(&mut self) {
         self.key_press.take();
         for state in self.mouse.buttons.values_mut() {
             state.settle();
         }
     }
 
-    pub fn key_press(&self) -> Option<Keybind> {
+    pub(super) fn key_press(&self) -> Option<Keybind> {
         self.key_press
     }
 
+    /// Get the current mouse positions
     pub fn mouse_pos(&self) -> Pos2 {
         self.mouse.pos
     }
 
+    /// Get the current button modifier state
+    pub fn modifiers(&self) -> Modifiers {
+        self.modifiers
+    }
+
+    /// Get the current focused id
     pub fn focus(&self) -> Option<ViewId> {
         self.focus.notify.get()
     }
 
+    /// Set (or unset) the current focused id
     pub fn set_focus(&self, id: Option<ViewId>) {
         self.focus.notify.set(id)
     }
 
+    /// Get the current selection id
     pub fn selection(&self) -> Option<ViewId> {
         self.selection.notify.get()
     }
 
+    /// Set (or unset) the current selection id
     pub fn set_selection(&self, id: Option<ViewId>) {
         self.selection.notify.set(id)
     }
 
+    /// Is this id focused?
+    pub fn is_focused(&self, id: ViewId) -> bool {
+        self.focus.notify.get() == Some(id)
+    }
+
+    /// Is this id hovered?
+    pub fn is_hovered(&self, id: ViewId) -> bool {
+        self.intersections.hit.contains(&id)
+    }
+
     #[cfg_attr(feature = "profile", profiling::function)]
-    pub fn update(
+    pub(super) fn update(
         &mut self,
         nodes: &ViewNodes,
         layout: &LayoutNodes,
@@ -608,25 +641,32 @@ impl InputState {
             })
             .unwrap_or(Handled::Bubble)
     }
-
-    pub(crate) fn is_focused(&self, current: ViewId) -> bool {
-        self.focus.notify.get() == Some(current)
-    }
-
-    pub(crate) fn is_hovered(&self, current: ViewId) -> bool {
-        self.intersections.hit.contains(&current)
-    }
 }
 
+/// A context passed to event handlers
 pub struct EventCtx<'a> {
+    /// The current id of the view that received the event.
     pub current: ViewId,
+    /// Immutable access to the view nodes tree.
+    ///
+    /// You can get your current view with [`nodes.get_current()`](ViewNodes::get_current)
+    ///
+    /// From your current node you can get:
+    /// - your children with [`node.children`](crate::view::ViewNode::children)
+    /// - your parent with  [`node.parent`](crate::view::ViewNode::parent)
     pub nodes: &'a ViewNodes,
+    /// Immutable access to the layout nodes tree.
+    ///
+    /// You can get a views rect with [`layout.rect()`](LayoutNodes::rect)
     pub layout: &'a LayoutNodes,
+    /// Immutable access to the input state tree.
     pub input: &'a InputState,
+    /// Mutable access to the animations context
     pub animation: &'a mut Animations,
 }
 
 impl<'a> EventCtx<'a> {
+    /// Send an event to a id
     pub fn send_event(&mut self, id: ViewId, event: ViewEvent) -> Handled {
         self.input.dispatch(
             self.nodes, //
@@ -637,14 +677,32 @@ impl<'a> EventCtx<'a> {
         )
     }
 
+    /// Get the cursor mouse position
     pub fn cursor_pos(&self) -> Pos2 {
         self.input.mouse_pos()
     }
 
-    pub fn current(&self) -> ViewId {
-        self.nodes.current()
+    /// Is the current view focused?
+    pub fn is_focused(&self) -> bool {
+        self.input.is_focused(self.current)
     }
 
+    /// Is the current view hovered?
+    pub fn is_hovered(&self) -> bool {
+        self.input.is_hovered(self.current)
+    }
+
+    /// Is the current view's parent focused?
+    pub fn is_parent_focused(&self) -> bool {
+        self.input.is_focused(self.nodes.parent())
+    }
+
+    /// Is the current view's parent hovered?
+    pub fn is_parent_hovered(&self) -> bool {
+        self.input.is_hovered(self.nodes.parent())
+    }
+
+    /// Get the [`Rect`] for the current view
     #[track_caller]
     pub fn rect(&self) -> Rect {
         self.layout.rect(self.current).unwrap()

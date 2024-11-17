@@ -93,6 +93,16 @@ impl<'a> Ui<'a> {
         self.size_changed
     }
 
+    pub fn palette(&self) -> Ref<'_, Palette> {
+        self.palette.borrow()
+    }
+
+    pub fn set_palette(&self, palette: Palette) {
+        *self.palette.borrow_mut() = palette
+    }
+}
+
+impl<'a> Ui<'a> {
     pub fn key_pressed(&self, keybind: impl Into<Keybind>) -> bool {
         let prev = match self.input.key_press() {
             Some(prev) => prev,
@@ -107,35 +117,47 @@ impl<'a> Ui<'a> {
         false
     }
 
-    pub fn current(&self) -> ViewId {
-        self.nodes.current()
-    }
-
-    pub fn children(&self) -> RefMapped<'_, [ViewId]> {
-        self.get_node_children(self.current()).unwrap()
-    }
-
-    pub fn get_node_children(&self, id: ViewId) -> Option<RefMapped<'_, [ViewId]>> {
-        let inner = self.nodes.get(id)?;
-        Some(RefMapped::map(inner, |node| &*node.children))
-    }
-
     pub fn cursor_pos(&self) -> Pos2 {
         self.input.mouse_pos()
     }
 
-    pub fn palette(&self) -> Ref<'_, Palette> {
-        self.palette.borrow()
+    pub fn is_hovered(&self) -> bool {
+        self.input.is_hovered(self.nodes.current())
     }
 
-    pub fn set_palette(&self, palette: Palette) {
-        *self.palette.borrow_mut() = palette
+    pub fn is_parent_hovered(&self) -> bool {
+        self.input.is_hovered(self.nodes.parent())
+    }
+
+    pub fn is_focused(&self) -> bool {
+        self.input.is_focused(self.nodes.current())
+    }
+
+    pub fn is_parent_focused(&self) -> bool {
+        self.input.is_focused(self.nodes.parent())
     }
 
     pub fn set_focus(&self, id: impl Into<Option<ViewId>>) {
         self.input.set_focus(id.into());
     }
+}
 
+impl<'a> Ui<'a> {
+    pub fn current(&self) -> ViewId {
+        self.nodes.current()
+    }
+
+    pub fn children(&self) -> RefMapped<'_, [ViewId]> {
+        self.children_for(self.current()).unwrap()
+    }
+
+    pub fn children_for(&self, id: ViewId) -> Option<RefMapped<'_, [ViewId]>> {
+        let inner = self.nodes.get(id)?;
+        Some(RefMapped::map(inner, |node| &*node.children))
+    }
+}
+
+impl<'a> Ui<'a> {
     // TODO this is a bad name, this means input layer not render layer
     pub fn layer<R>(&self, show: impl FnOnce(&Ui) -> R) -> Response<R>
     where
@@ -158,16 +180,6 @@ impl<'a> Ui<'a> {
         R: 'static,
     {
         self.new_layer(super::Layer::Top, show)
-    }
-}
-
-impl<'a> Ui<'a> {
-    pub fn is_hovered(&self) -> bool {
-        self.input.is_hovered(self.nodes.current())
-    }
-
-    pub fn is_parent_hovered(&self) -> bool {
-        self.input.is_hovered(self.nodes.parent())
     }
 }
 

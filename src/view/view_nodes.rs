@@ -5,6 +5,7 @@ use slotmap::SlotMap;
 use super::{internal_views::Root, Erased, Ui, View, ViewId};
 use crate::lock::{Lock, Ref, RefMapped, RefMut, RefMutMapped};
 
+/// The persistent tree of all of the views.
 pub struct ViewNodes {
     nodes: Lock<SlotMap<ViewId, ViewNode>>,
     stack: Lock<Vec<ViewId>>,
@@ -45,11 +46,11 @@ impl ViewNodes {
         self.removed.get_mut().drain(..)
     }
 
-    pub fn begin(&self, id: ViewId) {
+    pub(super) fn begin(&self, id: ViewId) {
         self.stack.borrow_mut().push(id);
     }
 
-    pub fn end(&self, id: ViewId) {
+    pub(super) fn end(&self, id: ViewId) {
         let Some(old) = self.stack.borrow_mut().pop() else {
             unreachable!("stack was empty");
         };
@@ -201,15 +202,18 @@ impl ViewNodes {
         }
     }
 
+    /// Get the rood id for this tree
     pub const fn root(&self) -> ViewId {
         self.root
     }
 
+    /// Tries to get a view by its id
     pub fn get(&self, id: ViewId) -> Option<RefMapped<'_, ViewNode>> {
         let nodes = self.nodes.borrow();
         Ref::filter_map(nodes, |nodes| nodes.get(id))
     }
 
+    /// Tries to get a view by its id, mutably
     pub fn get_mut(&self, id: ViewId) -> Option<RefMutMapped<'_, ViewNode>> {
         let nodes = self.nodes.borrow_mut();
         RefMut::filter_map(nodes, |nodes| nodes.get_mut(id))
@@ -217,7 +221,11 @@ impl ViewNodes {
 
     // TODO this should push the id to the stack and pop it off
     // TODO this should handle views not in the layout
-    pub fn scoped<R>(&self, id: ViewId, act: impl FnOnce(&mut dyn Erased) -> R) -> Option<R> {
+    pub(super) fn scoped<R>(
+        &self,
+        id: ViewId,
+        act: impl FnOnce(&mut dyn Erased) -> R,
+    ) -> Option<R> {
         let nodes = self.nodes.borrow();
         let node = nodes.get(id)?;
         let mut view = node.view.borrow_mut().take();
@@ -231,10 +239,12 @@ impl ViewNodes {
         Some(resp)
     }
 
+    /// Get the id of the current view
     pub fn current(&self) -> ViewId {
         self.stack.borrow().last().copied().unwrap_or(self.root)
     }
 
+    /// Get the id of the current view's parent
     pub fn parent(&self) -> ViewId {
         self.stack
             .borrow()
@@ -244,6 +254,7 @@ impl ViewNodes {
             .unwrap_or(self.root)
     }
 
+    /// Get the current [`ViewNode`]
     pub fn get_current(&self) -> RefMapped<'_, ViewNode> {
         let index = self.current();
         let nodes = self.nodes.borrow();
@@ -251,9 +262,12 @@ impl ViewNodes {
     }
 }
 
+/// A node for a view into the main UI tree
 #[derive(Default)]
 pub struct ViewNode {
+    /// Your parents id, if you have one.
     pub parent: Option<ViewId>,
+    /// Your childrens ids, if you have any
     pub children: Vec<ViewId>,
     pub(in crate::view) view: Lock<Slot>,
     pub(in crate::view) next: usize,

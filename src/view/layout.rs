@@ -9,30 +9,60 @@ use crate::{
 
 use super::{input::InputState, Interest, ViewId, ViewNodes};
 
+/// Layout context
+///
+/// Typically. you'll:
+/// - get your current node
+/// - get your children
+/// - iterate over them
+/// - call compute with their id
+/// - calculate some total size based on the above
+/// - return that size
+///
+/// ## In your code:
+/// ```rust,no_run
+/// let current = layout.nodes.get_current();
+/// let mut size = Size::ZERO;
+/// for &child in &current.children {
+///     size = size.max(layout.compute(child, space))
+/// }
+/// size
+/// ```
 pub struct Layout<'a> {
+    /// Immutable access to the node tree.
+    ///
+    /// You can get your current view with [`nodes.get_current()`](ViewNodes::get_current)
+    ///
+    /// From your current node you can get:
+    /// - your children with [`node.children`](crate::view::ViewNode::children)
+    /// - your parent with  [`node.parent`](crate::view::ViewNode::parent)
+    ///
     pub nodes: &'a ViewNodes,
+    /// Mutable access to the layout tree.
     pub layout: &'a mut LayoutNodes,
+    /// Mutable access to the input state tree.
     pub input: &'a mut InputState,
+    /// The current id of the view that is computing its layout
     pub current: ViewId,
 }
 
 impl<'a> Layout<'a> {
+    /// Compute the layout size of a view with the provided space
     pub fn compute(&mut self, id: ViewId, space: Space) -> Size {
         self.layout.compute(self.nodes, self.input, id, space)
     }
 
+    /// Get the axis of your parent
     pub fn parent_axis(&self) -> Axis {
         self.layout.current_axis().unwrap()
     }
 
+    /// Get the flex factor of a view
     pub fn flex(&self, id: ViewId) -> Flex {
         self.nodes.get(id).unwrap().view.borrow().flex()
     }
 
-    pub fn set_layer(&mut self, layer: Layer) {
-        self.layout.set_layer(self.current, layer);
-    }
-
+    /// Get the computed size of a view
     pub fn size(&self, id: ViewId) -> Size {
         self.layout
             .get(id)
@@ -40,6 +70,7 @@ impl<'a> Layout<'a> {
             .unwrap_or_default()
     }
 
+    /// Get the instrinic size of a view, with the provided axis and extent
     pub fn intrinsic_size(&self, id: ViewId, axis: Axis, extent: f32) -> f32 {
         self.layout.intrinsic_size(self.nodes, id, axis, extent)
     }
@@ -48,30 +79,54 @@ impl<'a> Layout<'a> {
         self.layout.new_layer(self.nodes);
     }
 
+    pub fn set_layer(&mut self, layer: Layer) {
+        self.layout.set_layer(self.current, layer);
+    }
+
+    /// Enables clipping.
+    ///
+    /// Clipping constraints your rendering rect to your computed size.
+    ///
+    /// You can use this if you produce an infinite size to ensure you can't draw outside of your visible rect.
     pub fn enable_clipping(&mut self) {
         self.layout.enable_clipping(self.nodes);
     }
 
+    /// Remove a view from the layout and input trees
     pub fn remove(&mut self, id: ViewId) {
         self.layout.remove(id);
         self.input.remove(id);
     }
 
+    /// Position a view in the layout tree.
+    ///
+    /// By default, your children are positioned at your origin (top-left) of your rect.
+    ///
+    /// If you need to place them somewhere else, you can use this. The `pos` is relative to your local rect.
+    ///
+    /// E.g. pos2(5, 3) is your top_left + (5, 3)
     pub fn set_position(&mut self, id: ViewId, pos: impl Into<Pos2>) {
         self.layout.set_position(id, pos);
     }
 
+    /// Set the size of a view in the layout tree.
+    ///
+    /// This lets you override a views computed size
     pub fn set_size(&mut self, id: ViewId, size: impl Into<Vec2>) {
         self.layout.set_size(id, size)
     }
 }
 
+/// Context for calculating the intrinstic size of a view
 pub struct IntrinsicSize<'a> {
     pub nodes: &'a ViewNodes,
     pub layout: &'a LayoutNodes,
 }
 
 impl<'a> IntrinsicSize<'a> {
+    /// Calculate the intrinsic size for a view, with the provided access and extent.
+    ///
+    /// The `extent` is the 'length' of the axis. (e.g. height or width)
     pub fn size(&self, id: ViewId, axis: Axis, extent: f32) -> f32 {
         self.layout.intrinsic_size(self.nodes, id, axis, extent)
     }
@@ -126,6 +181,7 @@ impl EventInterest {
     }
 }
 
+/// The tree for the layouts of all of the views
 #[derive(Default, Debug)]
 pub struct LayoutNodes {
     pub(super) nodes: SecondaryMap<ViewId, LayoutNode>,
@@ -135,23 +191,32 @@ pub struct LayoutNodes {
 }
 
 impl LayoutNodes {
-    pub fn current_axis(&self) -> Option<Axis> {
+    pub(super) fn current_axis(&self) -> Option<Axis> {
         self.axis_stack.iter().nth_back(1).copied()
     }
 
+    /// Get a [`LayoutNode`] by id
     pub fn get(&self, id: ViewId) -> Option<&LayoutNode> {
         self.nodes.get(id)
     }
 
+    /// Does this tree contain that id?
     pub fn contains(&self, id: ViewId) -> bool {
         self.nodes.contains_key(id)
     }
 
+    /// Get a [`Rect`] by id
     pub fn rect(&self, id: ViewId) -> Option<Rect> {
         self.get(id).map(|c| c.rect)
     }
 
-    pub fn intrinsic_size(&self, nodes: &ViewNodes, id: ViewId, axis: Axis, extent: f32) -> f32 {
+    pub(super) fn intrinsic_size(
+        &self,
+        nodes: &ViewNodes,
+        id: ViewId,
+        axis: Axis,
+        extent: f32,
+    ) -> f32 {
         nodes.begin(id);
 
         let size = nodes
@@ -168,27 +233,27 @@ impl LayoutNodes {
         size
     }
 
-    pub fn enable_clipping(&mut self, nodes: &ViewNodes) {
+    pub(super) fn enable_clipping(&mut self, nodes: &ViewNodes) {
         self.clip_stack.push(nodes.current());
     }
 
-    pub fn new_layer(&mut self, nodes: &ViewNodes) {
+    pub(super) fn new_layer(&mut self, nodes: &ViewNodes) {
         let id = nodes.current();
         self.interest.push_layer(id);
     }
 
-    pub fn remove(&mut self, id: ViewId) {
+    pub(super) fn remove(&mut self, id: ViewId) {
         self.nodes.remove(id);
     }
 
-    pub fn set_position(&mut self, id: ViewId, pos: impl Into<Pos2>) {
+    pub(super) fn set_position(&mut self, id: ViewId, pos: impl Into<Pos2>) {
         if let Some(node) = self.nodes.get_mut(id) {
             let offset = pos.into().to_vec2();
             node.rect = node.rect.translate(offset);
         }
     }
 
-    pub fn set_size(&mut self, id: ViewId, size: impl Into<Vec2>) {
+    pub(super) fn set_size(&mut self, id: ViewId, size: impl Into<Vec2>) {
         if let Some(node) = self.nodes.get_mut(id) {
             node.rect.set_size(size);
         }
@@ -313,23 +378,36 @@ impl LayoutNodes {
     }
 }
 
+/// A layer a view should be on, relative to its parent
 #[derive(Copy, Clone, Default, Debug, PartialEq, PartialOrd)]
 pub enum Layer {
+    /// At the bottom layer relative to its siblings
     Bottom,
     #[default]
+    /// The default layer
     Middle,
+    /// Above other siblings on lower layers
     Top,
+    /// Above other siblings on lower layers
     Debug,
 }
 
+/// A node in the layout tree for a view
 #[derive(Default)]
 pub struct LayoutNode {
+    /// The id of the view
     pub id: ViewId,
+    /// The computed rectangle for the view
     pub rect: Rect,
+    /// Which layer the view is on
     pub layer: Layer,
+    /// Was this view on a new layer?
     pub new_layer: bool,
+    /// Is the view being clipped?
     pub clipping_enabled: bool,
+    /// Who is clipping the view
     pub clipped_by: Option<ViewId>,
+    /// The event interests of the view
     pub interest: Interest,
 }
 

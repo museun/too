@@ -1,3 +1,4 @@
+/// Interests for events that a view want to recieve
 #[derive(Copy, Clone, Default, PartialEq)]
 pub struct Interest(u8);
 
@@ -32,18 +33,28 @@ impl std::fmt::Debug for Interest {
 }
 
 impl Interest {
+    /// No events should be sent to a view
     pub const NONE: Self = Self(0);
+    /// All events should be sent to a view
     pub const ALL: Self = Self(u8::MAX);
 
+    /// A view wants to get mouse events inside of it
     pub const MOUSE_INSIDE: Self = Self(1 << 0);
+    /// A view wants to get mouse events outside of it
     pub const MOUSE_OUTSIDE: Self = Self(1 << 1);
+    /// A view wants to get mouse move events
     pub const MOUSE_MOVE: Self = Self(1 << 2);
 
+    /// A view wants to get [`ViewEvent::FocusGained`](crate::view::ViewEvent::FocusGained) and [`ViewEvent::FocusLost`](crate::view::ViewEvent::FocusLost) events
     pub const FOCUS: Self = Self(1 << 3);
+
+    /// A view wants to key inputs
     pub const FOCUS_INPUT: Self = Self(1 << 4);
 
+    /// A view wants to get [`ViewEvent::SelectionAdded`](crate::view::ViewEvent::SelectionAdded) and [`ViewEvent::SelectionRemoved`](crate::view::ViewEvent::SelectionRemoved) events
     pub const SELECTION_CHANGE: Self = Self(1 << 5);
 
+    /// A view wants all mouse events
     pub const MOUSE: Self = Self(1 << 0 | 1 << 1 | 1 << 2);
 }
 
