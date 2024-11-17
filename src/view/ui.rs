@@ -1,7 +1,6 @@
-use std::cell::{Ref, RefCell};
-
 use crate::{
     layout::{Align2, Flex},
+    lock::{Lock, Ref, RefMapped},
     math::{Margin, Pos2, Rect, Size, Vec2},
     views::{self, Constrain},
     Border, Keybind, Rgba, Str,
@@ -16,7 +15,7 @@ pub struct Ui<'a> {
     nodes: &'a ViewNodes,
     layout: &'a LayoutNodes,
     input: &'a InputState,
-    palette: &'a RefCell<Palette>,
+    palette: &'a Lock<Palette>,
     client_rect: Rect,
 
     size_changed: Option<Vec2>,
@@ -110,12 +109,13 @@ impl<'a> Ui<'a> {
         self.nodes.current()
     }
 
-    pub fn children(&self) -> Ref<'_, [ViewId]> {
+    pub fn children(&self) -> RefMapped<'_, [ViewId]> {
         self.get_node_children(self.current()).unwrap()
     }
 
-    pub fn get_node_children(&self, id: ViewId) -> Option<Ref<'_, [ViewId]>> {
-        Some(Ref::map(self.nodes.get(id)?, |node| &*node.children))
+    pub fn get_node_children(&self, id: ViewId) -> Option<RefMapped<'_, [ViewId]>> {
+        let inner = self.nodes.get(id)?;
+        Some(RefMapped::map(inner, |node| &*node.children))
     }
 
     pub fn cursor_pos(&self) -> Pos2 {

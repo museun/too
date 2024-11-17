@@ -3,9 +3,12 @@ use crate::{
     math::{Size, Space},
 };
 
-use super::{EventCtx, Handled, Interest, IntrinsicSize, Layout, Render, View, ViewEvent};
+use super::{
+    builder::ViewMarker, EventCtx, Handled, Interest, IntrinsicSize, Layout, Render, View,
+    ViewEvent,
+};
 
-pub trait Erased: std::any::Any + std::fmt::Debug {
+pub trait Erased: std::any::Any + std::fmt::Debug + ViewMarker {
     fn interests(&self) -> Interest;
 
     fn flex(&self) -> Flex;
@@ -22,7 +25,7 @@ pub trait Erased: std::any::Any + std::fmt::Debug {
     fn type_name(&self) -> &'static str;
 }
 
-impl<T: View> Erased for T {
+impl<T: View + ViewMarker> Erased for T {
     #[inline(always)]
     fn interests(&self) -> Interest {
         T::interests(self)

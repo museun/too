@@ -372,6 +372,7 @@ dependencies = [
  "compact_str",
  "crossterm",
  "flume",
+ "parking_lot",
  "profiling",
  "slotmap",
  "str_indices",

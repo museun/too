@@ -28,8 +28,18 @@ pub trait ViewExt<'v>: Builder<'v> {
 
 impl<'v, T> ViewExt<'v> for T where T: Builder<'v> {}
 
+#[cfg(not(feature = "sync"))]
+pub trait ViewMarker {}
+#[cfg(not(feature = "sync"))]
+impl<T> ViewMarker for T {}
+
+#[cfg(feature = "sync")]
+pub trait ViewMarker: Send + Sync {}
+#[cfg(feature = "sync")]
+impl<T: Send + Sync> ViewMarker for T {}
+
 #[allow(unused_variables)]
-pub trait View: Sized + 'static + std::fmt::Debug {
+pub trait View: Sized + 'static + std::fmt::Debug + ViewMarker {
     type Args<'v>;
     type Response: 'static + Default;
 
