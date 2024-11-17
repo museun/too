@@ -1,7 +1,10 @@
+//! Some convenient types and functions
+
 use std::collections::VecDeque;
 
 pub use crate::hasher::{BuildIntHasher, DefaultIntHasher, IntHasher};
 
+/// Converts a long Rust type name into a shorter, more readable one
 pub fn short_name(name: &str) -> String {
     const fn is_special(c: char) -> bool {
         matches!(c, ' ' | '<' | '>' | '(' | ')' | '[' | ']' | ',' | ';')
@@ -36,6 +39,9 @@ pub fn short_name(name: &str) -> String {
     out
 }
 
+/// A simple bounded queue that rotates its buffer
+///
+/// This acts as a FIFO queue
 #[derive(Default, Debug)]
 pub struct Queue<T = String> {
     queue: VecDeque<T>,
@@ -43,6 +49,9 @@ pub struct Queue<T = String> {
 }
 
 impl<T> Queue<T> {
+    /// Create a new queue with a max size.
+    ///
+    /// The size can be zero
     pub const fn new(max: usize) -> Self {
         Self {
             queue: VecDeque::new(),
@@ -50,10 +59,14 @@ impl<T> Queue<T> {
         }
     }
 
+    /// Get the current max size of the queue
     pub const fn current_size(&self) -> usize {
         self.max
     }
 
+    /// Resizes the queue
+    ///
+    /// If the queue were to truncate, this'll remove the first N elements
     pub fn resize(&mut self, mut size: usize) {
         let old = std::mem::replace(&mut self.max, size);
         if size >= old {
@@ -71,6 +84,9 @@ impl<T> Queue<T> {
         }
     }
 
+    /// Push a value into the queue
+    ///
+    /// If the number of elements exceeds the max, the first (oldest) element is removed
     pub fn push(&mut self, item: T) {
         if self.max == 0 {
             return;
@@ -82,26 +98,38 @@ impl<T> Queue<T> {
         self.queue.push_back(item);
     }
 
+    /// How many elements are in the queue?
     pub fn len(&self) -> usize {
         self.queue.len()
     }
 
+    /// Is this queue empty?
     pub fn is_empty(&self) -> bool {
         self.queue.is_empty()
     }
 
+    /// Clears the queue -- this will remove all elements but not change the `max` size
     pub fn clear(&mut self) {
         self.queue.clear();
     }
 
+    /// Drains all elements from the queue
+    ///
+    /// This is FIFO -- so the order is from oldest to newest
     pub fn drain(&mut self) -> impl ExactSizeIterator<Item = T> + '_ {
         self.queue.drain(..)
     }
 
+    /// Get an iterator for all of the elements in the queue
+    ///
+    /// This is FIFO -- so the order is from oldest to newest
     pub fn iter(&self) -> impl ExactSizeIterator<Item = &T> + '_ {
         self.queue.iter()
     }
 
+    /// Get an iterator for all of the elements in the queue, mutably
+    ///
+    /// This is FIFO -- so the order is from oldest to newest
     pub fn iter_mut(&mut self) -> impl ExactSizeIterator<Item = &mut T> + '_ {
         self.queue.iter_mut()
     }

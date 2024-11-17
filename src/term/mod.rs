@@ -1,3 +1,5 @@
+//! A terminal backend
+
 use std::{
     collections::VecDeque,
     fs::File,

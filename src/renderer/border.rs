@@ -1,6 +1,8 @@
 use crate::math::Margin;
 
-// TODO move this out into the main module
+/// A border consisting of 8 parts.
+///
+/// This is 4 corners, and 4 lines
 #[derive(Copy, Clone, PartialEq)]
 pub struct Border {
     pub left_top: char,

@@ -1,5 +1,6 @@
 use super::Renderer;
 
+/// A renderer implementation that does nothing
 pub struct DummyRenderer;
 
 impl Renderer for DummyRenderer {

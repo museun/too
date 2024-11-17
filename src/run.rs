@@ -1,21 +1,59 @@
+//! An event loop implementation to run ***too*** applications
+//!
+//! This is only enabled with the `terminal` feature is enabled
 use crate::{
     animation::Animations,
     layout::Anchor2,
     view::{DebugMode, Palette},
 };
 
-pub struct Config {
+/// Configuration for an [`application`]
+///
+/// ## Default configuration:
+/// | Option | Value |
+/// | --- | --- |
+/// | [`palette`](Self::palette) | [`Palette::dark()`] |
+/// | [`debug`](Self::debug) | [`DebugMode::PerFrame`] |
+/// | [`debug_anchor`](Self::debug_anchor) | [`Anchor2::RIGHT_TOP`] |
+/// | [`fps`](Self::fps) | `60.0` (e.g. 60 fps) |
+/// | [`ctrl_c_quits`](Self::ctrl_c_quits) | `true` |
+/// | [`ctrl_z_switches`](Self::ctrl_z_switches) | `false` |
+/// | [`hook_panics`](Self::hook_panics) | `false` |
+
+pub struct RunConfig {
+    /// The palette to initially use
+    ///
+    /// Default: [`Palette::dark()`]
     pub palette: Palette,
+    /// The initial [`DebugMode`] for the debug overlay
+    ///
+    /// Default: [`DebugMode::PerFrame`]
     pub debug: DebugMode,
+    /// Where the debug overlay should be anchored
+    ///
+    /// Default: [`Anchor2::RIGHT_TOP`]
     pub debug_anchor: Anchor2,
+    /// The animation manager
     pub animation: Animations,
+    /// The framerate the application should run at
+    ///
+    /// Default: `60.0` (e.g. 60 fps)
     pub fps: f32,
+    /// Should pressing Ctrl-C quit the application?
+    ///
+    /// Default: `true`
     pub ctrl_c_quits: bool,
+    /// Should pressing Ctrl-Z switch to the non-displayed screen?
+    ///
+    /// Default: `false`
     pub ctrl_z_switches: bool,
+    /// Should we attempt to hook panics to display after an application panics?
+    ///
+    /// Default: `false`
     pub hook_panics: bool,
 }
 
-impl Default for Config {
+impl Default for RunConfig {
     fn default() -> Self {
         Self {
             palette: Palette::dark(),
@@ -30,14 +68,21 @@ impl Default for Config {
     }
 }
 
+// TODO more description on how the closure can be used
+/// Run an application with the default [`RunConfig`]
+///
+/// This will block the current thread until the application exits.
 #[cfg(feature = "terminal")]
 pub fn run<R: 'static>(app: impl FnMut(&crate::view::Ui) -> R) -> std::io::Result<()> {
-    application(Config::default(), app)
+    application(RunConfig::default(), app)
 }
 
+/// Run an application with the provided [`RunConfig`]
+///
+/// This will block the current thread until the application exits.
 #[cfg(feature = "terminal")]
 pub fn application<R: 'static>(
-    config: Config,
+    config: RunConfig,
     mut app: impl FnMut(&crate::view::Ui) -> R,
 ) -> std::io::Result<()> {
     use std::time::{Duration, Instant};

@@ -1,5 +1,10 @@
 use std::hash::BuildHasherDefault;
 
+/// A hasher that uses a `u64` as-in.
+///
+/// This doesn't actually hash the value.
+///
+/// This is useful if you already have a pre-hashed value
 #[derive(Default)]
 pub struct IntHasher(u64);
 
@@ -20,6 +25,7 @@ impl std::hash::Hasher for IntHasher {
     }
 }
 
+/// A [`BuildHasher`](std::hash::BuildHasher) for [`IntHasher`]
 #[derive(Default)]
 pub struct BuildIntHasher;
 
@@ -31,6 +37,7 @@ impl std::hash::BuildHasher for BuildIntHasher {
     }
 }
 
+/// A [`BuildHasherDefault`] for [`IntHasher`]
 pub type DefaultIntHasher = BuildHasherDefault<IntHasher>;
 
 #[inline(always)]

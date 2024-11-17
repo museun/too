@@ -6,7 +6,7 @@ use crate::{
     renderer::{Attribute, Rgba},
 };
 
-/// Renders to a `Backend` using ANSI escape sequences
+/// Renders to a [`Backend`](crate::backend::Backend) using ANSI escape sequences
 pub struct TermRenderer<W: Write> {
     out: W,
 }

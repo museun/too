@@ -1,9 +1,9 @@
+//! Things that can be drawn to a surface
 mod surface;
-
 pub use surface::Surface;
 
 mod cell;
-pub use cell::{Attribute, Cell, Color, Grapheme, Pixel, Underline};
+pub use cell::{Attribute, Cell, Color, Grapheme, Pixel};
 
 mod rgba;
 pub use rgba::Rgba;

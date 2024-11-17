@@ -1,3 +1,6 @@
+//! Backend types
+//!
+//! A backend provides events to the UI along with a [`Renderer`] to be used during rasterization
 use crate::{math::Vec2, renderer::Renderer};
 
 mod event;

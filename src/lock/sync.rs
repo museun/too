@@ -9,6 +9,7 @@ use parking_lot::{
     MappedRwLockReadGuard, MappedRwLockWriteGuard, RwLock, RwLockReadGuard, RwLockWriteGuard,
 };
 
+/// A (cheaply) clonable pointer
 #[derive(Clone, Default)]
 pub struct Shared<T>
 where
@@ -34,6 +35,7 @@ impl<T: std::fmt::Debug> Debug for Shared<T> {
 }
 
 impl<T> Shared<T> {
+    /// Create a new [`Shared`] from a value
     pub fn new(value: T) -> Self {
         Self {
             inner: Arc::new(value),
@@ -41,6 +43,7 @@ impl<T> Shared<T> {
     }
 
     #[allow(clippy::should_implement_trait)]
+    /// Clone this [`Shared`]
     pub fn clone(this: &Self) -> Self {
         Self {
             inner: Arc::clone(&this.inner),
@@ -48,6 +51,7 @@ impl<T> Shared<T> {
     }
 }
 
+/// An immutable reference
 pub struct Ref<'a, T>
 where
     T: ?Sized,
@@ -71,6 +75,7 @@ where
     }
 }
 
+/// An immutable reference
 pub struct RefMapped<'a, T>
 where
     T: ?Sized,
@@ -82,6 +87,7 @@ impl<'a, T> RefMapped<'a, T>
 where
     T: ?Sized,
 {
+    /// See [`RwLock::map`](https://docs.rs/lock_api/0.4.12/lock_api/struct.MappedRwLockReadGuard.html#method.map)
     pub fn map<U>(this: Self, map: impl FnOnce(&T) -> &U) -> RefMapped<'a, U>
     where
         U: ?Sized,
@@ -91,6 +97,9 @@ where
         }
     }
 
+    /// See [`RwLock::try_map`](https://docs.rs/lock_api/0.4.12/lock_api/struct.MappedRwLockReadGuard.html#method.try_map)
+    ///
+    /// ***NOTE*** this returns an Option instead of the original reference
     pub fn filter_map<U>(this: Self, map: impl FnOnce(&T) -> Option<&U>) -> Option<RefMapped<'a, U>>
     where
         U: ?Sized,
@@ -121,6 +130,7 @@ impl<'a, T> Ref<'a, T>
 where
     T: ?Sized,
 {
+    /// See [`RwLock::map`](https://docs.rs/lock_api/0.4.12/lock_api/struct.RwLockReadGuard.html#method.map)
     pub fn map<U>(this: Self, map: impl FnOnce(&T) -> &U) -> RefMapped<'a, U>
     where
         U: ?Sized,
@@ -130,6 +140,9 @@ where
         }
     }
 
+    /// See [`RwLock::try_map`](https://docs.rs/lock_api/0.4.12/lock_api/struct.RwLockReadGuard.html#method.try_map)
+    ///
+    /// ***NOTE*** this returns an Option instead of the original reference
     pub fn filter_map<U>(this: Self, map: impl FnOnce(&T) -> Option<&U>) -> Option<RefMapped<'a, U>>
     where
         U: ?Sized,
@@ -140,6 +153,7 @@ where
     }
 }
 
+/// A mutable reference
 pub struct RefMut<'a, T>
 where
     T: ?Sized,
@@ -176,6 +190,7 @@ impl<'a, T> RefMut<'a, T>
 where
     T: ?Sized,
 {
+    /// See [`RwLock::map`](https://docs.rs/lock_api/0.4.12/lock_api/struct.RwLockWriteGuard.html#method.map)
     pub fn map<U>(this: Self, map: impl FnOnce(&mut T) -> &mut U) -> RefMutMapped<'a, U>
     where
         U: ?Sized,
@@ -185,6 +200,9 @@ where
         }
     }
 
+    /// See [`RwLock::try_map`](https://docs.rs/lock_api/0.4.12/lock_api/struct.RwLockWriteGuard.html#method.try_map)
+    ///
+    /// ***NOTE*** this returns an Option instead of the original reference
     pub fn filter_map<U>(
         this: Self,
         map: impl FnOnce(&mut T) -> Option<&mut U>,
@@ -198,6 +216,7 @@ where
     }
 }
 
+/// A mutable reference
 pub struct RefMutMapped<'a, T>
 where
     T: ?Sized,
@@ -209,6 +228,7 @@ impl<'a, T> RefMutMapped<'a, T>
 where
     T: ?Sized,
 {
+    /// See [`RwLock::map`](https://docs.rs/lock_api/0.4.12/lock_api/struct.MappedRwLockWriteGuard.html#method.map)
     pub fn map<U>(this: Self, map: impl FnOnce(&mut T) -> &mut U) -> RefMutMapped<'a, U>
     where
         U: ?Sized,
@@ -218,6 +238,9 @@ where
         }
     }
 
+    /// See [`RwLock::try_map`](https://docs.rs/lock_api/0.4.12/lock_api/struct.MappedRwLockWriteGuard.html#method.try_map)
+    ///
+    /// ***NOTE*** this returns an Option instead of the original reference
     pub fn filter_map<U>(
         this: Self,
         map: impl FnOnce(&mut T) -> Option<&mut U>,
@@ -256,6 +279,7 @@ where
     }
 }
 
+/// An interior mutable container for a type
 #[derive(Default)]
 pub struct Lock<T> {
     inner: RwLock<T>,
@@ -270,28 +294,39 @@ impl<T: Debug> Debug for Lock<T> {
 }
 
 impl<T> Lock<T> {
+    /// Create a new Lock for this value
     pub const fn new(value: T) -> Self {
         Self {
             inner: RwLock::new(value),
         }
     }
 
+    /// Gets immutable borrow to the internal data
+    ///
+    /// ***WARNING:*** This'll deadlock if any mutable borrows are outstanding
     pub fn borrow(&self) -> Ref<'_, T> {
         Ref {
             inner: self.inner.read(),
         }
     }
 
+    /// Gets mutable borrow to the internal data
+    ///
+    /// ***WARNING:*** This'll deadlock if any immutable or mutable borrows are outstanding
     pub fn borrow_mut(&self) -> RefMut<'_, T> {
         RefMut {
             inner: self.inner.write(),
         }
     }
 
+    /// Gets mutable to the internal data.
+    ///
+    /// This will not panic because we have &mut access to the lock
     pub fn get_mut(&mut self) -> &mut T {
         self.inner.get_mut()
     }
 
+    /// Consumes the lock, returning the internal data
     pub fn into_inner(self) -> T {
         self.inner.into_inner()
     }

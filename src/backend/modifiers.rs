@@ -1,3 +1,4 @@
+/// Event modifiers
 #[derive(Copy, Clone, Default, PartialEq, PartialOrd, Eq, Ord, Hash)]
 pub struct Modifiers(pub u8);
 
