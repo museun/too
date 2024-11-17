@@ -61,6 +61,12 @@ impl<'a, T> Deref for Ref<'a, T> {
     }
 }
 
+impl<'a, T: std::fmt::Display> std::fmt::Display for Ref<'a, T> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        self.inner.fmt(f)
+    }
+}
+
 pub struct RefMapped<'a, T>
 where
     T: ?Sized,
@@ -94,6 +100,12 @@ where
 impl<'a, T: Debug> Debug for RefMapped<'a, T> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         (*self.inner).fmt(f)
+    }
+}
+
+impl<'a, T: std::fmt::Display> std::fmt::Display for RefMapped<'a, T> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        self.inner.fmt(f)
     }
 }
 
