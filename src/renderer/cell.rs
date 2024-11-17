@@ -319,23 +319,23 @@ impl<T: ToCompactString> From<T> for Grapheme {
     }
 }
 
-#[derive(Copy, Clone, Debug, PartialEq, PartialOrd, Eq, Ord, Hash)]
-pub struct Underline(pub(crate) u8);
-impl Underline {
-    // <ESC>[4:0m  # no underline
-    // <ESC>[4:1m  # straight underline
-    // <ESC>[4:2m  # double underline
-    // <ESC>[4:3m  # curly underline
-    // <ESC>[4:4m  # dotted underline
-    // <ESC>[4:5m  # dashed underline
+// #[derive(Copy, Clone, Debug, PartialEq, PartialOrd, Eq, Ord, Hash)]
+// pub struct Underline(pub(crate) u8);
+// impl Underline {
+//     // <ESC>[4:0m  # no underline
+//     // <ESC>[4:1m  # straight underline
+//     // <ESC>[4:2m  # double underline
+//     // <ESC>[4:3m  # curly underline
+//     // <ESC>[4:4m  # dotted underline
+//     // <ESC>[4:5m  # dashed underline
 
-    pub const NONE: Self = Self(0);
-    pub const STRAIGHT: Self = Self(1 << 0);
-    pub const DOUBLE: Self = Self(1 << 1);
-    pub const CURLY: Self = Self(1 << 2);
-    pub const DOTTED: Self = Self(1 << 3);
-    pub const DASHED: Self = Self(1 << 4);
-}
+//     pub const NONE: Self = Self(0);
+//     pub const STRAIGHT: Self = Self(1 << 0);
+//     pub const DOUBLE: Self = Self(1 << 1);
+//     pub const CURLY: Self = Self(1 << 2);
+//     pub const DOTTED: Self = Self(1 << 3);
+//     pub const DASHED: Self = Self(1 << 4);
+// }
 
 /// Attributes for a [`Pixel`] like _italic_ or _bold_
 #[derive(Copy, Clone, Default, PartialEq, PartialOrd, Eq, Ord, Hash)]
