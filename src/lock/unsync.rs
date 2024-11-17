@@ -13,7 +13,10 @@ where
     inner: Rc<T>,
 }
 
-impl<T> Deref for Shared<T> {
+impl<T> Deref for Shared<T>
+where
+    T: ?Sized,
+{
     type Target = T;
     fn deref(&self) -> &Self::Target {
         self.inner.deref()
@@ -54,7 +57,10 @@ impl<'a, T: Debug> Debug for Ref<'a, T> {
     }
 }
 
-impl<'a, T> Deref for Ref<'a, T> {
+impl<'a, T> Deref for Ref<'a, T>
+where
+    T: ?Sized,
+{
     type Target = T;
     fn deref(&self) -> &Self::Target {
         self.inner.deref()
@@ -109,7 +115,10 @@ impl<'a, T: std::fmt::Display> std::fmt::Display for RefMapped<'a, T> {
     }
 }
 
-impl<'a, T> Deref for RefMapped<'a, T> {
+impl<'a, T> Deref for RefMapped<'a, T>
+where
+    T: ?Sized,
+{
     type Target = T;
     fn deref(&self) -> &Self::Target {
         self.inner.deref()
@@ -152,14 +161,20 @@ impl<'a, T: Debug> Debug for RefMut<'a, T> {
     }
 }
 
-impl<'a, T> Deref for RefMut<'a, T> {
+impl<'a, T> Deref for RefMut<'a, T>
+where
+    T: ?Sized,
+{
     type Target = T;
     fn deref(&self) -> &Self::Target {
         self.inner.deref()
     }
 }
 
-impl<'a, T> DerefMut for RefMut<'a, T> {
+impl<'a, T> DerefMut for RefMut<'a, T>
+where
+    T: ?Sized,
+{
     fn deref_mut(&mut self) -> &mut Self::Target {
         self.inner.deref_mut()
     }
@@ -204,14 +219,20 @@ impl<'a, T: Debug> Debug for RefMutMapped<'a, T> {
     }
 }
 
-impl<'a, T> Deref for RefMutMapped<'a, T> {
+impl<'a, T> Deref for RefMutMapped<'a, T>
+where
+    T: ?Sized,
+{
     type Target = T;
     fn deref(&self) -> &Self::Target {
         self.inner.deref()
     }
 }
 
-impl<'a, T> DerefMut for RefMutMapped<'a, T> {
+impl<'a, T> DerefMut for RefMutMapped<'a, T>
+where
+    T: ?Sized,
+{
     fn deref_mut(&mut self) -> &mut Self::Target {
         self.inner.deref_mut()
     }
