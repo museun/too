@@ -75,13 +75,10 @@ struct Mouse {
     buttons: HashMap<MouseButton, ButtonState>,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Default)]
 struct Notify<T: Copy + PartialEq = ViewId> {
     current: Cell<Option<T>>,
     prev: Option<T>,
-
-    gained: fn(T) -> ViewEvent,
-    lost: fn(T) -> ViewEvent,
 }
 
 impl<T: Copy + PartialEq> Notify<T> {
@@ -94,52 +91,14 @@ impl<T: Copy + PartialEq> Notify<T> {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Default)]
 struct Focus {
     notify: Notify,
 }
 
-impl Default for Focus {
-    fn default() -> Self {
-        Self::new()
-    }
-}
-
-impl Focus {
-    const fn new() -> Self {
-        Self {
-            notify: Notify {
-                current: Cell::new(None),
-                prev: None,
-                gained: |_| ViewEvent::FocusGained,
-                lost: |_| ViewEvent::FocusLost,
-            },
-        }
-    }
-}
-
-#[derive(Debug)]
+#[derive(Debug, Default)]
 struct Selection {
     notify: Notify,
-}
-
-impl Default for Selection {
-    fn default() -> Self {
-        Self::new()
-    }
-}
-
-impl Selection {
-    const fn new() -> Self {
-        Self {
-            notify: Notify {
-                current: Cell::new(None),
-                prev: None,
-                gained: ViewEvent::SelectionAdded,
-                lost: ViewEvent::SelectionRemoved,
-            },
-        }
-    }
 }
 
 #[derive(Debug, Default)]
@@ -273,11 +232,7 @@ impl InputState {
             key,
             modifiers: self.modifiers,
         };
-
-        let handled = nodes.scoped(id, |node| {
-            self.send_event(nodes, layout, animation, id, node, event)
-        });
-        handled.unwrap_or_default()
+        self.dispatch(nodes, layout, animation, id, event)
     }
 
     fn mouse_moved(
@@ -311,9 +266,7 @@ impl InputState {
                 continue;
             }
 
-            nodes.scoped(id, |node| {
-                self.send_event(nodes, layout, animation, id, node, event);
-            });
+            self.dispatch(nodes, layout, animation, id, event);
         }
     }
 
@@ -330,14 +283,10 @@ impl InputState {
                 break;
             }
 
-            let resp = nodes
-                .scoped(hit, |node| {
-                    let ev = ViewEvent::MouseEntered;
-                    self.send_event(nodes, layout, animation, hit, node, ev)
-                })
-                .unwrap();
-
-            if resp.is_sink() {
+            if self
+                .dispatch(nodes, layout, animation, hit, ViewEvent::MouseEntered)
+                .is_sink()
+            {
                 self.intersections.sunk.push(hit);
                 break;
             }
@@ -354,10 +303,8 @@ impl InputState {
         let mut inactive = vec![];
         for &hit in &self.intersections.entered {
             if !self.intersections.hit.contains(&hit) {
-                nodes.scoped(hit, |node| {
-                    self.send_event(nodes, layout, animation, hit, node, ViewEvent::MouseLeave);
-                    inactive.push(hit);
-                });
+                self.dispatch(nodes, layout, animation, hit, ViewEvent::MouseLeave);
+                inactive.push(hit);
             }
         }
 
@@ -402,17 +349,11 @@ impl InputState {
         };
 
         for &hit in &self.intersections.hit {
-            if !nodes
-                .scoped(hit, |node| {
-                    let new = self.send_event(nodes, layout, animation, hit, node, event);
-                    if new.is_sink() {
-                        resp = new;
-                        return false;
-                    }
-                    true
-                })
-                .unwrap_or(true)
+            if self
+                .dispatch(nodes, layout, animation, hit, event)
+                .is_sink()
             {
+                resp = Handled::Sink;
                 break;
             }
         }
@@ -428,9 +369,7 @@ impl InputState {
 
         for (id, interest) in layout.interest.iter() {
             if interest.is_mouse_outside() && !self.intersections.hit.contains(&id) {
-                nodes.scoped(id, |node| {
-                    self.send_event(nodes, layout, animation, id, node, event);
-                });
+                self.dispatch(nodes, layout, animation, id, event);
             }
         }
 
@@ -464,13 +403,11 @@ impl InputState {
         };
 
         for &hit in &self.intersections.hit {
-            let new = nodes
-                .scoped(hit, |node| {
-                    self.send_event(nodes, layout, animation, hit, node, event)
-                })
-                .unwrap();
-            if new.is_sink() {
-                resp = new;
+            if self
+                .dispatch(nodes, layout, animation, hit, event)
+                .is_sink()
+            {
+                resp = Handled::Sink;
                 break;
             }
         }
@@ -493,9 +430,7 @@ impl InputState {
 
         for (id, interest) in layout.interest.iter() {
             if interest.is_mouse_outside() && !self.intersections.hit.contains(&id) {
-                nodes.scoped(id, |node| {
-                    self.send_event(nodes, layout, animation, id, node, event);
-                });
+                self.dispatch(nodes, layout, animation, id, event);
             }
         }
 
@@ -514,11 +449,8 @@ impl InputState {
             modifiers: self.modifiers,
         };
         for &hit in &self.intersections.hit {
-            if nodes
-                .scoped(hit, |node| {
-                    self.send_event(nodes, layout, animation, hit, node, event)
-                })
-                .unwrap_or_default()
+            if self
+                .dispatch(nodes, layout, animation, hit, event)
                 .is_sink()
             {
                 return Handled::Sink;
@@ -568,10 +500,7 @@ impl InputState {
                 if !interest.is_selection_change() {
                     continue;
                 }
-                let resp = nodes.scoped(id, |node| {
-                    self.send_event(nodes, layout, animation, id, node, ev)
-                });
-                if let Some(Handled::Sink) = resp {
+                if self.dispatch(nodes, layout, animation, id, ev).is_sink() {
                     break;
                 }
             }
@@ -608,9 +537,7 @@ impl InputState {
 
         if let Some(left) = previous {
             let ev = ViewEvent::FocusLost;
-            nodes.scoped(left, |node| {
-                self.send_event(nodes, layout, animation, left, node, ev);
-            });
+            self.dispatch(nodes, layout, animation, left, ev);
         }
 
         self.focus.notify.prev = current;
@@ -674,22 +601,11 @@ impl InputState {
         id: ViewId,
         event: ViewEvent,
     ) -> Handled {
-        // TODO ViewNodes::scoped
-        let Some(node) = nodes.get(id) else {
-            return Handled::Bubble;
-        };
-
-        nodes.begin(id);
-        let ctx = EventCtx {
-            current: id,
-            nodes,
-            layout,
-            animation,
-            input: self,
-        };
-        let resp = node.view.borrow_mut().event(event, ctx);
-        nodes.end(id);
-        resp
+        nodes
+            .scoped(id, |node| {
+                self.send_event(nodes, layout, animation, id, node, event)
+            })
+            .unwrap_or(Handled::Bubble)
     }
 
     pub(crate) fn is_focused(&self, current: ViewId) -> bool {
@@ -710,9 +626,14 @@ pub struct EventCtx<'a> {
 }
 
 impl<'a> EventCtx<'a> {
-    pub fn event(&mut self, id: ViewId, event: ViewEvent) -> Handled {
-        self.input
-            .dispatch(self.nodes, self.layout, self.animation, id, event) // this'll panic with BorrowMutError on the nodes.get(id)
+    pub fn send_event(&mut self, id: ViewId, event: ViewEvent) -> Handled {
+        self.input.dispatch(
+            self.nodes, //
+            self.layout,
+            self.animation,
+            id,
+            event,
+        )
     }
 
     pub fn cursor_pos(&self) -> Pos2 {
