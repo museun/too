@@ -1,9 +1,14 @@
 # too
 
+[![Documentation][docs_badge]][docs]
+[![Crates][crates_badge]][crates]
+
 too -- a different kind of tui library
 
 ## Simple examples
+
 ### Centering some text:
+
 ```rust
 fn main() -> std::io::Result<()> {
     too::run(|ui| {
@@ -11,7 +16,9 @@ fn main() -> std::io::Result<()> {
     })
 }
 ```
+
 ### A pair of buttons to increment and decrement a counter
+
 ```rust
 fn main() -> std::io::Result<()> {
     let mut counter = 0;
@@ -30,7 +37,9 @@ fn main() -> std::io::Result<()> {
     })
 }
 ```
+
 ### Storing state in a struct
+
 ```rust
 use too::view::Ui;
 
@@ -50,7 +59,9 @@ fn main() -> std::io::Result<()> {
     too::run(|ui| app.view(ui))
 }
 ```
+
 ### Storing state seperately from an application
+
 ```rust
 use too::view::Ui;
 
@@ -76,5 +87,9 @@ fn main() -> std::io::Result<()> {
 
 Some pre-made views are provided in: [`too::views`](crate::views)
 
-
 License: MIT OR Apache-2.0
+
+[docs_badge]: https://docs.rs/too/badge.svg
+[crates_badge]: https://img.shields.io/crates/v/too.svg
+[docs]: https://docs.rs/too
+[crates]: https://crates.io/crates/too
