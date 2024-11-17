@@ -1,3 +1,4 @@
+//! Some premade views, with their builders, styles and responses.
 // TODO ensure any builder can be constructed from itself as well
 // TODO sort the shorthands
 

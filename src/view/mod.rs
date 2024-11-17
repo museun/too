@@ -1,3 +1,4 @@
+//! Types for implementing and interacting with Ui elements
 pub mod debug;
 
 mod state;
