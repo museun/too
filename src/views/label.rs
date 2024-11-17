@@ -49,7 +49,7 @@ pub fn label(label: impl Into<Str>) -> Label {
 impl Label {
     pub fn new(label: impl Into<Str>) -> Self {
         Label {
-            label: label.into().0,
+            label: label.into().into_inner(),
             class: StyleKind::Deferred(LabelStyle::default),
             main: Align::Min,
             attribute: None,

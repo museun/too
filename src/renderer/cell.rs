@@ -290,7 +290,7 @@ impl Grapheme {
 
     pub fn new(data: impl Into<Str>) -> Self {
         Self {
-            cluster: data.into().0,
+            cluster: data.into().into_inner(),
             fg: Color::Reset,
             bg: Color::Reuse,
             attribute: Attribute::RESET,

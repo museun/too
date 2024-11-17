@@ -113,7 +113,7 @@ pub struct Button {
 impl Button {
     pub fn new(label: impl Into<Str>) -> Self {
         Button {
-            label: label.into().0,
+            label: label.into().into_inner(),
             margin: Margin::symmetric(1, 0),
             state: ButtonState::None,
             disabled: false,

@@ -63,7 +63,7 @@ impl BorderView {
     }
 
     pub fn title(mut self, title: impl Into<Str>) -> Self {
-        self.title = Some(title.into().0);
+        self.title = Some(title.into().into_inner());
         self
     }
 
@@ -201,7 +201,7 @@ pub fn border(border: Border) -> BorderView {
 pub fn frame(border: Border, title: impl Into<Str>) -> BorderView {
     BorderView {
         border,
-        title: Some(title.into().0),
+        title: Some(title.into().into_inner()),
         align: Align::Min,
         class: StyleKind::deferred(BorderStyle::default),
     }

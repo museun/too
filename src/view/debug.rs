@@ -135,7 +135,7 @@ fn render_pretty_tree(node: &DebugNode) -> String {
         fn new(s: impl Into<Str>, align: Align) -> Self {
             Self::Label {
                 align,
-                text: s.into().0,
+                text: s.into().into_inner(),
             }
         }
 
