@@ -1,5 +1,12 @@
 //! too -- a different kind of tui library
 //!
+//! # Feature flags
+//! | Flag | Description | Default |
+//! | --- | --- | -- |
+//! |`terminal` | enable the terminal backend | `true` |
+//! |`sync` | enable `Send`+`Sync` wrappers | `false` |
+//! |`profile` | enable [`profiling`](https://docs.rs/profiling/1.0.16/profiling/index.html) support | `false` |
+//!
 //! # Simple examples
 //! ## Centering some text:
 //! ```rust,no_run
