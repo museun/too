@@ -2,6 +2,7 @@ pub mod debug;
 pub mod helpers;
 
 mod state;
+pub(crate) use state::Debug;
 pub use state::{debug, DebugMode, State};
 
 mod response;

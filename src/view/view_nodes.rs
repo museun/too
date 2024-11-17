@@ -1,17 +1,14 @@
-use std::{
-    any::TypeId,
-    cell::{Ref, RefCell, RefMut},
-    collections::VecDeque,
-};
+use std::{any::TypeId, collections::VecDeque};
 
 use slotmap::SlotMap;
 
 use super::{internal_views::Root, Erased, Ui, View, ViewId};
+use crate::lock::{Lock, Ref, RefMapped, RefMut, RefMutMapped};
 
 pub struct ViewNodes {
-    nodes: RefCell<SlotMap<ViewId, ViewNode>>,
-    stack: RefCell<Vec<ViewId>>,
-    removed: RefCell<Vec<ViewId>>,
+    nodes: Lock<SlotMap<ViewId, ViewNode>>,
+    stack: Lock<Vec<ViewId>>,
+    removed: Lock<Vec<ViewId>>,
     pub(super) root: ViewId,
 }
 
@@ -27,14 +24,14 @@ impl ViewNodes {
     pub(super) fn new() -> Self {
         let mut nodes = SlotMap::with_key();
         let root = nodes.insert(ViewNode {
-            view: RefCell::new(Slot::new(Root)),
+            view: Lock::new(Slot::new(Root)),
             ..ViewNode::default()
         });
 
         Self {
-            nodes: RefCell::new(nodes),
-            stack: RefCell::default(),
-            removed: RefCell::default(),
+            nodes: Lock::new(nodes),
+            stack: Lock::default(),
+            removed: Lock::default(),
             root,
         }
     }
@@ -122,7 +119,7 @@ impl ViewNodes {
 
         let id = self.nodes.borrow_mut().insert(ViewNode {
             parent: Some(parent_id),
-            view: RefCell::new(Slot::new(view)),
+            view: Lock::new(Slot::new(view)),
             ..ViewNode::default()
         });
 
@@ -208,14 +205,14 @@ impl ViewNodes {
         self.root
     }
 
-    pub fn get(&self, id: ViewId) -> Option<Ref<'_, ViewNode>> {
+    pub fn get(&self, id: ViewId) -> Option<RefMapped<'_, ViewNode>> {
         let nodes = self.nodes.borrow();
-        Ref::filter_map(nodes, |nodes| nodes.get(id)).ok()
+        Ref::filter_map(nodes, |nodes| nodes.get(id))
     }
 
-    pub fn get_mut(&self, id: ViewId) -> Option<RefMut<'_, ViewNode>> {
+    pub fn get_mut(&self, id: ViewId) -> Option<RefMutMapped<'_, ViewNode>> {
         let nodes = self.nodes.borrow_mut();
-        RefMut::filter_map(nodes, |nodes| nodes.get_mut(id)).ok()
+        RefMut::filter_map(nodes, |nodes| nodes.get_mut(id))
     }
 
     // TODO this should push the id to the stack and pop it off
@@ -247,7 +244,7 @@ impl ViewNodes {
             .unwrap_or(self.root)
     }
 
-    pub fn get_current(&self) -> Ref<'_, ViewNode> {
+    pub fn get_current(&self) -> RefMapped<'_, ViewNode> {
         let index = self.current();
         let nodes = self.nodes.borrow();
         Ref::map(nodes, |nodes| &nodes[index])
@@ -258,7 +255,7 @@ impl ViewNodes {
 pub struct ViewNode {
     pub parent: Option<ViewId>,
     pub children: Vec<ViewId>,
-    pub(in crate::view) view: RefCell<Slot>,
+    pub(in crate::view) view: Lock<Slot>,
     pub(in crate::view) next: usize,
 }
 
@@ -272,6 +269,7 @@ impl std::fmt::Debug for ViewNode {
     }
 }
 
+// this is the only thing that has to be maybe send+sync
 #[derive(Default)]
 pub(in crate::view) enum Slot {
     #[default]

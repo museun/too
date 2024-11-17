@@ -1,14 +1,11 @@
 use core::f32;
-use std::{
-    cell::{Ref, RefCell},
-    rc::Rc,
-};
 
 use unicode_segmentation::UnicodeSegmentation as _;
 use unicode_width::UnicodeWidthStr as _;
 
 use crate::{
     layout::Axis,
+    lock::{Lock, Ref, RefMapped, Shared},
     math::{pos2, Size, Space},
     view::{
         Builder, EventCtx, Handled, Interest, Layout, Palette, Render, StyleKind, Ui, View,
@@ -90,7 +87,7 @@ impl<'v> Builder<'v> for TextInput<'v> {
 
 #[derive(Debug, Default)]
 pub struct TextInputResponse {
-    state: Rc<RefCell<Inner>>,
+    state: Shared<Lock<Inner>>,
     submitted: Option<String>,
 }
 
@@ -103,7 +100,7 @@ impl TextInputResponse {
         self.state.borrow().cursor
     }
 
-    pub fn data(&self) -> Ref<'_, str> {
+    pub fn data(&self) -> RefMapped<'_, str> {
         let g = self.state.borrow();
         Ref::map(g, |i| &*i.buf)
     }
@@ -116,9 +113,9 @@ impl TextInputResponse {
         self.submitted.take().filter(|s| !s.is_empty())
     }
 
-    pub fn selection(&self) -> Option<Ref<'_, str>> {
+    pub fn selection(&self) -> Option<RefMapped<'_, str>> {
         let g = self.state.borrow();
-        Ref::filter_map(g, |i| i.selection_buffer()).ok()
+        Ref::filter_map(g, |i| i.selection_buffer())
     }
 
     pub fn set_text(&self, data: impl ToString) {
@@ -153,7 +150,7 @@ impl View for InputView {
 
         Self {
             state: InputState {
-                inner: Rc::new(RefCell::new(input)),
+                inner: Shared::new(Lock::new(input)),
             },
             enabled: args.enabled,
             class: args.class,
@@ -165,7 +162,7 @@ impl View for InputView {
         self.class = args.class;
 
         let mut resp = TextInputResponse {
-            state: Rc::clone(&self.state.inner),
+            state: Shared::clone(&self.state.inner),
             submitted: None,
         };
 
@@ -449,7 +446,7 @@ impl InputView {
 
 #[derive(Debug, Default)]
 struct InputState {
-    inner: Rc<RefCell<Inner>>,
+    inner: Shared<Lock<Inner>>,
 }
 
 #[derive(Debug, Default)]

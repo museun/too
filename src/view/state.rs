@@ -1,13 +1,11 @@
-use std::{
-    cell::{Ref, RefCell},
-    collections::VecDeque,
-};
+use std::collections::VecDeque;
 
 use compact_str::{CompactString, ToCompactString};
 
 use crate::{
     backend::Event,
-    layout::{Anchor2, LinearLayout},
+    layout::{Anchor2, LinearAllocator, LinearLayout},
+    lock::{Lock, Ref},
     math::{Rect, Vec2},
     rasterizer::Rasterizer,
     Animations, Str, TextShape,
@@ -24,7 +22,7 @@ pub struct State {
     pub(in crate::view) render: RenderNodes,
     pub(in crate::view) input: InputState,
     pub(in crate::view) animations: Animations,
-    pub(in crate::view) palette: RefCell<Palette>,
+    pub(in crate::view) palette: Lock<Palette>,
     pub(in crate::view) frame_count: u64,
     pub(in crate::view) dt: f32,
     pub(in crate::view) size_changed: Option<Vec2>,
@@ -48,23 +46,11 @@ impl State {
             render: RenderNodes::new(),
             input: InputState::default(),
             animations,
-            palette: RefCell::new(palette),
+            palette: Lock::new(palette),
             frame_count: 0,
             dt: 1.0,
             size_changed: None,
         }
-    }
-
-    pub fn debug(&self, msg: impl Into<Str>) {
-        if matches!(DEBUG.with(|c| c.mode.get()), DebugMode::Off) {
-            return;
-        }
-        let msg = msg.into();
-        let msg = msg.trim();
-        if msg.is_empty() {
-            return;
-        }
-        debug(msg);
     }
 
     pub fn set_palette(&self, palette: Palette) {
@@ -73,14 +59,6 @@ impl State {
 
     pub fn palette(&self) -> Ref<'_, Palette> {
         self.palette.borrow()
-    }
-
-    pub fn set_debug_mode(&self, mode: DebugMode) {
-        DEBUG.with(|c| c.mode.set(mode))
-    }
-
-    pub fn set_debug_anchor(&self, anchor: Anchor2) {
-        DEBUG.with(|c| c.anchor.set(anchor))
     }
 
     pub fn root(&self) -> ViewId {
@@ -98,7 +76,7 @@ impl State {
                 self.size_changed.take();
             }
 
-            DEBUG.with(|c| c.queue.borrow_mut().resize(size.y as usize))
+            Debug::resize(size.y as usize);
         }
 
         // TODO debounce 'event'
@@ -174,7 +152,7 @@ impl State {
 
     #[cfg_attr(feature = "profile", profiling::function)]
     fn render_debug(&self, rect: Rect, rasterizer: &mut impl Rasterizer) {
-        DEBUG.with(|c| {
+        Debug::with(|c| {
             let mut debug = c.queue.borrow_mut();
             if debug.is_empty() {
                 return;
@@ -182,32 +160,22 @@ impl State {
 
             let mut layout = LinearLayout::vertical()
                 .wrap(false)
-                .anchor(c.anchor.get())
+                .anchor(*c.anchor.borrow())
                 .layout(rect);
 
-            match c.mode.get() {
+            match *c.mode.borrow() {
                 DebugMode::PerFrame => {
                     for msg in debug.drain() {
-                        let text = TextShape::new(&msg).fg("#F00").bg("#000");
-                        #[allow(deprecated)]
-                        let size = Vec2::from(crate::measure_text(&text.label));
-                        let Some(rect) = layout.allocate(size) else {
+                        if !Debug::render(rasterizer, &mut layout, &msg) {
                             break;
-                        };
-                        rasterizer.set_rect(rect);
-                        rasterizer.text(text);
+                        }
                     }
                 }
                 DebugMode::Rolling => {
                     for msg in debug.iter() {
-                        let text = TextShape::new(msg).fg("#F00").bg("#000");
-                        #[allow(deprecated)]
-                        let size = Vec2::from(crate::measure_text(&text.label));
-                        let Some(rect) = layout.allocate(size) else {
+                        if !Debug::render(rasterizer, &mut layout, msg) {
                             break;
-                        };
-                        rasterizer.set_rect(rect);
-                        rasterizer.text(text);
+                        }
                     }
                 }
                 DebugMode::Off => {}
@@ -244,39 +212,85 @@ pub enum DebugMode {
 }
 
 #[derive(Debug)]
-pub(in crate::view) struct Debug {
-    queue: RefCell<Queue<CompactString>>,
-    pub(in crate::view) mode: std::cell::Cell<DebugMode>,
-    pub(in crate::view) anchor: std::cell::Cell<Anchor2>,
+pub(crate) struct Debug {
+    // TODO this should all be in the same `Lock`
+    queue: Lock<Queue<CompactString>>,
+    mode: Lock<DebugMode>,
+    anchor: Lock<Anchor2>,
 }
 
+// TODO this should be conditionally in a LazyLock or a ThreadLocalKey
+#[cfg(not(feature = "sync"))]
 thread_local! {
     static DEBUG: Debug = const { Debug::new() }
 }
 
+#[cfg(feature = "sync")]
+static DEBUG: std::sync::LazyLock<Debug> = std::sync::LazyLock::new(Debug::new);
+
 pub fn debug(msg: impl Into<Str>) {
-    DEBUG.with(|c| c.push(msg.into().0))
+    let msg = msg.into();
+    let msg = msg.trim();
+    if msg.is_empty() {
+        return;
+    }
+    Debug::with(|c| c.push(msg));
 }
 
 impl Debug {
     const fn new() -> Self {
         Self {
-            queue: RefCell::new(Queue::new(25)),
-            mode: std::cell::Cell::new(DebugMode::Rolling),
-            anchor: std::cell::Cell::new(Anchor2::RIGHT_TOP),
+            queue: Lock::new(Queue::new(25)),
+            mode: Lock::new(DebugMode::Rolling),
+            anchor: Lock::new(Anchor2::RIGHT_TOP),
         }
     }
 
+    pub(in crate::view) fn with<R: 'static>(f: impl FnOnce(&Debug) -> R) -> R {
+        #[cfg(not(feature = "sync"))]
+        return DEBUG.with(|debug| f(debug));
+        #[cfg(feature = "sync")]
+        return f(&DEBUG);
+    }
+
     pub(in crate::view) fn for_each(mut f: impl FnMut(&str)) {
-        DEBUG.with(|c| {
+        Self::with(|c| {
             for msg in c.queue.borrow().iter() {
                 f(msg);
             }
-        })
+        });
+    }
+
+    pub fn set_debug_mode(debug_mode: DebugMode) {
+        Self::with(|c| *c.mode.borrow_mut() = debug_mode);
+    }
+
+    pub fn set_debug_anchor(anchor: Anchor2) {
+        Self::with(|c| *c.anchor.borrow_mut() = anchor);
+    }
+
+    pub fn is_enabled() -> bool {
+        !matches!(Self::with(|c| *c.mode.borrow()), DebugMode::Off)
+    }
+
+    pub(in crate::view) fn resize(size: usize) {
+        Self::with(|c| c.queue.borrow_mut().resize(size));
+    }
+
+    fn render(rasterizer: &mut dyn Rasterizer, layout: &mut LinearAllocator, msg: &str) -> bool {
+        let text = TextShape::new(msg).fg("#F00").bg("#000");
+        #[allow(deprecated)]
+        let size = Vec2::from(crate::measure_text(&text.label));
+        let Some(rect) = layout.allocate(size) else {
+            return false;
+        };
+        rasterizer.set_rect(rect);
+        rasterizer.text(text);
+        true
     }
 
     fn push(&self, msg: impl ToCompactString) {
-        if matches!(self.mode.get(), DebugMode::Off) {
+        if matches!(*self.mode.borrow(), DebugMode::Off) {
             return;
         }
         let msg = msg.to_compact_string();
