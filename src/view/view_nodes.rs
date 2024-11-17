@@ -6,10 +6,7 @@ use std::{
 
 use slotmap::SlotMap;
 
-use super::{
-    internal_views::{self, Root},
-    Erased, Ui, View, ViewId,
-};
+use super::{internal_views::Root, Erased, Ui, View, ViewId};
 
 pub struct ViewNodes {
     nodes: RefCell<SlotMap<ViewId, ViewNode>>,

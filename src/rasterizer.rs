@@ -121,7 +121,7 @@ impl<'a> From<&'a str> for TextShape<'a> {
 
 impl<'a> From<&'a Str> for TextShape<'a> {
     fn from(value: &'a Str) -> Self {
-        Self::new(&*value)
+        Self::new(value)
     }
 }
 
