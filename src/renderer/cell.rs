@@ -1,7 +1,7 @@
 use compact_str::{CompactString, ToCompactString};
 use unicode_width::{UnicodeWidthChar, UnicodeWidthStr};
 
-use crate::{Rgba, Str};
+use crate::{renderer::Rgba, Str};
 
 #[derive(Clone, PartialEq, Eq, Debug)]
 pub enum Cell {

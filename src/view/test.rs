@@ -1,18 +1,19 @@
 use std::{borrow::Cow, ops::RangeInclusive};
 
 use crate::{
+    animation::Animations,
     backend::Event,
+    backend::{Modifiers, MouseButton},
     layout::Axis,
     math::{vec2, Pos2, Rect, Vec2},
-    rasterizer::{Rasterizer, Shape, TextShape},
+    renderer::{Cell, Grapheme, Pixel, Rasterizer, Rgba, Shape, TextShape},
     view::{Palette, State, ViewId},
-    Animations, Cell, Grapheme, Modifiers, MouseButton, Pixel, Rgba,
 };
 
 use super::Ui;
 
 #[derive(Default)]
-pub(crate) struct DebugRasterizer {
+pub struct DebugRasterizer {
     current: ViewId,
     paint_list: Vec<(ViewId, Shape)>,
     rect: Rect,

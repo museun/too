@@ -1,6 +1,6 @@
 use crate::{
+    backend::{Key, Keybind, Modifiers, MouseButton},
     math::{Pos2, Vec2},
-    Key, Keybind, Modifiers, MouseButton,
 };
 
 /// An event produced by the user's interaction

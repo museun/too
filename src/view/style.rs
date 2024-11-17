@@ -1,4 +1,4 @@
-use crate::Rgba;
+use crate::renderer::Rgba;
 
 #[derive(Copy, Clone, Debug)]
 pub enum StyleKind<Class, Style> {

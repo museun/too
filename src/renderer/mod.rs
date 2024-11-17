@@ -5,7 +5,7 @@ pub use surface::Surface;
 mod cell;
 pub use cell::{Attribute, Cell, Color, Grapheme, Pixel, Underline};
 
-pub mod rgba;
+mod rgba;
 pub use rgba::Rgba;
 
 mod gradient;
@@ -14,7 +14,10 @@ pub use gradient::Gradient;
 mod border;
 pub use border::Border;
 
-use crate::math::{self};
+mod rasterizer;
+pub use rasterizer::{Rasterizer, Shape, TextShape};
+
+use crate::math;
 
 /// Abstraction for rendering to a surface.
 pub trait Renderer {

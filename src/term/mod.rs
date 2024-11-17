@@ -13,9 +13,9 @@ use crossterm::{
 
 use crate::{
     backend::{Backend, Command, CurrentScreen, Event, EventReader},
+    backend::{Key, Keybind, Modifiers, MouseButton},
     math::{pos2, vec2, Vec2},
     renderer::{Renderer as _, TermRenderer},
-    Key, Keybind, Modifiers, MouseButton,
 };
 
 /// Configuration for [`Term`]
@@ -103,7 +103,7 @@ impl Default for Config {
     }
 }
 
-pub struct Output {
+struct Output {
     #[cfg(windows)]
     mode: u32,
     out: BufWriter<File>,

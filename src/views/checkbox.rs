@@ -1,6 +1,7 @@
 use crate::{
+    renderer::Rgba,
     view::{Adhoc, Palette, Response, StyleKind, Ui},
-    Rgba, Str,
+    Str,
 };
 
 use super::label::LabelStyle;

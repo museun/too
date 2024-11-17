@@ -1,6 +1,6 @@
 use crate::{
+    renderer::Rgba,
     view::{Builder, Render, View},
-    Rgba,
 };
 
 #[derive(Copy, Clone)]

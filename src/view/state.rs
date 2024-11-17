@@ -3,19 +3,25 @@ use std::collections::VecDeque;
 use compact_str::{CompactString, ToCompactString};
 
 use crate::{
+    animation::Animations,
     backend::Event,
+    helpers::Queue,
     layout::{Anchor2, LinearAllocator, LinearLayout},
     lock::{Lock, Ref},
     math::{Rect, Vec2},
-    rasterizer::Rasterizer,
-    Animations, Str, TextShape,
+    renderer::{Rasterizer, TextShape},
+    Str,
 };
+
+#[allow(deprecated)]
+use super::measure_text;
 
 use super::{
-    helpers::Queue, input::InputState, render::RenderNodes, style::Palette, ui::Ui, Layer,
-    LayoutNode, LayoutNodes, ViewId, ViewNodes,
+    input::InputState, render::RenderNodes, style::Palette, ui::Ui, Layer, LayoutNode, LayoutNodes,
+    ViewId, ViewNodes,
 };
 
+// TODO what of this should actually be public?
 pub struct State {
     pub(in crate::view) nodes: ViewNodes,
     pub(in crate::view) layout: LayoutNodes,
@@ -63,10 +69,6 @@ impl State {
 
     pub fn root(&self) -> ViewId {
         self.nodes.root()
-    }
-
-    pub fn current(&self) -> ViewId {
-        self.nodes.current()
     }
 
     #[cfg_attr(feature = "profile", profiling::function)]
@@ -212,7 +214,7 @@ pub enum DebugMode {
 }
 
 #[derive(Debug)]
-pub(crate) struct Debug {
+pub struct Debug {
     // TODO this should all be in the same `Lock`
     queue: Lock<Queue<CompactString>>,
     mode: Lock<DebugMode>,
@@ -253,7 +255,7 @@ impl Debug {
         return f(&DEBUG);
     }
 
-    pub(in crate::view) fn for_each(mut f: impl FnMut(&str)) {
+    pub fn for_each(mut f: impl FnMut(&str)) {
         Self::with(|c| {
             for msg in c.queue.borrow().iter() {
                 f(msg);
@@ -273,14 +275,14 @@ impl Debug {
         !matches!(Self::with(|c| *c.mode.borrow()), DebugMode::Off)
     }
 
-    pub(in crate::view) fn resize(size: usize) {
+    pub fn resize(size: usize) {
         Self::with(|c| c.queue.borrow_mut().resize(size));
     }
 
     fn render(rasterizer: &mut dyn Rasterizer, layout: &mut LinearAllocator, msg: &str) -> bool {
         let text = TextShape::new(msg).fg("#F00").bg("#000");
         #[allow(deprecated)]
-        let size = Vec2::from(crate::measure_text(&text.label));
+        let size = Vec2::from(measure_text(&text.label));
         let Some(rect) = layout.allocate(size) else {
             return false;
         };

@@ -1,6 +1,6 @@
 use crate::{
+    backend::{Key, Keybind, Modifiers},
     view::{Builder, EventCtx, Handled, Interest, Ui, View, ViewEvent},
-    Key, Keybind, Modifiers,
 };
 
 #[derive(Debug, Default)]

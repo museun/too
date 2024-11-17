@@ -1,7 +1,7 @@
 use crate::{
     math::{Size, Space},
+    renderer::Rgba,
     view::{Builder, Layout, Render, View},
-    Rgba,
 };
 
 #[derive(Copy, Clone, Debug, PartialEq)]

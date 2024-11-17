@@ -4,11 +4,11 @@ use std::ops::RangeInclusive;
 use crate::{
     layout::Axis,
     math::{denormalize, inverse_lerp, lerp, normalize, Pos2, Size, Space},
+    renderer::{Pixel, Rgba},
     view::{
         Builder, Elements, EventCtx, Handled, Interest, Layout, Palette, Render, StyleKind, Ui,
         View, ViewEvent,
     },
-    Pixel, Rgba,
 };
 
 pub type SliderClass = fn(&Palette, Axis) -> SliderStyle;

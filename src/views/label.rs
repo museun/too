@@ -4,9 +4,9 @@ use unicode_width::UnicodeWidthStr as _;
 use crate::{
     layout::Align,
     math::{Size, Space},
-    rasterizer::TextShape,
+    renderer::{Attribute, Rgba, TextShape},
     view::{Builder, Layout, Palette, Render, StyleKind, View},
-    Attribute, Rgba, Str,
+    Str,
 };
 
 #[derive(Copy, Clone, Debug, PartialEq)]

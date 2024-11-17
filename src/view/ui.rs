@@ -1,9 +1,11 @@
 use crate::{
+    backend::Keybind,
     layout::{Align2, Flex},
     lock::{Lock, Ref, RefMapped},
     math::{Margin, Pos2, Rect, Size, Vec2},
+    renderer::{Border, Rgba},
     views::{self, Constrain},
-    Border, Keybind, Rgba, Str,
+    Str,
 };
 
 use super::{

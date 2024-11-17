@@ -1,6 +1,6 @@
 use std::fmt::Write;
 
-use crate::{Key, Modifiers};
+use crate::backend::{Key, Modifiers};
 
 /// A keybind is a combination of a [`Key`] and some [`Modifiers`]
 #[derive(Copy, Clone, PartialEq, Eq, Hash)]

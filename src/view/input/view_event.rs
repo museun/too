@@ -1,7 +1,7 @@
 use crate::{
+    backend::{Key, Modifiers, MouseButton},
     math::{Pos2, Vec2},
     view::ViewId,
-    Key, Modifiers, MouseButton,
 };
 
 #[derive(Copy, Clone, Debug, PartialEq)]

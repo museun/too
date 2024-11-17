@@ -1,5 +1,7 @@
 use std::collections::VecDeque;
 
+pub use crate::hasher::{BuildIntHasher, DefaultIntHasher, IntHasher};
+
 pub fn short_name(name: &str) -> String {
     const fn is_special(c: char) -> bool {
         matches!(c, ' ' | '<' | '>' | '(' | ')' | '[' | ']' | ',' | ';')

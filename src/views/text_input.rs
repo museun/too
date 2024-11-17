@@ -4,14 +4,15 @@ use unicode_segmentation::UnicodeSegmentation as _;
 use unicode_width::UnicodeWidthStr as _;
 
 use crate::{
+    backend::Key,
     layout::Axis,
     lock::{Lock, Ref, RefMapped, Shared},
     math::{pos2, Size, Space},
+    renderer::{Attribute, Grapheme, Pixel, Rgba},
     view::{
         Builder, EventCtx, Handled, Interest, Layout, Palette, Render, StyleKind, Ui, View,
         ViewEvent,
     },
-    Attribute, Grapheme, Key, Pixel, Rgba,
 };
 
 pub type TextInputClass = fn(&Palette, bool) -> TextInputStyle;

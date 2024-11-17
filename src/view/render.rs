@@ -3,11 +3,10 @@ use std::{collections::VecDeque, ops::RangeInclusive};
 use unicode_segmentation::UnicodeSegmentation as _;
 
 use crate::{
+    animation::Animations,
     layout::Axis,
     math::{pos2, Pos2, Rect, Vec2},
-    rasterizer::{Rasterizer, TextShape},
-    renderer::Surface,
-    Animations, Cell, Grapheme, Pixel, Rgba,
+    renderer::{Cell, Grapheme, Pixel, Rasterizer, Rgba, Surface, TextShape},
 };
 
 use super::{input::InputState, Layer, LayoutNodes, Palette, ViewId, ViewNodes};

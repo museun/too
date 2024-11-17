@@ -67,7 +67,7 @@ pub use text_input::{text_input, TextInput, TextInputClass, TextInputResponse, T
 mod todo_value;
 pub use todo_value::{todo_value, TodoClass, TodoStyle, TodoValue};
 
-pub mod toggle;
+mod toggle;
 pub use toggle::{toggle, Toggle};
 
 mod toggle_switch;

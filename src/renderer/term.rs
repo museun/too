@@ -1,7 +1,10 @@
 use std::io::Write;
 
 use super::Renderer;
-use crate::{math::Pos2, Attribute, Rgba};
+use crate::{
+    math::Pos2,
+    renderer::{Attribute, Rgba},
+};
 
 /// Renders to a `Backend` using ANSI escape sequences
 pub struct TermRenderer<W: Write> {

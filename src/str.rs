@@ -6,7 +6,7 @@ use compact_str::{CompactString, ToCompactString};
 ///
 /// You would normally not need to name this type, anything that implements [`ToCompactString`](https://docs.rs/compact_str/0.8.0/compact_str/trait.ToCompactString.html) can be turned into this type.
 ///
-/// You can use [`format_str!`] like [`std::format!`] to make this type
+/// You can use [`format_str!`][crate::format_str] like [`std::format!`] to make this type
 /// - or `Str::from(&str)`
 /// - or `Str::from(String)`
 /// - or `Str::from(usize)`

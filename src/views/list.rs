@@ -1,13 +1,14 @@
 use core::f32;
 
 use crate::{
+    backend::Key,
     layout::{Axis, CrossAlign, Justify},
     math::{remap, vec2, Pos2, Rect, Size, Space, Vec2},
+    renderer::{Pixel, Rgba},
     view::{
         Builder, Elements, EventCtx, Handled, Interest, Layout, Palette, Render, StyleKind, Ui,
         View, ViewEvent,
     },
-    Key, Pixel, Rgba,
 };
 
 #[derive(Debug, Default)]
@@ -54,7 +55,6 @@ struct ScrollState {
     scrollable: bool,
     pos: usize,
     knob_held: bool,
-    stick_to_bottom: bool,
 }
 
 pub type ScrollClass = fn(&Palette, Axis) -> ScrollStyle;
@@ -546,7 +546,6 @@ pub const fn list() -> List {
             scrollable: false,
             pos: 0,
             knob_held: false,
-            stick_to_bottom: false,
         },
         class: StyleKind::deferred(ScrollStyle::default),
     }

@@ -87,7 +87,7 @@ pub trait View: Sized + 'static + std::fmt::Debug + ViewMarker {
         let node = ctx.nodes.get_current();
         let mut resp = Handled::Bubble;
         for &child in &node.children {
-            let new = ctx.event(child, event);
+            let new = ctx.send_event(child, event);
             if new.is_sink() {
                 return new;
             }

@@ -2,7 +2,10 @@ use unicode_segmentation::UnicodeSegmentation;
 use unicode_width::UnicodeWidthStr;
 
 use super::Renderer;
-use crate::{math::Pos2, Attribute, Rgba};
+use crate::{
+    math::Pos2,
+    renderer::{Attribute, Rgba},
+};
 
 /// A renderer that explains the actions a render phase would take
 #[derive(Default)]

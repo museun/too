@@ -3,8 +3,8 @@ use std::ops::RangeInclusive;
 use crate::{
     layout::Axis,
     math::{lerp, normalize, Pos2, Size, Space},
+    renderer::{Pixel, Rgba},
     view::{Builder, Elements, Layout, Palette, Render, StyleKind, View},
-    Pixel, Rgba,
 };
 
 pub type ProgressClass = fn(&Palette, Axis) -> ProgressStyle;

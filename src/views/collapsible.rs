@@ -1,6 +1,6 @@
 use crate::{
+    renderer::Border,
     view::{Adhoc, Palette, Response, StyleKind, Ui},
-    Border,
 };
 
 use super::border::BorderStyle;

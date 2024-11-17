@@ -1,6 +1,6 @@
 use crate::{
     math::{vec3, Vec3},
-    Rgba,
+    renderer::Rgba,
 };
 
 /// A gradient type

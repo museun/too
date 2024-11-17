@@ -74,6 +74,7 @@ impl Surface {
     }
 
     #[cfg_attr(feature = "profile", profiling::function)]
+    #[allow(dead_code)]
     fn set_line(&mut self, line: i32, start: i32, end: i32, pixel: Pixel) {
         let y = Self::pos_to_index(pos2(0, line), self.size.x);
         let (start, end) = (start as usize + y, end as usize + y);

@@ -6,7 +6,9 @@ use easing::{linear, round_trip, Easing};
 pub mod easing;
 
 mod manager;
-pub use manager::{AnimationMut, AnimationRef, Animations};
+#[doc(inline)]
+pub use manager::Animations;
+pub use manager::{AnimationMut, AnimationRef};
 
 struct Keyframe {
     easing: Easing,

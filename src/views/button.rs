@@ -1,14 +1,17 @@
 use compact_str::CompactString;
 
+#[allow(deprecated)]
+use crate::view::measure_text;
+
 use crate::{
     layout::Align,
     math::{Margin, Size, Space},
-    rasterizer::TextShape,
+    renderer::{Rgba, TextShape},
     view::{
         Builder, EventCtx, Handled, Interest, Layout, Palette, Render, StyleKind, Ui, View,
         ViewEvent,
     },
-    Rgba, Str,
+    Str,
 };
 
 #[derive(Copy, Clone, Default, Debug, PartialEq)]
@@ -217,7 +220,7 @@ impl View for Button {
     fn layout(&mut self, _layout: Layout, space: Space) -> Size {
         // FIXME this should use this function
         #[allow(deprecated)]
-        space.fit(crate::measure_text(&self.label) + self.margin)
+        space.fit(measure_text(&self.label) + self.margin)
     }
 
     fn draw(&mut self, mut render: Render) {

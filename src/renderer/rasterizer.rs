@@ -3,8 +3,9 @@ use std::{borrow::Cow, ops::RangeInclusive};
 use crate::{
     layout::Axis,
     math::{pos2, Pos2, Rect},
+    renderer::{Attribute, Cell, Color, Grapheme, Pixel, Rgba},
     view::ViewId,
-    Attribute, Cell, Color, Grapheme, Pixel, Rgba, Str,
+    Str,
 };
 
 #[derive(Clone, PartialEq)]

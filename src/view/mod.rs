@@ -1,9 +1,7 @@
 pub mod debug;
-pub mod helpers;
 
 mod state;
-pub(crate) use state::Debug;
-pub use state::{debug, DebugMode, State};
+pub use state::{debug, Debug, DebugMode, State};
 
 mod response;
 pub use response::Response;
@@ -42,3 +40,12 @@ slotmap::new_key_type! {
 }
 
 pub mod test;
+
+// TODO get rid of this
+use crate::math::Size;
+#[inline(always)]
+#[deprecated(note = "don't use this, use Text when its implemented")]
+pub fn measure_text(data: &str) -> Size {
+    use unicode_width::UnicodeWidthStr as _;
+    Size::new(data.width() as f32, 1.0)
+}

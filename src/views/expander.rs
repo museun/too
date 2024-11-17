@@ -1,8 +1,8 @@
 use crate::{
     layout::{Axis, Flex},
     math::{Size, Space},
+    renderer::{Pixel, Rgba},
     view::{Builder, Elements, Layout, Palette, Render, StyleKind, View},
-    Pixel, Rgba,
 };
 
 #[derive(Debug, Copy, Clone)]

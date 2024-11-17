@@ -4,11 +4,11 @@ use crate::{
     animation::{easing, Animation},
     layout::Axis,
     math::{lerp, Pos2, Size, Space},
+    renderer::{Pixel, Rgba},
     view::{
         Builder, Elements, EventCtx, Handled, Interest, Layout, Palette, Render, StyleKind, Ui,
         View, ViewEvent,
     },
-    Pixel, Rgba,
 };
 
 #[derive(Debug, Copy, Clone)]

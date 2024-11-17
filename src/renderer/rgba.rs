@@ -453,11 +453,3 @@ impl Hsva {
         .to_srgb()
     }
 }
-
-pub fn motion_blur(base: Rgba, steps: usize, factor: f32) -> impl Iterator<Item = Rgba> {
-    let Hsva(h, s, v, a) = base.to_hsva();
-    (0..steps).map(move |i| {
-        let t = (1.0 - factor) * (i as f32 / steps as f32);
-        Hsva(h, s, v * t, a * (1.0 - t)).to_srgb()
-    })
-}

@@ -2,11 +2,15 @@ use compact_str::CompactString;
 use unicode_segmentation::UnicodeSegmentation as _;
 use unicode_width::UnicodeWidthStr as _;
 
+#[allow(deprecated)]
+use crate::view::measure_text;
+
 use crate::{
     layout::Align,
     math::{pos2, Size, Space},
+    renderer::{Border, Grapheme, Pixel, Rgba},
     view::{Builder, Interest, Layout, Palette, Render, StyleKind, View},
-    Border, Grapheme, Pixel, Rgba, Str,
+    Str,
 };
 
 pub type BorderClass = fn(&Palette, bool, bool) -> BorderStyle;
@@ -120,7 +124,7 @@ impl View for BorderView {
         let title_size = self
             .title
             .as_deref()
-            .map(crate::measure_text)
+            .map(measure_text)
             .unwrap_or(Size::ZERO);
 
         let max = size.max(title_size) + Size::new(1.0, 0.0);
@@ -163,7 +167,7 @@ impl View for BorderView {
         // weird intersperse border-behind-title things
         if let Some(title) = &self.title {
             #[allow(deprecated)]
-            let tw = crate::measure_text(title);
+            let tw = measure_text(title);
 
             let w = w as f32;
             let x = match self.align {

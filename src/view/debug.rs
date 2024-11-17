@@ -4,15 +4,16 @@ use unicode_width::UnicodeWidthStr;
 
 use crate::{
     backend::Event,
+    helpers::short_name,
     layout::{Align, Flex},
     math::{rect, vec2, Rect},
+    renderer::Shape,
     view::layout::Layer,
-    Shape, Str,
+    Str,
 };
 
 use super::{
-    helpers::short_name, state::Debug, test::DebugRasterizer, Interest, LayoutNodes, State, Ui,
-    ViewId, ViewNodes,
+    state::Debug, test::DebugRasterizer, Interest, LayoutNodes, State, Ui, ViewId, ViewNodes,
 };
 
 #[derive(Debug)]
@@ -40,7 +41,7 @@ impl DebugNode {
         render_pretty_tree(self)
     }
 
-    pub fn new(root: ViewId, nodes: &ViewNodes, layout: &LayoutNodes) -> Self {
+    fn new(root: ViewId, nodes: &ViewNodes, layout: &LayoutNodes) -> Self {
         fn build(
             debug_nodes: &mut Vec<DebugNode>,
             id: ViewId,
@@ -476,7 +477,7 @@ fn evaluate<R: 'static>(
 
     let size = vec2(80, 25);
     state.event(&Event::Resize(size));
-    for i in 0..2 {
+    for _ in 0..2 {
         state.build(rect(size), &mut app);
     }
 

@@ -26,7 +26,7 @@ impl View for Toggle {
         args
     }
 
-    fn update(&mut self, args: Self::Args<'_>, ui: &Ui) -> Self::Response {
+    fn update(&mut self, args: Self::Args<'_>, _ui: &Ui) -> Self::Response {
         let prev = self.state;
         self.state ^= args.state;
         ToggleResponse {
