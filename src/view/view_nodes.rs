@@ -1,6 +1,6 @@
 use std::{any::TypeId, collections::VecDeque};
 
-use slotmap::SlotMap;
+use slotmap::{Key, SlotMap};
 
 use super::{internal_views::Root, Erased, Ui, View, ViewId};
 use crate::lock::{Lock, Ref, RefMapped, RefMut, RefMutMapped};
@@ -15,8 +15,18 @@ pub struct ViewNodes {
 
 impl std::fmt::Debug for ViewNodes {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        struct NodeDebug<'a>(&'a SlotMap<ViewId, ViewNode>);
+        impl<'a> std::fmt::Debug for NodeDebug<'a> {
+            fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+                f.debug_map()
+                    .entries(self.0.iter().map(|(k, v)| (k.data(), v)))
+                    .finish()
+            }
+        }
+
         f.debug_struct("ViewNodes")
-            .field("root", &self.root)
+            .field("root", &self.root.data())
+            .field("nodes", &NodeDebug(&self.nodes.borrow()))
             .finish()
     }
 }
@@ -63,8 +73,7 @@ impl ViewNodes {
         V: View,
     {
         let parent = self.current();
-        let (id, resp) = self.update_view::<V>(parent, args, ui);
-        (id, resp)
+        self.update_view::<V>(parent, args, ui)
     }
 
     fn update_view<V>(&self, parent: ViewId, args: V::Args<'_>, ui: &Ui) -> (ViewId, V::Response)
@@ -275,9 +284,18 @@ pub struct ViewNode {
 
 impl std::fmt::Debug for ViewNode {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        struct ChildrenDebug<'a>(&'a [ViewId]);
+        impl<'a> std::fmt::Debug for ChildrenDebug<'a> {
+            fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+                f.debug_list()
+                    .entries(self.0.iter().map(|c| c.data()))
+                    .finish()
+            }
+        }
+
         f.debug_struct("ViewNode")
-            .field("parent", &self.parent)
-            .field("children", &self.children)
+            .field("parent", &self.parent.map(|c| c.data()))
+            .field("children", &ChildrenDebug(&self.children))
             .field("next", &self.next)
             .finish()
     }
