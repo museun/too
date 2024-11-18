@@ -18,8 +18,8 @@ pub struct Ui<'a> {
     layout: &'a LayoutNodes,
     input: &'a InputState,
     palette: &'a Lock<Palette>,
-    client_rect: Rect,
 
+    client_rect: Rect,
     size_changed: Option<Vec2>,
     frame_count: u64,
     dt: f32,

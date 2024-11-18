@@ -8,7 +8,7 @@ pub mod easing;
 mod manager;
 #[doc(inline)]
 pub use manager::Animations;
-pub use manager::{AnimationMut, AnimationRef};
+pub use manager::{AnimationMut, AnimationRef, Id};
 
 struct Keyframe {
     easing: Easing,

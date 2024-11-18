@@ -273,7 +273,7 @@ pub trait View: Sized + 'static + std::fmt::Debug + ViewMarker {
         for &child in &current.children {
             size = size.max(layout.compute(child, space))
         }
-        size
+        space.fit(size)
     }
 
     /// The default draw handling behavior to delegate to your children.
