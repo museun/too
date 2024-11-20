@@ -51,6 +51,10 @@ impl Rasterizer for DebugRasterizer {
 
     fn clear(&mut self, _color: Rgba) {}
 
+    fn patch_bg(&mut self, rect: Rect, color: Rgba) {
+        self.push_shape(Shape::PatchBg { rect, color });
+    }
+
     fn fill_bg(&mut self, color: Rgba) {
         self.push_shape(Shape::FillBg {
             rect: self.rect,

@@ -189,6 +189,12 @@ impl<'a, 'b> Render<'a, 'b> {
         self
     }
 
+    /// Update the background color of a region
+    pub fn patch_bg(&mut self, rect: Rect, color: Rgba) -> &mut Self {
+        self.rasterizer.patch_bg(rect, color);
+        self
+    }
+
     /// Sets a cell as a specific position
     pub fn set(&mut self, pos: impl Into<Pos2>, cell: impl Into<Cell>) -> &mut Self {
         let pos = pos.into();
@@ -328,6 +334,10 @@ impl<'a> Rasterizer for CroppedSurface<'a> {
 
     fn rect(&self) -> Rect {
         self.clip_rect
+    }
+
+    fn patch_bg(&mut self, rect: Rect, color: Rgba) {
+        self.surface.patch(rect, |c| c.set_bg(color));
     }
 
     fn fill_bg(&mut self, color: Rgba) {

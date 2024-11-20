@@ -81,6 +81,17 @@ impl Surface {
         self.back[start..end].fill(Cell::Pixel(pixel));
     }
 
+    pub fn patch(&mut self, rect: Rect, patch: impl Fn(&mut Cell)) {
+        let rect = self.rect().intersection(rect);
+        for y in rect.top()..rect.bottom() {
+            for x in rect.left()..rect.right() {
+                if let Some(cell) = self.get_mut(pos2(x, y)) {
+                    patch(cell)
+                }
+            }
+        }
+    }
+
     // PERF we can use 'set_line' if we patch any cells afterward
     pub fn fill(&mut self, rect: Rect, pixel: impl Into<Pixel>) {
         let pixel = pixel.into();
