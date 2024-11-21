@@ -46,7 +46,7 @@
 //!
 //! impl App {
 //!     fn view(&mut self, ui: &Ui) {
-//!         ui.slider(&mut value);
+//!         ui.slider(&mut self.value);
 //!     }
 //! }
 //!
