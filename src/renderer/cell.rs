@@ -12,6 +12,7 @@ pub enum Cell {
 }
 
 impl Cell {
+    /// Set the foreground color of this cell
     pub fn set_fg(&mut self, fg: impl Into<Color>) {
         match self {
             Self::Grapheme(grapheme) => grapheme.fg = fg.into(),
@@ -20,6 +21,7 @@ impl Cell {
         }
     }
 
+    /// Set the background color of this cell
     pub fn set_bg(&mut self, bg: impl Into<Color>) {
         match self {
             Self::Grapheme(grapheme) => grapheme.bg = bg.into(),
@@ -28,11 +30,39 @@ impl Cell {
         }
     }
 
+    /// Appends this attribute to the current attributes of the cell
     pub fn set_attribute(&mut self, attribute: Attribute) {
         match self {
             Self::Grapheme(grapheme) => grapheme.attribute |= attribute,
             Self::Pixel(pixel) => pixel.attribute |= attribute,
             _ => {}
+        }
+    }
+
+    /// Gets the foreground color mode for this cell
+    pub const fn fg(&self) -> Color {
+        match self {
+            Self::Grapheme(grapheme) => grapheme.fg,
+            Self::Pixel(pixel) => pixel.fg,
+            _ => unreachable!(),
+        }
+    }
+
+    /// Gets the background color mode for this cell
+    pub const fn bg(&self) -> Color {
+        match self {
+            Self::Grapheme(grapheme) => grapheme.bg,
+            Self::Pixel(pixel) => pixel.bg,
+            _ => unreachable!(),
+        }
+    }
+
+    /// Gets the attributes currently set for this cell
+    pub const fn attribute(&self) -> Attribute {
+        match self {
+            Self::Grapheme(grapheme) => grapheme.attribute,
+            Self::Pixel(pixel) => pixel.attribute,
+            _ => unreachable!(),
         }
     }
 }
@@ -133,30 +163,6 @@ impl Cell {
 
     pub(crate) const fn is_empty(&self) -> bool {
         matches!(self, Self::Empty)
-    }
-
-    pub(crate) const fn fg(&self) -> Color {
-        match self {
-            Self::Grapheme(grapheme) => grapheme.fg,
-            Self::Pixel(pixel) => pixel.fg,
-            _ => unreachable!(),
-        }
-    }
-
-    pub(crate) const fn bg(&self) -> Color {
-        match self {
-            Self::Grapheme(grapheme) => grapheme.bg,
-            Self::Pixel(pixel) => pixel.bg,
-            _ => unreachable!(),
-        }
-    }
-
-    pub(crate) const fn attribute(&self) -> Attribute {
-        match self {
-            Self::Grapheme(grapheme) => grapheme.attribute,
-            Self::Pixel(pixel) => pixel.attribute,
-            _ => unreachable!(),
-        }
     }
 }
 
@@ -484,6 +490,21 @@ pub enum Color {
     Reuse,
     /// Reset the default color
     Reset,
+}
+
+impl Color {
+    /// Overrides the current color mode with it set to a specific [`Rgba`]
+    pub fn set_color(&mut self, rgba: impl Into<Rgba>) {
+        *self = Self::Set(rgba.into())
+    }
+
+    /// If this color is set, returns it
+    pub fn as_rgba(&self) -> Option<Rgba> {
+        match self {
+            Self::Set(rgba) => Some(*rgba),
+            _ => None,
+        }
+    }
 }
 
 impl From<&'static str> for Color {
