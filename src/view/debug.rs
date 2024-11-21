@@ -24,11 +24,21 @@ pub struct DebugNode {
     id: ViewId,
     name: String,
     debug: Vec<String>,
-    rect: Rect,
-    flex: Flex,
-    layer: Layer,
-    interest: Interest,
     children: Vec<Self>,
+    inner: InnerNode,
+}
+
+#[derive(Debug, Default)]
+enum InnerNode {
+    FoundNode {
+        rect: Rect,
+        flex: Flex,
+        layer: Layer,
+        interactive: bool,
+        interest: Interest,
+    },
+    #[default]
+    MissingLayout,
 }
 
 impl DebugNode {
@@ -59,17 +69,25 @@ impl DebugNode {
 
             let view = &node.view.borrow();
 
-            debug_nodes.push(DebugNode {
+            let mut debug_node = DebugNode {
                 id,
                 name: short_name(view.type_name()),
-                rect: layout.get(id).map(|c| c.rect).unwrap_or_default(),
                 debug: format!("{view:#?}").split('\n').map(String::from).collect(),
                 children,
-                flex: view.flex(),
-                // TODO mark this as missing (its not on the screen)
-                layer: layout.get(id).map(|c| c.layer).unwrap_or(Layer::Bottom),
-                interest: view.interests(),
-            });
+                inner: InnerNode::MissingLayout,
+            };
+
+            if let Some(layout_node) = layout.get(id) {
+                debug_node.inner = InnerNode::FoundNode {
+                    rect: layout_node.rect,
+                    flex: view.flex(),
+                    interactive: layout_node.interactive,
+                    layer: layout_node.layer,
+                    interest: view.interests(),
+                };
+            };
+
+            debug_nodes.push(debug_node);
         }
 
         let mut children = vec![];
@@ -83,12 +101,16 @@ impl DebugNode {
         Self {
             id: root,
             name: short_name(view.type_name()),
-            rect: layout.get(root).map(|c| c.rect).unwrap_or_default(),
+
             debug: format!("{view:#?}").split('\n').map(String::from).collect(),
             children,
-            flex: view.flex(),
-            layer: layout.nodes[root].layer,
-            interest: view.interests(),
+            inner: InnerNode::FoundNode {
+                rect: layout.nodes[root].rect,
+                flex: view.flex(),
+                interactive: false,
+                layer: layout.nodes[root].layer,
+                interest: view.interests(),
+            },
         }
     }
 }
@@ -188,60 +210,88 @@ fn render_pretty_tree(node: &DebugNode) -> String {
     }
 
     impl Node {
-        fn new(node: &DebugNode, spacing: usize) -> Self {
+        fn build_labels(node: &DebugNode) -> Vec<DebugLabel> {
             let mut labels = vec![
                 DebugLabel::Split {
                     min: format!("{:?}", node.id.data()).into(),
                     max: node.name.clone().into(),
                 },
                 DebugLabel::Header,
-                DebugLabel::Split {
-                    min: format!("x: {:?}", node.rect.min.x).into(),
-                    max: format!("w: {:?}", node.rect.width()).into(),
-                },
-                DebugLabel::Split {
-                    min: format!("y: {:?}", node.rect.min.y).into(),
-                    max: format!("h: {:?}", node.rect.height()).into(),
-                },
-                DebugLabel::Separator,
-                DebugLabel::Split {
-                    min: CompactString::const_new("Layer"),
-                    max: CompactString::const_new(match node.layer {
-                        Layer::Bottom => "Bottom",
-                        Layer::Middle => "Middle",
-                        Layer::Top => "Top",
-                        Layer::Debug => "Debug",
-                    }),
-                },
-                DebugLabel::Separator,
             ];
 
-            if !node.interest.is_none() {
-                for label in format!("{:?}", node.interest).split(" | ") {
+            match node.inner {
+                InnerNode::FoundNode {
+                    rect,
+                    flex,
+                    layer,
+                    interactive,
+                    interest,
+                } => {
+                    labels.extend([
+                        DebugLabel::Split {
+                            min: compact_str::format_compact!("x: {:?}", rect.min.x),
+                            max: compact_str::format_compact!("w: {:?}", rect.width()),
+                        },
+                        DebugLabel::Split {
+                            min: compact_str::format_compact!("y: {:?}", rect.min.y),
+                            max: compact_str::format_compact!("h: {:?}", rect.height()),
+                        },
+                        DebugLabel::Separator,
+                        DebugLabel::Split {
+                            min: CompactString::const_new("Layer"),
+                            max: CompactString::const_new(match layer {
+                                Layer::Bottom => "Bottom",
+                                Layer::Middle => "Middle",
+                                Layer::Top => "Top",
+                                Layer::Debug => "Debug",
+                            }),
+                        },
+                        DebugLabel::Separator,
+                        DebugLabel::Split {
+                            min: CompactString::const_new("Interactive"),
+                            max: CompactString::const_new(match interactive {
+                                true => "true",
+                                false => "false",
+                            }),
+                        },
+                        DebugLabel::Separator,
+                    ]);
+
+                    if !interest.is_none() {
+                        for label in format!("{:?}", interest).split(" | ") {
+                            labels.push(DebugLabel::Label {
+                                align: Align::Center,
+                                text: label.into(),
+                            });
+                        }
+                        labels.push(DebugLabel::Separator);
+                    }
+
+                    if flex.has_flex() {
+                        let flex_fit = match flex {
+                            Flex::Tight(..) => "Tight",
+                            Flex::Loose(..) => "Loose",
+                        };
+
+                        labels.push(DebugLabel::Split {
+                            min: CompactString::const_new("Flex:"),
+                            max: compact_str::format_compact!("{:.2?}", flex.factor()),
+                        });
+
+                        labels.push(DebugLabel::Split {
+                            min: CompactString::const_new("Fit:"),
+                            max: CompactString::const_new(flex_fit),
+                        });
+                        labels.push(DebugLabel::Separator);
+                    }
+                }
+                InnerNode::MissingLayout => {
                     labels.push(DebugLabel::Label {
                         align: Align::Center,
-                        text: label.into(),
+                        text: CompactString::const_new("!! Node not used in layout !!"),
                     });
+                    labels.push(DebugLabel::Header);
                 }
-                labels.push(DebugLabel::Separator);
-            }
-
-            if node.flex.has_flex() {
-                let flex = match node.flex {
-                    Flex::Tight(..) => "Tight",
-                    Flex::Loose(..) => "Loose",
-                };
-
-                labels.push(DebugLabel::Split {
-                    min: "Flex:".into(),
-                    max: format!("{:.2?}", node.flex.factor()).into(),
-                });
-
-                labels.push(DebugLabel::Split {
-                    min: "Fit:".into(),
-                    max: flex.into(),
-                });
-                labels.push(DebugLabel::Separator);
             }
 
             for debug in &node.debug {
@@ -251,10 +301,16 @@ fn render_pretty_tree(node: &DebugNode) -> String {
             if node.children.len() > 1 {
                 labels.push(DebugLabel::Separator);
                 labels.push(DebugLabel::Split {
-                    min: "Children".into(),
+                    min: CompactString::const_new("Children"),
                     max: format!("{}", node.children.len()).into(),
                 });
             }
+
+            labels
+        }
+
+        fn new(node: &DebugNode, spacing: usize) -> Self {
+            let labels = Self::build_labels(node);
 
             let labels = labels.iter().flat_map(|s| s.split()).collect::<Vec<_>>();
 

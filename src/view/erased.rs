@@ -12,6 +12,7 @@ pub trait Erased: std::any::Any + std::fmt::Debug + ViewMarker {
     fn interests(&self) -> Interest;
 
     fn flex(&self) -> Flex;
+    fn interactive(&self) -> bool;
 
     fn size(&self, size: IntrinsicSize, axis: Axis, extent: f32) -> f32;
     fn primary_axis(&self) -> Axis;
@@ -33,6 +34,11 @@ impl<T: View + ViewMarker> Erased for T {
     #[inline(always)]
     fn flex(&self) -> Flex {
         T::flex(self)
+    }
+
+    #[inline(always)]
+    fn interactive(&self) -> bool {
+        T::interactive(self)
     }
 
     #[inline(always)]

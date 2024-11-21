@@ -153,6 +153,13 @@ pub trait View: Sized + 'static + std::fmt::Debug + ViewMarker {
         Flex::Loose(0.0)
     }
 
+    /// If your view can be interacted with
+    ///
+    /// By default, views are interactive.
+    fn interactive(&self) -> bool {
+        true
+    }
+
     /// If you want to receive events, you need to provide some [`Interest`]s
     ///
     /// This is a set of bit flags which lets the runtime filter and dispatch events efficiently.

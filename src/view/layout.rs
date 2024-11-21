@@ -298,7 +298,7 @@ impl LayoutNodes {
         nodes.begin(id);
 
         self.nodes.insert(id, LayoutNode::new(id));
-        let (size, interest) = nodes
+        let (size, interest, interactive) = nodes
             .scoped(id, |node| {
                 self.axis_stack.push(node.primary_axis());
                 let layout = Layout {
@@ -309,7 +309,7 @@ impl LayoutNodes {
                 };
                 let size = node.layout(layout, space);
                 self.axis_stack.pop();
-                (size, node.interests())
+                (size, node.interests(), node.interactive())
             })
             .unwrap();
 
@@ -335,6 +335,7 @@ impl LayoutNodes {
             layout.new_layer = new_layer;
             layout.clipped_by = clipped_by;
             layout.interest = interest;
+            layout.interactive = interactive;
             layout.rect.set_size(size);
         };
 
@@ -426,6 +427,8 @@ pub struct LayoutNode {
     pub clipped_by: Option<ViewId>,
     /// The event interests of the view
     pub interest: Interest,
+    /// Is this node interactive?
+    pub interactive: bool,
 }
 
 impl LayoutNode {
@@ -438,6 +441,7 @@ impl LayoutNode {
             clipping_enabled: false,
             clipped_by: None,
             interest: Interest::NONE,
+            interactive: false,
         }
     }
 }
