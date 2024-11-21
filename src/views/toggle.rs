@@ -26,6 +26,10 @@ impl View for Toggle {
         args
     }
 
+    fn interactive(&self) -> bool {
+        true
+    }
+
     fn update(&mut self, args: Self::Args<'_>, _ui: &Ui) -> Self::Response {
         let prev = self.state;
         self.state ^= args.state;

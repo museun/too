@@ -174,8 +174,13 @@ impl View for Button {
         builder
     }
 
+    fn interactive(&self) -> bool {
+        true
+    }
+
     fn update(&mut self, builder: Self::Args<'_>, _: &Ui) -> Self::Response {
         // TODO splat this
+
         self.label = builder.label;
         self.class = builder.class;
         self.margin = builder.margin;

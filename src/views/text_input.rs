@@ -175,6 +175,10 @@ impl View for InputView {
         resp
     }
 
+    fn interactive(&self) -> bool {
+        self.enabled
+    }
+
     fn interests(&self) -> Interest {
         Interest::FOCUS_INPUT | Interest::MOUSE_INSIDE
     }

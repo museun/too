@@ -139,6 +139,10 @@ impl View for MouseArea {
         }
     }
 
+    fn interactive(&self) -> bool {
+        true
+    }
+
     fn interests(&self) -> Interest {
         Interest::MOUSE_INSIDE
     }

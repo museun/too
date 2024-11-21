@@ -103,6 +103,8 @@ impl View for BorderView {
         Interest::MOUSE_INSIDE
     }
 
+    // TODO frames should have a 'click to focus' option
+
     fn layout(&mut self, mut layout: Layout, space: Space) -> Size {
         let mut margin = self.border.as_margin();
         if margin.top == 0 && self.title.is_some() {

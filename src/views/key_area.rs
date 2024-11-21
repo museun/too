@@ -28,6 +28,10 @@ impl View for KeyArea {
         }
     }
 
+    fn interactive(&self) -> bool {
+        true
+    }
+
     fn interests(&self) -> Interest {
         Interest::FOCUS_INPUT
     }

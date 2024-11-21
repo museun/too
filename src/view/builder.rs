@@ -155,9 +155,9 @@ pub trait View: Sized + 'static + std::fmt::Debug + ViewMarker {
 
     /// If your view can be interacted with
     ///
-    /// By default, views are interactive.
+    /// By default, views are _not_ interactive.
     fn interactive(&self) -> bool {
-        true
+        false
     }
 
     /// If you want to receive events, you need to provide some [`Interest`]s

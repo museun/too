@@ -176,6 +176,10 @@ impl View for ToggleSwitchView {
         ToggleResponse { changed }
     }
 
+    fn interactive(&self) -> bool {
+        true
+    }
+
     fn interests(&self) -> Interest {
         Interest::MOUSE_INSIDE
     }

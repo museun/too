@@ -333,6 +333,10 @@ impl View for List {
         }
     }
 
+    fn interactive(&self) -> bool {
+        self.scroll.scrollable
+    }
+
     fn primary_axis(&self) -> Axis {
         self.axis
     }
