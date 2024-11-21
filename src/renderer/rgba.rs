@@ -116,6 +116,14 @@ impl Rgba {
         !self.is_dark()
     }
 
+    pub const fn is_transparent(&self) -> bool {
+        self.3 < 255
+    }
+
+    pub const fn is_opaque(&self) -> bool {
+        self.3 == 255
+    }
+
     #[must_use]
     pub const fn to_opaque(mut self) -> Self {
         self.3 = 255;
@@ -167,21 +175,41 @@ impl Rgba {
         self.mix(mix, other, mix)
     }
 
+    /// This blends two colors by averaging their alpha channels
     #[must_use]
-    pub fn blend_alpha(&self, other: Self) -> Self {
-        const fn blend(a: i32, l: u8, r: u8) -> u8 {
-            ((a * l as i32 + (255 - a) * r as i32) / 255) as u8
+    pub fn blend_with_alpha(&self, other: Self) -> Self {
+        if self.alpha() == 0 {
+            return other;
+        }
+        if other.alpha() == 0 {
+            return *self;
         }
 
+        let a = (self.alpha() as i32 + other.alpha() as i32) / 2;
+        self.alpha_blend(other, a)
+    }
+
+    /// This blends two colors, if either alpha channel is fully transparent or
+    /// opaque the other is returned
+    #[must_use]
+    pub fn blend_alpha(&self, other: Self) -> Self {
         let a = match self.alpha() as i32 {
             0 => return other,
             255 => return *self,
             a => a,
         };
+
+        self.alpha_blend(other, a).with_alpha(255)
+    }
+
+    fn alpha_blend(&self, other: Self, a: i32) -> Self {
+        const fn blend(a: i32, l: u8, r: u8) -> u8 {
+            ((a * l as i32 + (255 - a) * r as i32) / 255) as u8
+        }
         let r = blend(a, self.red(), other.red());
         let g = blend(a, self.blue(), other.blue());
         let b = blend(a, self.green(), other.green());
-        Self(r, g, b, 255)
+        Self(r, g, b, a as u8)
     }
 
     #[must_use]

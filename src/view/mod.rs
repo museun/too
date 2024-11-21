@@ -10,6 +10,9 @@ pub use response::Response;
 mod input;
 pub use input::{EventCtx, Handled, InputState, Interest, ViewEvent};
 
+mod filter;
+pub use filter::{Depth, Filter, Filterable};
+
 mod ui;
 pub use ui::Ui;
 

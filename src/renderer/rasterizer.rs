@@ -11,13 +11,6 @@ use crate::{
 /// Shapes that a [`Rasterizer`] can produce
 #[derive(Clone, PartialEq)]
 pub enum Shape {
-    /// Patch the region with a color
-    PatchBg {
-        /// The region to patch
-        rect: Rect,
-        /// The color to use
-        color: Rgba,
-    },
     /// Fill the region with a color
     FillBg {
         /// The region to fill
@@ -74,11 +67,6 @@ impl std::fmt::Debug for Shape {
         }
 
         match self {
-            Self::PatchBg { rect, color } => f
-                .debug_struct("PatchBg")
-                .field("rect", &CompactRect(rect))
-                .field("color", color)
-                .finish(),
             Self::FillBg { rect, color } => f
                 .debug_struct("FillBg")
                 .field("rect", &CompactRect(rect))
@@ -126,8 +114,8 @@ pub trait Rasterizer {
         self.fill_bg(color);
     }
 
-    /// Update the background of a region with a color
-    fn patch_bg(&mut self, rect: Rect, color: Rgba);
+    /// Patch the background region
+    fn patch(&mut self, rect: Rect, patch: &dyn Fn(&mut Cell));
 
     /// Fill the background of the region with a color
     fn fill_bg(&mut self, color: Rgba);

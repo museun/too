@@ -9,9 +9,16 @@ use crate::{
 };
 
 use super::{
-    input::InputState, internal_views, Adhoc, Builder, LayoutNodes, Palette, Response, State, View,
-    ViewId, ViewNodes,
+    filter::{Filter, Filterable},
+    input::InputState,
+    internal_views, Adhoc, Builder, LayoutNodes, Palette, Response, State, View, ViewId, ViewNodes,
 };
+
+impl<'a> Filterable for Ui<'a> {
+    fn filter(&self) -> Filter<'_> {
+        Filter::new(self.nodes, self.layout, self.input)
+    }
+}
 
 pub struct Ui<'a> {
     nodes: &'a ViewNodes,
@@ -72,6 +79,10 @@ impl<'a> Ui<'a> {
 }
 
 impl<'a> Ui<'a> {
+    pub fn root(&self) -> ViewId {
+        self.nodes.root()
+    }
+
     pub fn client_rect(&self) -> Rect {
         self.client_rect
     }

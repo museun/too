@@ -1,6 +1,8 @@
 //! Debug helpers for a view
 //!
 //! This can print trees in various forms
+use std::usize;
+
 use compact_str::CompactString;
 use slotmap::Key;
 use unicode_width::UnicodeWidthStr;
@@ -47,7 +49,11 @@ impl DebugNode {
     }
 
     pub fn compact_tree(&self) -> String {
-        render_compact_tree(self)
+        render_compact_tree(self, false)
+    }
+
+    pub fn compact_tree_sizes(&self) -> String {
+        render_compact_tree(self, true)
     }
 
     pub fn pretty_tree(&self) -> String {
@@ -115,16 +121,26 @@ impl DebugNode {
     }
 }
 
-fn render_compact_tree(node: &DebugNode) -> String {
+fn render_compact_tree(node: &DebugNode, show_sizes: bool) -> String {
     use std::fmt::Write as _;
-    fn print(children: &[DebugNode], prefix: &str, out: &mut impl std::fmt::Write) {
+    fn print(
+        children: &[DebugNode],
+        prefix: &str,
+        tree: &mut impl std::fmt::Write,
+        geom: &mut Vec<Option<Rect>>,
+    ) {
         for (i, node) in children.iter().enumerate() {
             let is_last = i == children.len() - 1;
-            let connector = if is_last { "└─ " } else { "├─ " };
+            let upper_connector = if is_last { "└─ " } else { "├─ " };
+
+            match node.inner {
+                InnerNode::FoundNode { rect, .. } => geom.push(Some(rect)),
+                InnerNode::MissingLayout => geom.push(None),
+            };
 
             _ = writeln!(
-                out,
-                "{prefix}{connector}{name}({id:?})",
+                tree,
+                "{prefix}{upper_connector}{name}({id:?})",
                 name = node.name,
                 id = node.id.data(),
             );
@@ -135,14 +151,82 @@ fn render_compact_tree(node: &DebugNode) -> String {
                 format!("{prefix}│  ")
             };
 
-            print(&node.children, &prefix, out)
+            print(&node.children, &prefix, tree, geom)
         }
     }
 
-    let mut out = String::new();
-    let _ = writeln!(out, "{name}({id:?})", name = node.name, id = node.id.data());
-    print(&node.children, "", &mut out);
-    out
+    let InnerNode::FoundNode { rect, .. } = node.inner else {
+        unreachable!()
+    };
+
+    let mut tree = String::new();
+    let mut geom = Vec::new();
+    _ = writeln!(
+        tree,
+        "{name}({id:?})",
+        name = node.name,
+        id = node.id.data()
+    );
+    geom.push(Some(rect));
+    print(&node.children, "", &mut tree, &mut geom);
+
+    let left = tree.lines().fold(usize::MIN, |a, c| a.max(c.width()));
+
+    const fn count_digits(d: usize) -> usize {
+        let (mut len, mut n) = (1, 1);
+        while len < 20 {
+            n *= 10;
+            if n > d {
+                return len;
+            }
+            len += 1;
+        }
+        len
+    }
+
+    let [x, y, w, h] = geom
+        .iter()
+        .copied()
+        .filter_map(|r| {
+            r.map(|r| {
+                (
+                    count_digits(r.min.x as usize),
+                    count_digits(r.min.y as usize),
+                    count_digits(r.width() as usize),
+                    count_digits(r.height() as usize),
+                )
+            })
+        })
+        .fold([0; 4], |[xs, ys, ws, hs], (x, y, w, h)| {
+            [xs.max(x), ys.max(y), ws.max(w), hs.max(h)]
+        });
+
+    tree.lines()
+        .zip(geom.iter())
+        .fold(String::new(), |mut a, (t, g)| {
+            if !show_sizes {
+                a.push_str(t);
+                a.push('\n');
+                return a;
+            }
+
+            let mut s = format!("{t}{sp} ║ ", sp = " ".repeat(left - t.width()));
+            match g {
+                Some(r) => {
+                    let (rx, ry, rw, rh) = (r.min.x, r.min.y, r.width(), r.height());
+                    s.push_str(&format!(
+                        "x: {rx}{xs} y: {ry}{ys} ┊ w: {rw}{ws} h: {rh}{hs}\n",
+                        xs = " ".repeat(x - count_digits(rx as usize)),
+                        ys = " ".repeat(y - count_digits(ry as usize)),
+                        ws = " ".repeat(w - count_digits(rw as usize)),
+                        hs = " ".repeat(h - count_digits(rw as usize)),
+                    ));
+                }
+                None => s.push_str("Not used in layout"),
+            };
+            a.push_str(&s);
+            a
+        })
 }
 
 fn render_pretty_tree(node: &DebugNode) -> String {
@@ -562,7 +646,7 @@ fn evaluate<R: 'static>(
 ///
 /// Example:
 /// ```rust,no_run
-/// too::view::pretty_tree(|ui| {
+/// too::view::debug::pretty_tree(|ui| {
 ///     ui.center(|ui| ui.label("hello world"));
 ///
 ///     ui.aligned(Align2::RIGHT_TOP, |ui| {
@@ -644,7 +728,7 @@ pub fn pretty_tree<R: 'static>(app: impl FnMut(&Ui) -> R) -> TreeOutput {
 ///
 /// Example:
 /// ```rust,no_run
-/// too::view::compact_tree(|ui| {
+/// too::view::debug::compact_tree(|ui| {
 ///     ui.center(|ui| ui.label("hello world"));
 ///
 ///     ui.aligned(Align2::RIGHT_TOP, |ui| {
@@ -666,6 +750,41 @@ pub fn pretty_tree<R: 'static>(app: impl FnMut(&Ui) -> R) -> TreeOutput {
 pub fn compact_tree<R: 'static>(app: impl FnMut(&Ui) -> R) -> TreeOutput {
     let (node, debug, shapes) = evaluate(app);
     let tree = node.compact_tree();
+    TreeOutput {
+        tree,
+        debug,
+        shapes,
+    }
+}
+
+/// Generate a compact tree of the views (nodes) for this application
+///
+/// This includes the rectangles for each view
+///
+/// Example:
+/// ```rust,no_run
+/// too::view::debug::compact_tree_sizes(|ui| {
+///     ui.center(|ui| ui.label("hello world"));
+///
+///     ui.aligned(Align2::RIGHT_TOP, |ui| {
+///         ui.button("click me");
+///     });
+///
+///     ui.show(fill("#F0F", [10.0, 10.0]));
+/// })
+/// ```
+/// produces:
+/// ```text
+/// Root(1v1)         ║ x: 0  y: 0  ┊ w: 80 h: 25
+/// ├─ Aligned(2v1)   ║ x: 0  y: 0  ┊ w: 80 h: 25
+/// │  └─ Label(3v1)  ║ x: 35 y: 12 ┊ w: 11 h: 1
+/// ├─ Aligned(4v1)   ║ x: 0  y: 0  ┊ w: 80 h: 25
+/// │  └─ Button(5v1) ║ x: 70 y: 0  ┊ w: 10 h: 1
+/// └─ Fill(6v1)      ║ x: 0  y: 0  ┊ w: 10 h: 10
+/// ```
+pub fn compact_tree_sizes<R: 'static>(app: impl FnMut(&Ui) -> R) -> TreeOutput {
+    let (node, debug, shapes) = evaluate(app);
+    let tree = node.compact_tree_sizes();
     TreeOutput {
         tree,
         debug,

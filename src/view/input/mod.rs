@@ -7,7 +7,7 @@ use crate::{
     math::{Pos2, Rect, Vec2},
 };
 
-use super::{Erased, LayoutNodes, ViewId, ViewNodes};
+use super::{Erased, Filter, Filterable, LayoutNodes, ViewId, ViewNodes};
 
 mod interest;
 pub use interest::Interest;
@@ -640,6 +640,12 @@ impl InputState {
                 self.send_event(nodes, layout, animation, id, node, event)
             })
             .unwrap_or(Handled::Bubble)
+    }
+}
+
+impl<'a> Filterable for EventCtx<'a> {
+    fn filter(&self) -> super::Filter<'_> {
+        Filter::new(self.nodes, self.layout, self.input)
     }
 }
 

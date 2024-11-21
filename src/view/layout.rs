@@ -7,7 +7,13 @@ use crate::{
     math::{Pos2, Rect, Size, Space, Vec2},
 };
 
-use super::{input::InputState, Interest, ViewId, ViewNodes};
+use super::{input::InputState, Filter, Filterable, Interest, ViewId, ViewNodes};
+
+impl<'a> Filterable for Layout<'a> {
+    fn filter(&self) -> super::Filter<'_> {
+        Filter::new(self.nodes, self.layout, self.input)
+    }
+}
 
 /// Layout context
 ///
@@ -114,6 +120,16 @@ impl<'a> Layout<'a> {
     /// This lets you override a views computed size
     pub fn set_size(&mut self, id: ViewId, size: impl Into<Vec2>) {
         self.layout.set_size(id, size)
+    }
+
+    /// Get the properties for the current node
+    pub fn properties(&self) -> Properties {
+        self.properties_for(self.current).unwrap()
+    }
+
+    /// Get the properties for a specific node
+    pub fn properties_for(&self, id: ViewId) -> Option<Properties> {
+        self.layout.get(id).map(|c| c.properties(self.input))
     }
 }
 
@@ -410,8 +426,21 @@ pub enum Layer {
     Debug,
 }
 
+/// Properties for a layout node
+#[derive(Copy, Clone, Debug, PartialEq)]
+pub struct Properties {
+    /// Is this node interactive?
+    pub interactive: bool,
+    /// Is this node hovered?
+    pub hovered: bool,
+    /// Is this node focused?
+    pub focused: bool,
+    /// The interests of this node
+    pub interests: Interest,
+}
+
 /// A node in the layout tree for a view
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct LayoutNode {
     /// The id of the view
     pub id: ViewId,
@@ -444,22 +473,13 @@ impl LayoutNode {
             interactive: false,
         }
     }
-}
 
-impl std::fmt::Debug for LayoutNode {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.debug_struct("LayoutNode")
-            .field(
-                "rect",
-                &format_args!(
-                    "{{{}, {} .. {}, {}}}",
-                    self.rect.min.x, self.rect.min.y, self.rect.max.y, self.rect.max.y
-                ),
-            )
-            .field("clipping_enabled", &self.clipping_enabled)
-            .field("new_layer", &self.new_layer)
-            .field("clipped_by", &self.clipped_by)
-            .field("interest", &self.interest)
-            .finish()
+    pub(crate) fn properties(&self, state: &InputState) -> Properties {
+        Properties {
+            interactive: self.interactive,
+            focused: state.is_focused(self.id),
+            hovered: state.is_hovered(self.id),
+            interests: self.interest,
+        }
     }
 }

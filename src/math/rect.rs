@@ -8,11 +8,11 @@ pub struct Rect {
 
 impl std::fmt::Debug for Rect {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.debug_tuple("Rect")
-            .field(&self.min.x)
-            .field(&self.min.y)
-            .field(&self.max.x)
-            .field(&self.max.y)
+        f.debug_struct("Rect")
+            .field("x", &self.min.x)
+            .field("y", &self.min.y)
+            .field("w", &self.width())
+            .field("h", &self.height())
             .finish()
     }
 }

@@ -59,6 +59,10 @@ impl Interest {
 }
 
 impl Interest {
+    pub const fn contains(&self, other: Self) -> bool {
+        (self.0 & other.0) == other.0
+    }
+
     pub const fn is_none(&self) -> bool {
         self.0 == 0
     }

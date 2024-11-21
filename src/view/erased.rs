@@ -21,6 +21,7 @@ pub trait Erased: std::any::Any + std::fmt::Debug + ViewMarker {
     fn layout(&mut self, layout: Layout, space: Space) -> Size;
     fn draw(&mut self, render: Render);
 
+    fn as_any(&self) -> &dyn std::any::Any;
     fn as_mut_any(&mut self) -> &mut dyn std::any::Any;
     fn type_name(&self) -> &'static str;
 }
@@ -66,6 +67,9 @@ impl<T: View + ViewMarker> Erased for T {
         T::draw(self, render)
     }
 
+    fn as_any(&self) -> &dyn std::any::Any {
+        self
+    }
     fn as_mut_any(&mut self) -> &mut dyn std::any::Any {
         self
     }

@@ -6,10 +6,18 @@ use crate::{
     animation::Animations,
     layout::Axis,
     math::{pos2, Pos2, Rect, Vec2},
-    renderer::{Cell, Grapheme, Pixel, Rasterizer, Rgba, Surface, TextShape},
+    renderer::{Attribute, Cell, Grapheme, Pixel, Rasterizer, Rgba, Surface, TextShape},
 };
 
-use super::{input::InputState, Layer, LayoutNodes, Palette, ViewId, ViewNodes};
+use super::{
+    input::InputState, Filter, Filterable, Layer, LayoutNodes, Palette, ViewId, ViewNodes,
+};
+
+impl<'a, 'b> Filterable for Render<'a, 'b> {
+    fn filter(&self) -> Filter<'_> {
+        Filter::new(self.nodes, self.layout, self.input)
+    }
+}
 
 /// The render context
 pub struct Render<'a, 'b> {
@@ -190,8 +198,41 @@ impl<'a, 'b> Render<'a, 'b> {
     }
 
     /// Update the background color of a region
-    pub fn patch_bg(&mut self, rect: Rect, color: Rgba) -> &mut Self {
-        self.rasterizer.patch_bg(rect, color);
+    pub fn patch_bg(&mut self, rect: Rect, color: impl Into<Rgba>) -> &mut Self {
+        let color = color.into();
+        self.patch_bg_with(rect, |_| color)
+    }
+
+    /// Update the background color of a region
+    pub fn patch_bg_with(&mut self, rect: Rect, bg: impl Fn(Rgba) -> Rgba) -> &mut Self {
+        self.rasterizer.patch(rect, &|cell| cell.patch_bg(&bg));
+        self
+    }
+
+    /// Update the foreground color of a region
+    pub fn patch_fg(&mut self, rect: Rect, color: impl Into<Rgba>) -> &mut Self {
+        let color = color.into();
+        self.patch_fg_with(rect, |_| color)
+    }
+
+    /// Update the foreground color of a region
+    pub fn patch_fg_with(&mut self, rect: Rect, fg: impl Fn(Rgba) -> Rgba) -> &mut Self {
+        self.rasterizer.patch(rect, &|cell| cell.patch_fg(&fg));
+        self
+    }
+
+    /// Update the attribute of a region
+    pub fn patch_attribute(&mut self, rect: Rect, attr: Attribute) -> &mut Self {
+        self.patch_attribute_with(rect, |_| attr)
+    }
+
+    /// Update the attribute of a region
+    pub fn patch_attribute_with(
+        &mut self,
+        rect: Rect,
+        attr: impl Fn(Attribute) -> Attribute,
+    ) -> &mut Self {
+        self.rasterizer.patch(rect, &|cell| cell.patch_attr(&attr));
         self
     }
 
@@ -307,12 +348,12 @@ pub struct CroppedSurface<'a> {
 
 impl<'a> CroppedSurface<'a> {
     pub fn get_mut(&mut self, pos: impl Into<Pos2>) -> Option<&mut Cell> {
-        let offset = self.clip_rect.left_top();
-        let pos = pos.into() + offset;
-        if !self.clip_rect.contains(pos) {
-            return None;
-        }
-        self.surface.get_mut(pos)
+        // let offset = self.clip_rect.left_top();
+        // let pos = pos.into() + offset;
+        // if !self.clip_rect.contains(pos) {
+        //     return None;
+        // }
+        self.surface.get_mut(pos.into())
     }
 
     #[inline]
@@ -336,8 +377,8 @@ impl<'a> Rasterizer for CroppedSurface<'a> {
         self.clip_rect
     }
 
-    fn patch_bg(&mut self, rect: Rect, color: Rgba) {
-        self.surface.patch(rect, |c| c.set_bg(color));
+    fn patch(&mut self, rect: Rect, patch: &dyn Fn(&mut Cell)) {
+        self.surface.patch(rect, patch);
     }
 
     fn fill_bg(&mut self, color: Rgba) {

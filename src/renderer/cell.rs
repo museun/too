@@ -39,6 +39,24 @@ impl Cell {
         }
     }
 
+    pub fn patch_fg(&mut self, fg: impl Fn(Rgba) -> Rgba) {
+        let Color::Set(rgba) = self.fg() else {
+            return;
+        };
+        self.set_fg(fg(rgba))
+    }
+
+    pub fn patch_bg(&mut self, bg: impl Fn(Rgba) -> Rgba) {
+        let Color::Set(rgba) = self.bg() else {
+            return;
+        };
+        self.set_bg(bg(rgba))
+    }
+
+    pub fn patch_attr(&mut self, attr: impl Fn(Attribute) -> Attribute) {
+        self.set_attribute(attr(self.attribute()));
+    }
+
     /// Gets the foreground color mode for this cell
     pub const fn fg(&self) -> Color {
         match self {

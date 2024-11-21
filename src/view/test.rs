@@ -51,8 +51,8 @@ impl Rasterizer for DebugRasterizer {
 
     fn clear(&mut self, _color: Rgba) {}
 
-    fn patch_bg(&mut self, rect: Rect, color: Rgba) {
-        self.push_shape(Shape::PatchBg { rect, color });
+    fn patch(&mut self, _rect: Rect, _patch: &dyn Fn(&mut Cell)) {
+        // TODO this isn't collected.
     }
 
     fn fill_bg(&mut self, color: Rgba) {
