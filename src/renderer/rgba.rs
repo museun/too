@@ -276,7 +276,12 @@ impl std::fmt::Debug for Rgba {
 impl std::fmt::LowerHex for Rgba {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let Self(r, g, b, a) = self;
-        write!(f, "0x{r:02x}{g:02x}{b:02x}")?;
+        if f.alternate() {
+            write!(f, "0x")?;
+        } else {
+            write!(f, "#")?;
+        }
+        write!(f, "{r:02x}{g:02x}{b:02x}")?;
         if self.alpha() != 0xFF {
             write!(f, "{a:02x}")?;
         }
@@ -287,7 +292,12 @@ impl std::fmt::LowerHex for Rgba {
 impl std::fmt::UpperHex for Rgba {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let Self(r, g, b, a) = self;
-        write!(f, "0x{r:02X}{g:02X}{b:02X}")?;
+        if f.alternate() {
+            write!(f, "0x")?;
+        } else {
+            write!(f, "#")?;
+        }
+        write!(f, "{r:02X}{g:02X}{b:02X}")?;
         if self.alpha() != 0xFF {
             write!(f, "{a:02X}")?;
         }

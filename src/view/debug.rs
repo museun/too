@@ -58,6 +58,7 @@ impl DebugNode {
             }
 
             let view = &node.view.borrow();
+
             debug_nodes.push(DebugNode {
                 id,
                 name: short_name(view.type_name()),
@@ -65,7 +66,8 @@ impl DebugNode {
                 debug: format!("{view:#?}").split('\n').map(String::from).collect(),
                 children,
                 flex: view.flex(),
-                layer: layout.nodes[id].layer,
+                // TODO mark this as missing (its not on the screen)
+                layer: layout.get(id).map(|c| c.layer).unwrap_or(Layer::Bottom),
                 interest: view.interests(),
             });
         }

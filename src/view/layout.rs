@@ -1,6 +1,6 @@
 use std::collections::VecDeque;
 
-use slotmap::SecondaryMap;
+use slotmap::{Key as _, SecondaryMap};
 
 use crate::{
     layout::{Axis, Flex},
@@ -182,12 +182,29 @@ impl EventInterest {
 }
 
 /// The tree for the layouts of all of the views
-#[derive(Default, Debug)]
+#[derive(Default)]
 pub struct LayoutNodes {
     pub(super) nodes: SecondaryMap<ViewId, LayoutNode>,
     clip_stack: Vec<ViewId>,
     axis_stack: Vec<Axis>,
     pub(super) interest: EventInterest,
+}
+
+impl std::fmt::Debug for LayoutNodes {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        struct NodeDebug<'a>(&'a SecondaryMap<ViewId, LayoutNode>);
+        impl<'a> std::fmt::Debug for NodeDebug<'a> {
+            fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+                f.debug_map()
+                    .entries(self.0.iter().map(|(k, v)| (k.data(), v)))
+                    .finish()
+            }
+        }
+
+        f.debug_struct("ViewNodes")
+            .field("nodes", &NodeDebug(&self.nodes))
+            .finish()
+    }
 }
 
 impl LayoutNodes {
