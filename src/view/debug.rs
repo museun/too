@@ -1,7 +1,6 @@
 //! Debug helpers for a view
 //!
 //! This can print trees in various forms
-use std::usize;
 
 use compact_str::CompactString;
 use slotmap::Key;
