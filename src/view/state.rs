@@ -379,7 +379,7 @@ impl Debug {
         }
 
         let mut queue = self.queue.borrow_mut();
-        if msg.find(|c| c == '\n').is_some() {
+        if msg.find('\n').is_some() {
             queue.extend(msg.lines().map(CompactString::from));
         } else {
             queue.push(msg.into());
