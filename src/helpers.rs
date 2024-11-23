@@ -134,3 +134,14 @@ impl<T> Queue<T> {
         self.queue.iter_mut()
     }
 }
+
+impl<T> Extend<T> for Queue<T> {
+    fn extend<I>(&mut self, iter: I)
+    where
+        I: IntoIterator<Item = T>,
+    {
+        for item in iter {
+            self.push(item);
+        }
+    }
+}

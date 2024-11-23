@@ -377,6 +377,12 @@ impl Debug {
         if msg.is_empty() {
             return;
         }
-        self.queue.borrow_mut().push(msg.into());
+
+        let mut queue = self.queue.borrow_mut();
+        if msg.find(|c| c == '\n').is_some() {
+            queue.extend(msg.lines().map(CompactString::from));
+        } else {
+            queue.push(msg.into());
+        }
     }
 }
