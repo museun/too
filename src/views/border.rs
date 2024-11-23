@@ -113,12 +113,12 @@ impl View for BorderView {
 
         let sum = margin.sum();
         let offset = margin.left_top();
-        let child_space = space.shrink(sum);
+        let child_space = space.shrink(sum).loosen();
 
         let node = layout.nodes.get_current();
         let mut size = Size::ZERO;
         for &child in &node.children {
-            size = layout.compute(child, child_space) + sum;
+            size = layout.compute(child, child_space);
             layout.set_position(child, offset);
         }
 
@@ -127,10 +127,10 @@ impl View for BorderView {
             .title
             .as_deref()
             .map(measure_text)
+            .map(|c| c + Size::new(2.0, 0.0))
             .unwrap_or(Size::ZERO);
 
-        let max = size.max(title_size) + Size::new(1.0, 0.0);
-        space.fit(max)
+        space.fit((size + sum).max(title_size))
     }
 
     fn draw(&mut self, mut render: Render) {
