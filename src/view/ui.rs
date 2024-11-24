@@ -11,7 +11,7 @@ use crate::{
 use super::{
     filter::{Filter, Filterable},
     input::InputState,
-    internal_views, Adhoc, Builder, LayoutNodes, Palette, Response, State, View, ViewId, ViewNodes,
+    internal_views, Builder, LayoutNodes, Palette, Response, State, View, ViewId, ViewNodes,
 };
 
 impl<'a> Filterable for Ui<'a> {
@@ -48,13 +48,6 @@ impl<'a> Ui<'a> {
 }
 
 impl<'a> Ui<'a> {
-    pub fn adhoc<'v, A>(&self, view: A) -> A::Output
-    where
-        A: Adhoc<'v>,
-    {
-        view.show(self)
-    }
-
     pub fn show<'v, B>(&self, args: B) -> Response<<B::View as View>::Response>
     where
         B: Builder<'v>,
@@ -363,22 +356,22 @@ impl<'a> Ui<'a> {
     }
 
     pub fn checkbox(&self, value: &mut bool, label: impl Into<Str>) -> Response<bool> {
-        self.adhoc(views::checkbox(value, label))
+        self.show(views::checkbox(value, label))
     }
 
     pub fn todo_value(&self, value: &mut bool, label: impl Into<Str>) -> Response<bool> {
-        self.adhoc(views::todo_value(value, label))
+        self.show(views::todo_value(value, label))
     }
 
     pub fn selected(&self, value: &mut bool, label: impl Into<Str>) -> Response<bool> {
-        self.adhoc(views::selected(value, label))
+        self.show(views::selected(value, label))
     }
 
     pub fn radio<V>(&self, value: V, existing: &mut V, label: impl Into<Str>) -> Response<bool>
     where
-        V: PartialEq,
+        V: PartialEq + 'static,
     {
-        self.adhoc(views::radio(value, existing, label))
+        self.show(views::radio(value, existing, label))
     }
 
     pub fn label(&self, data: impl Into<Str>) -> Response {

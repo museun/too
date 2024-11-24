@@ -1,6 +1,6 @@
 use crate::{
     renderer::{Attribute, Rgba},
-    view::{Adhoc, Palette, Response, StyleKind},
+    view::{Builder, Palette, StyleKind, Ui, View},
     Str,
 };
 
@@ -8,7 +8,7 @@ use super::label::LabelStyle;
 
 pub type TodoClass = fn(&Palette, bool) -> TodoStyle;
 
-#[derive(Debug)]
+#[derive(Debug, Copy, Clone)]
 pub struct TodoStyle {
     pub selected: Attribute,
     pub text_color: Rgba,
@@ -44,14 +44,32 @@ impl<'a> TodoValue<'a> {
     }
 }
 
-impl<'a> Adhoc<'a> for TodoValue<'a> {
-    type Output = Response<bool>;
+impl<'v> Builder<'v> for TodoValue<'v> {
+    type View = TodoValueView;
+}
 
-    fn show(self, ui: &crate::view::Ui) -> Self::Output {
+#[derive(Debug)]
+pub struct TodoValueView {
+    label: Str,
+    class: StyleKind<TodoClass, TodoStyle>,
+}
+
+impl View for TodoValueView {
+    type Args<'v> = TodoValue<'v>;
+    type Response = bool;
+
+    fn create(args: Self::Args<'_>) -> Self {
+        Self {
+            label: args.label,
+            class: args.class,
+        }
+    }
+
+    fn update(&mut self, args: Self::Args<'_>, ui: &Ui) -> Self::Response {
         let resp = ui
             .mouse_area(|ui| {
                 let style = match self.class {
-                    StyleKind::Deferred(style) => (style)(&ui.palette(), *self.value),
+                    StyleKind::Deferred(style) => (style)(&ui.palette(), *args.value),
                     StyleKind::Direct(style) => style,
                 };
 
@@ -61,7 +79,7 @@ impl<'a> Adhoc<'a> for TodoValue<'a> {
                     style.text_color
                 };
 
-                let attr = if *self.value {
+                let attr = if *args.value {
                     style.selected
                 } else {
                     Attribute::RESET
@@ -69,7 +87,7 @@ impl<'a> Adhoc<'a> for TodoValue<'a> {
 
                 ui.horizontal(|ui| {
                     ui.show(
-                        super::label(self.label)
+                        super::label(&self.label)
                             .style(LabelStyle { foreground })
                             .attribute(attr),
                     );
@@ -77,8 +95,8 @@ impl<'a> Adhoc<'a> for TodoValue<'a> {
             })
             .flatten_left();
 
-        *self.value ^= resp.clicked();
-        resp.map(|c| c.clicked())
+        *args.value ^= resp.clicked();
+        resp.clicked()
     }
 }
 

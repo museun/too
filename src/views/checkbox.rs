@@ -1,6 +1,6 @@
 use crate::{
     renderer::Rgba,
-    view::{Adhoc, Palette, Response, StyleKind, Ui},
+    view::{Builder, Palette, StyleKind, Ui, View},
     Str,
 };
 
@@ -8,7 +8,7 @@ use super::label::LabelStyle;
 
 pub type CheckboxClass = fn(&Palette, bool) -> CheckboxStyle;
 
-#[derive(Debug)]
+#[derive(Debug, Copy, Clone)]
 pub struct CheckboxStyle {
     pub checked: &'static str,
     pub unchecked: &'static str,
@@ -55,15 +55,32 @@ impl<'a> Checkbox<'a> {
     }
 }
 
-impl<'a> Adhoc<'a> for Checkbox<'a> {
-    // TODO make this an opaque response
-    type Output = Response<bool>;
+impl<'v> Builder<'v> for Checkbox<'v> {
+    type View = CheckboxView;
+}
 
-    fn show(self, ui: &Ui) -> Self::Output {
+#[derive(Debug)]
+pub struct CheckboxView {
+    label: Str,
+    class: StyleKind<CheckboxClass, CheckboxStyle>,
+}
+
+impl View for CheckboxView {
+    type Args<'v> = Checkbox<'v>;
+    type Response = bool;
+
+    fn create(args: Self::Args<'_>) -> Self {
+        Self {
+            label: args.label,
+            class: args.class,
+        }
+    }
+
+    fn update(&mut self, args: Self::Args<'_>, ui: &Ui) -> Self::Response {
         let resp = ui
             .mouse_area(|ui| {
                 let style = match self.class {
-                    StyleKind::Deferred(style) => (style)(&ui.palette(), *self.value),
+                    StyleKind::Deferred(style) => (style)(&ui.palette(), *args.value),
                     StyleKind::Direct(style) => style,
                 };
 
@@ -74,19 +91,19 @@ impl<'a> Adhoc<'a> for Checkbox<'a> {
                 };
 
                 ui.horizontal(|ui| {
-                    let marker = if *self.value {
+                    let marker = if *args.value {
                         style.checked
                     } else {
                         style.unchecked
                     };
                     ui.label(marker);
-                    ui.show(super::label(self.label).style(LabelStyle { foreground }));
+                    ui.show(super::label(&self.label).style(LabelStyle { foreground }));
                 });
             })
             .flatten_left();
 
-        *self.value ^= resp.clicked();
-        resp.map(|c| c.clicked())
+        *args.value ^= resp.clicked();
+        resp.clicked()
     }
 }
 

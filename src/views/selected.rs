@@ -1,12 +1,12 @@
 use crate::{
     renderer::Rgba,
-    view::{Adhoc, Palette, Response, StyleKind},
+    view::{Builder, Palette, StyleKind, Ui, View},
     Str,
 };
 
 use super::label::{label, LabelStyle};
 
-#[derive(Debug)]
+#[derive(Debug, Copy, Clone)]
 pub struct SelectedStyle {
     pub text_color: Rgba,
 
@@ -59,19 +59,37 @@ impl<'a> Selected<'a> {
     }
 }
 
-impl<'v> Adhoc<'v> for Selected<'v> {
-    type Output = Response<bool>;
+impl<'v> Builder<'v> for Selected<'v> {
+    type View = SelectedView;
+}
 
-    fn show(self, ui: &crate::view::Ui) -> Self::Output {
+#[derive(Debug)]
+pub struct SelectedView {
+    label: Str,
+    class: StyleKind<SelectedClass, SelectedStyle>,
+}
+
+impl View for SelectedView {
+    type Args<'v> = Selected<'v>;
+    type Response = bool;
+
+    fn create(args: Self::Args<'_>) -> Self {
+        Self {
+            label: args.label,
+            class: args.class,
+        }
+    }
+
+    fn update(&mut self, args: Self::Args<'_>, ui: &Ui) -> Self::Response {
         let resp = ui
             .mouse_area(|ui| {
                 let style = match self.class {
-                    StyleKind::Deferred(style) => (style)(&ui.palette(), *self.value),
+                    StyleKind::Deferred(style) => (style)(&ui.palette(), *args.value),
                     StyleKind::Direct(style) => style,
                 };
 
                 let hovered = ui.is_hovered();
-                let fill = match (hovered, *self.value) {
+                let fill = match (hovered, *args.value) {
                     (false, true) => style.selected_background,
                     (false, false) => style.background,
                     (true, true) => style
@@ -87,13 +105,13 @@ impl<'v> Adhoc<'v> for Selected<'v> {
                 };
 
                 ui.background(fill, |ui| {
-                    ui.show(label(self.label).style(LabelStyle { foreground: text }))
+                    ui.show(label(&self.label).style(LabelStyle { foreground: text }))
                 });
             })
             .flatten_left();
 
-        *self.value ^= resp.clicked();
-        resp.map(|c| c.clicked())
+        *args.value ^= resp.clicked();
+        resp.clicked()
     }
 }
 

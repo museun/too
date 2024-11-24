@@ -17,8 +17,8 @@ pub use button::{button, Button, ButtonClass, ButtonResponse, ButtonStyle};
 mod checkbox;
 pub use checkbox::{checkbox, Checkbox, CheckboxClass, CheckboxStyle};
 
-mod collapsible;
-pub use collapsible::{collapsible, Collapsible, CollapsibleClass, CollapsibleStyle};
+// mod collapsible;
+// pub use collapsible::{collapsible, Collapsible, CollapsibleClass, CollapsibleStyle};
 
 mod constrain;
 pub use constrain::{Constrain, Unconstrained};
