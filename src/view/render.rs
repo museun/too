@@ -132,6 +132,12 @@ impl<'a, 'b> Render<'a, 'b> {
         self.rasterizer.set_rect(old);
     }
 
+    pub fn filter(&self) -> Filter<'_> {
+        <Self as Filterable>::filter(self)
+    }
+}
+
+impl<'a, 'b> Render<'a, 'b> {
     /// Fill this render context with a specific color
     pub fn fill_bg(&mut self, color: impl Into<Rgba>) -> &mut Self {
         self.rasterizer.fill_bg(color.into());

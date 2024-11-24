@@ -230,6 +230,7 @@ impl ViewNodes {
 
     // TODO this should push the id to the stack and pop it off
     // TODO this should handle views not in the layout
+    #[track_caller]
     pub(super) fn scoped<R>(
         &self,
         id: ViewId,
@@ -237,7 +238,7 @@ impl ViewNodes {
     ) -> Option<R> {
         let nodes = self.nodes.borrow();
         let node = nodes.get(id)?;
-        let mut view = node.view.borrow_mut().take();
+        let mut view = node.view.borrow_mut().take()?;
         drop(nodes); // drop the borrow so we can recursively call this function
 
         let resp = act(&mut *view);
@@ -328,11 +329,12 @@ impl Slot {
         *self = Self::Inhabited(view)
     }
 
-    pub fn take(&mut self) -> Box<dyn Erased> {
+    #[track_caller]
+    pub fn take(&mut self) -> Option<Box<dyn Erased>> {
         let Self::Inhabited(view) = std::mem::take(self) else {
-            unreachable!("slot was vacant")
+            return None;
         };
-        view
+        Some(view)
     }
 }
 

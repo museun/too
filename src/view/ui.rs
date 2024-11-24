@@ -79,8 +79,30 @@ impl<'a> Ui<'a> {
 }
 
 impl<'a> Ui<'a> {
+    pub fn filter(&self) -> Filter<'_> {
+        <Self as Filterable>::filter(self)
+    }
+}
+
+impl<'a> Ui<'a> {
     pub fn root(&self) -> ViewId {
         self.nodes.root()
+    }
+
+    pub fn rect_of(&self, id: ViewId) -> Option<Rect> {
+        self.layout.rect(id)
+    }
+
+    pub fn lookup<'v, T, R>(
+        &self,
+        id: ViewId,
+        found: impl FnMut(&<T as Builder<'v>>::View) -> R,
+    ) -> Option<R>
+    where
+        T: Builder<'v>,
+        R: 'static,
+    {
+        self.filter().lookup::<T, R>(id, found)
     }
 
     pub fn client_rect(&self) -> Rect {
@@ -89,6 +111,7 @@ impl<'a> Ui<'a> {
 
     pub fn current_available_rect(&self) -> Rect {
         let parent = self.nodes.parent();
+        // TODO don't unwrap_or_default here, just return the Option (first frame would always be 'None')
         self.layout.get(parent).map(|c| c.rect).unwrap_or_default()
     }
 

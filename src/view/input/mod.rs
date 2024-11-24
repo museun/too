@@ -711,6 +711,11 @@ impl<'a> EventCtx<'a> {
     /// Get the [`Rect`] for the current view
     #[track_caller]
     pub fn rect(&self) -> Rect {
+        // TODO should this actually return the None?
         self.layout.rect(self.current).unwrap()
+    }
+
+    pub fn filter(&self) -> Filter<'_> {
+        <Self as Filterable>::filter(self)
     }
 }

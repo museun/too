@@ -131,6 +131,10 @@ impl<'a> Layout<'a> {
     pub fn properties_for(&self, id: ViewId) -> Option<Properties> {
         self.layout.get(id).map(|c| c.properties(self.input))
     }
+
+    pub fn filter(&self) -> Filter<'_> {
+        <Self as Filterable>::filter(self)
+    }
 }
 
 /// Context for calculating the intrinstic size of a view
@@ -239,8 +243,16 @@ impl LayoutNodes {
     }
 
     /// Get a [`Rect`] by id
+    ///
+    /// If this id was not found this'll return None
+    ///
+    /// If the rect for the id was 'empty' this'll return None.
+    ///
+    /// The latter can happen if you try to get a rect for a view before its layout has ever happened.
+    ///
+    /// Or it can happen if the view's size was set to zero (essentially hiding it).
     pub fn rect(&self, id: ViewId) -> Option<Rect> {
-        self.get(id).map(|c| c.rect)
+        self.get(id).map(|c| c.rect).filter(|c| !c.is_empty())
     }
 
     pub(super) fn intrinsic_size(
