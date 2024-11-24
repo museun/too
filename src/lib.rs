@@ -110,12 +110,6 @@ mod run;
 #[cfg(feature = "terminal")]
 pub use run::{application, run, RunConfig};
 
-#[doc(hidden)]
-pub fn ඞrun_in_docs<R: 'static>(app: impl FnMut(&crate::view::Ui) -> R) -> std::io::Result<()> {
-    view::State::default().build(math::rect(math::vec2(80, 25)), app);
-    Ok(())
-}
-
 #[doc = include_str!("../README.md")]
 #[cfg(doctest)]
 pub struct ReadmeDocTests;
