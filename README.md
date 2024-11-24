@@ -19,7 +19,7 @@ too -- a different kind of tui library
 
 ### Centering some text:
 
-```rust
+```rust,no_run
 fn main() -> std::io::Result<()> {
     too::run(|ui| {
         ui.center(|ui| ui.label("hello world"));
@@ -29,7 +29,7 @@ fn main() -> std::io::Result<()> {
 
 ### A pair of buttons to increment and decrement a counter
 
-```rust
+```rust,no_run
 fn main() -> std::io::Result<()> {
     let mut counter = 0;
     too::run(|ui| {
@@ -50,7 +50,7 @@ fn main() -> std::io::Result<()> {
 
 ### Storing state in a struct
 
-```rust
+```rust,no_run
 use too::view::Ui;
 
 #[derive(Default)]
@@ -72,7 +72,7 @@ fn main() -> std::io::Result<()> {
 
 ### Storing state seperately from an application
 
-```rust
+```rust,no_run
 use too::view::Ui;
 
 #[derive(Default)]
