@@ -214,7 +214,7 @@ impl<'a> Ui<'a> {
     where
         R: 'static,
     {
-        self.show_children(views::MarginView::new(margin), show)
+        self.show_children(views::Padding::new(margin), show)
             .flatten_right()
     }
 

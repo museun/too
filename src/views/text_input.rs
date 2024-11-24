@@ -83,7 +83,7 @@ impl<'a> TextInput<'a> {
 }
 
 impl<'v> Builder<'v> for TextInput<'v> {
-    type View = InputView;
+    type View = TextInputView;
 }
 
 #[derive(Debug, Default)]
@@ -129,13 +129,13 @@ impl TextInputResponse {
 }
 
 #[derive(Debug)]
-pub struct InputView {
+pub struct TextInputView {
     state: InputState,
     enabled: bool,
     class: StyleKind<TextInputClass, TextInputStyle>,
 }
 
-impl View for InputView {
+impl View for TextInputView {
     type Args<'v> = TextInput<'v>;
     type Response = TextInputResponse;
 
@@ -329,7 +329,7 @@ impl View for InputView {
     }
 }
 
-impl InputView {
+impl TextInputView {
     fn draw_placeholder(enabled: bool, style: &TextInputStyle, state: &Inner, render: &mut Render) {
         let Some(placeholder) = state.placeholder.as_deref().filter(|c| !c.is_empty()) else {
             Self::draw_cursors(0, style, state, render);

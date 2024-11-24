@@ -127,6 +127,10 @@ impl View for MouseArea {
             self.dragged
         };
 
+        if matches!(state, MouseState::Hovering) {
+            self.state = state;
+        }
+
         MouseAreaResponse {
             pos: self.pos,
             clicked: std::mem::take(&mut self.clicked),

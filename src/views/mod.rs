@@ -9,7 +9,7 @@ mod background;
 pub use background::Background;
 
 mod border;
-pub use border::{border, frame, BorderClass, BorderStyle, BorderView};
+pub use border::{border, frame, BorderClass, BorderStyle, Frame};
 
 mod button;
 pub use button::{button, Button, ButtonClass, ButtonResponse, ButtonStyle};
@@ -42,7 +42,7 @@ mod list;
 pub use list::{list, List, ScrollClass, ScrollStyle};
 
 mod margin;
-pub use margin::MarginView;
+pub use margin::Padding;
 
 mod mouse_area;
 pub use mouse_area::{mouse_area, DraggingResponse, MouseArea, MouseAreaResponse};

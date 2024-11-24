@@ -43,14 +43,14 @@ impl BorderStyle {
 }
 
 #[must_use = "a view does nothing unless `show()` or `show_children()` is called"]
-pub struct BorderView {
+pub struct Frame {
     border: Border,
     title: Option<CompactString>,
     align: Align,
     class: StyleKind<BorderClass, BorderStyle>,
 }
 
-impl std::fmt::Debug for BorderView {
+impl std::fmt::Debug for Frame {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("BorderView")
             .field("title", &self.title)
@@ -60,7 +60,7 @@ impl std::fmt::Debug for BorderView {
     }
 }
 
-impl BorderView {
+impl Frame {
     pub const fn border(mut self, border: Border) -> Self {
         self.border = border;
         self
@@ -87,11 +87,11 @@ impl BorderView {
     }
 }
 
-impl<'v> Builder<'v> for BorderView {
+impl<'v> Builder<'v> for Frame {
     type View = Self;
 }
 
-impl View for BorderView {
+impl View for Frame {
     type Args<'v> = Self;
     type Response = ();
 
@@ -195,8 +195,8 @@ impl View for BorderView {
     }
 }
 
-pub fn border(border: Border) -> BorderView {
-    BorderView {
+pub fn border(border: Border) -> Frame {
+    Frame {
         border,
         title: None,
         align: Align::Min,
@@ -204,8 +204,8 @@ pub fn border(border: Border) -> BorderView {
     }
 }
 
-pub fn frame(border: Border, title: impl Into<Str>) -> BorderView {
-    BorderView {
+pub fn frame(border: Border, title: impl Into<Str>) -> Frame {
+    Frame {
         border,
         title: Some(title.into().into_inner()),
         align: Align::Min,
