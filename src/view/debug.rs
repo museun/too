@@ -644,7 +644,9 @@ fn evaluate<R: 'static>(
 /// Generate a pretty tree of the views (nodes) for this application
 ///
 /// Example:
-/// ```rust,no_run
+/// ```rust
+/// use too::{layout::Align2, views::fill};
+///
 /// too::view::debug::pretty_tree(|ui| {
 ///     ui.center(|ui| ui.label("hello world"));
 ///
@@ -653,10 +655,10 @@ fn evaluate<R: 'static>(
 ///     });
 ///
 ///     ui.show(fill("#F0F", [10.0, 10.0]));
-/// })
+/// });
 /// ```
 /// produces:
-/// ```text
+/// ```text,no_run
 ///                                         ┌──────────────┐
 ///                                         │ 1v1     Root │
 ///                                         ╞══════════════╡
@@ -726,7 +728,9 @@ pub fn pretty_tree<R: 'static>(app: impl FnMut(&Ui) -> R) -> TreeOutput {
 /// Generate a compact tree of the views (nodes) for this application
 ///
 /// Example:
-/// ```rust,no_run
+/// ```rust
+/// use too::{layout::Align2, views::fill};
+///
 /// too::view::debug::compact_tree(|ui| {
 ///     ui.center(|ui| ui.label("hello world"));
 ///
@@ -735,10 +739,10 @@ pub fn pretty_tree<R: 'static>(app: impl FnMut(&Ui) -> R) -> TreeOutput {
 ///     });
 ///
 ///     ui.show(fill("#F0F", [10.0, 10.0]));
-/// })
+/// });
 /// ```
 /// produces:
-/// ```text
+/// ```text,no_run
 /// Root(1v1)
 /// ├─ Aligned(2v1)
 /// │  └─ Label(3v1)
@@ -761,7 +765,9 @@ pub fn compact_tree<R: 'static>(app: impl FnMut(&Ui) -> R) -> TreeOutput {
 /// This includes the rectangles for each view
 ///
 /// Example:
-/// ```rust,no_run
+/// ```rust
+/// use too::{layout::Align2, views::fill};
+///
 /// too::view::debug::compact_tree_sizes(|ui| {
 ///     ui.center(|ui| ui.label("hello world"));
 ///
@@ -770,10 +776,10 @@ pub fn compact_tree<R: 'static>(app: impl FnMut(&Ui) -> R) -> TreeOutput {
 ///     });
 ///
 ///     ui.show(fill("#F0F", [10.0, 10.0]));
-/// })
+/// });
 /// ```
 /// produces:
-/// ```text
+/// ```text,no_run
 /// Root(1v1)         ║ x: 0  y: 0  ┊ w: 80 h: 25
 /// ├─ Aligned(2v1)   ║ x: 0  y: 0  ┊ w: 80 h: 25
 /// │  └─ Label(3v1)  ║ x: 35 y: 12 ┊ w: 11 h: 1
@@ -794,8 +800,10 @@ pub fn compact_tree_sizes<R: 'static>(app: impl FnMut(&Ui) -> R) -> TreeOutput {
 /// Generate the paint list this application would do
 ///
 /// Example:
-/// ```rust,no_run
-/// too::view::render_tree(|ui| {
+/// ```rust
+/// use too::{layout::Align2, views::fill};
+///
+/// too::view::debug::render_tree(|ui| {
 ///     ui.center(|ui| ui.label("hello world"));
 ///
 ///     ui.aligned(Align2::RIGHT_TOP, |ui| {
@@ -803,10 +811,10 @@ pub fn compact_tree_sizes<R: 'static>(app: impl FnMut(&Ui) -> R) -> TreeOutput {
 ///     });
 ///
 ///     ui.show(fill("#F0F", [10.0, 10.0]));
-/// })
+/// });
 /// ```
 /// produces:
-/// ```rust,no_run
+/// ```text,no_run
 /// ViewId(3v1): Text { rect: { x: 35, y: 12, w: 11, h: 1 }, shape: TextShape { label: "hello world", fg: Set(rgb(255, 255, 255, 255)), bg: Reuse, attribute: None } }
 /// ViewId(5v1): FillBg { rect: { x: 70, y: 0, w: 10, h: 1 }, color: rgb(77, 77, 77, 255) }
 /// ViewId(5v1): Text { rect: { x: 71, y: 0, w: 8, h: 1 }, shape: TextShape { label: "click me", fg: Set(rgb(255, 255, 255, 255)), bg: Reuse, attribute: None } }

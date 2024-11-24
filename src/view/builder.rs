@@ -20,7 +20,9 @@ use super::{EventCtx, Handled, Interest, IntrinsicSize, Layout, Render, Response
 /// 'v lifetime. Views cannot borrow data as they must be 'static
 ///
 /// ### Builders can also be views
-/// ```rust,no_run
+/// ```rust
+/// use too::view::{Builder, View, Ui};
+///
 /// // views must be `Debug`, builders don't have to be
 /// #[derive(Debug)]
 /// struct Foo;

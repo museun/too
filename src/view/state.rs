@@ -29,7 +29,9 @@ use super::{
 /// You can have multiple state, they are built with a [`Rect`] as their constraining bounds.
 ///
 /// ## State life cycles
-/// ```rust,no_run
+/// ```compile_fail
+/// use too::view::State;
+///
 /// let mut state = State::new(Palette::default(), Animations::default());
 ///
 /// // provide a way to read events from a backend
