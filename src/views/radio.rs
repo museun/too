@@ -1,6 +1,8 @@
+use std::marker::PhantomData;
+
 use crate::{
     renderer::Rgba,
-    view::{Adhoc, Palette, Response, StyleKind},
+    view::{Builder, Palette, StyleKind, Ui, View},
     Str,
 };
 
@@ -8,7 +10,7 @@ use super::label::{label, LabelStyle};
 
 pub type RadioClass = fn(&Palette, bool) -> RadioStyle;
 
-#[derive(Debug)]
+#[derive(Debug, Copy, Clone)]
 pub struct RadioStyle {
     pub selected: Option<&'static str>,
     pub unselected: Option<&'static str>,
@@ -51,24 +53,55 @@ pub struct Radio<'a, V> {
     class: StyleKind<RadioClass, RadioStyle>,
 }
 
-impl<'v, V> Adhoc<'v> for Radio<'v, V>
-where
-    V: PartialEq,
-{
-    type Output = Response<bool>;
+impl<'v, V: PartialEq + 'static> Builder<'v> for Radio<'v, V> {
+    type View = RadioView<V>;
+}
 
-    fn show(self, ui: &crate::view::Ui) -> Self::Output {
+pub struct RadioView<V>
+where
+    V: PartialEq + 'static,
+{
+    label: Str,
+    class: StyleKind<RadioClass, RadioStyle>,
+    _marker: std::marker::PhantomData<V>,
+}
+
+impl<V: PartialEq> std::fmt::Debug for RadioView<V> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("RadioView")
+            .field("label", &self.label)
+            .field("class", &self.class)
+            .finish()
+    }
+}
+
+impl<V> View for RadioView<V>
+where
+    V: PartialEq + 'static,
+{
+    type Args<'v> = Radio<'v, V>;
+    type Response = bool;
+
+    fn create(args: Self::Args<'_>) -> Self {
+        Self {
+            label: args.label,
+            class: args.class,
+            _marker: PhantomData,
+        }
+    }
+
+    fn update(&mut self, args: Self::Args<'_>, ui: &Ui) -> Self::Response {
         let resp = ui
             .mouse_area(|ui| {
                 let style = match self.class {
                     StyleKind::Deferred(style) => {
-                        (style)(&ui.palette(), self.value == *self.existing)
+                        (style)(&ui.palette(), args.value == *args.existing)
                     }
                     StyleKind::Direct(style) => style,
                 };
 
                 let hovered = ui.is_hovered();
-                let fill = match (hovered, self.value == *self.existing) {
+                let fill = match (hovered, args.value == *args.existing) {
                     (false, true) => style.selected_background,
                     (false, false) => style.background,
                     (true, true) => style
@@ -84,15 +117,16 @@ where
                 };
 
                 ui.background(fill, |ui| {
-                    ui.show(label(self.label).style(LabelStyle { foreground }))
+                    ui.show(label(&self.label).style(LabelStyle { foreground }))
                 });
             })
             .flatten_left();
 
-        if resp.clicked() {
-            *self.existing = self.value;
+        let clicked = resp.clicked();
+        if clicked {
+            *args.existing = args.value;
         }
-        resp.map(|c| c.clicked())
+        clicked
     }
 }
 

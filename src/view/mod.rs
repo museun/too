@@ -30,9 +30,6 @@ pub use style::{Elements, Palette, StyleKind};
 
 mod internal_views;
 
-mod adhoc;
-pub use adhoc::Adhoc;
-
 mod builder;
 pub use builder::{Builder, View, ViewExt};
 
