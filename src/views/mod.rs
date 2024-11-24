@@ -30,7 +30,7 @@ mod fill;
 pub use fill::{fill, Fill};
 
 mod flex;
-pub use flex::FlexView;
+pub use flex::Flexible;
 
 mod key_area;
 pub use key_area::{key_area, KeyArea, KeyAreaResponse};

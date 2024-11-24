@@ -366,7 +366,7 @@ impl<'a> Ui<'a> {
     where
         R: 'static,
     {
-        self.show_children(views::FlexView::new(Flex::Tight(1.0)), show)
+        self.show_children(views::Flexible::new(Flex::Tight(1.0)), show)
             .flatten_right()
     }
 
@@ -374,7 +374,7 @@ impl<'a> Ui<'a> {
     where
         R: 'static,
     {
-        self.show_children(views::FlexView::new(Flex::Loose(1.0)), show)
+        self.show_children(views::Flexible::new(Flex::Loose(1.0)), show)
             .flatten_right()
     }
 
