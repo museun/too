@@ -3,7 +3,7 @@ use std::collections::VecDeque;
 use crate::math::Rect;
 
 use super::{
-    erased::Erased, layout::Properties, InputState, LayoutNode, LayoutNodes, View, ViewId,
+    erased::Erased, layout::Properties, Builder, InputState, LayoutNode, LayoutNodes, View, ViewId,
     ViewNodes,
 };
 
@@ -63,10 +63,10 @@ impl<'a> Filter<'a> {
 
     pub fn by_type<T>(&self, start: ViewId, depth: Depth) -> Vec<ViewId>
     where
-        T: View,
+        for<'v> T: Builder<'v>,
     {
         self.find_childern(start, depth, |_id, erased, _layout| {
-            erased.as_any().downcast_ref::<T>().is_some()
+            erased.as_any().downcast_ref::<T::View>().is_some()
         })
     }
 
