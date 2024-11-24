@@ -110,7 +110,7 @@ impl<'a> Layout<'a> {
     ///
     /// If you need to place them somewhere else, you can use this. The `pos` is relative to your local rect.
     ///
-    /// E.g. pos2(5, 3) is your top_left + (5, 3)
+    /// E.g. pos2(5, 3) is your `top_left` + (5, 3)
     pub fn set_position(&mut self, id: ViewId, pos: impl Into<Pos2>) {
         self.layout.set_position(id, pos);
     }

@@ -19,10 +19,35 @@ pub enum Depth {
     All,
 }
 
+/// Abstraction over sources that let you filter the tree
 pub trait Filterable {
     fn filter(&self) -> Filter<'_>;
 }
 
+/// A single-use filter
+///
+/// You can create this type either by feeding it its components via [`Filter::new`]
+///
+/// ---
+///
+/// Or you can get it from the various context types in two ways:
+///
+/// ### Trait-based (useful for being generic over queries from difference _sources_):
+/// ```rust
+/// use too::view::{Filterable, ViewId, Depth};
+/// fn something(f: impl Filterable, start: ViewId) {
+///     f.filter().by_type::<too::views::Label>(start, Depth::All);
+/// }
+/// ```
+///
+/// ### Inherit method based.
+/// This is implemented on:
+/// - [`Ui::filter`](crate::view::Ui::filter)
+/// - [`Layout::filter`](crate::view::Layout::filter)
+/// - [`Render::filter`](crate::view::Render::filter)
+/// - [`EventCtx::filter`](crate::view::EventCtx::filter)
+///
+/// Simple just do `whatever.filter()`
 pub struct Filter<'a> {
     nodes: &'a ViewNodes,
     layout: &'a LayoutNodes,
@@ -30,6 +55,7 @@ pub struct Filter<'a> {
 }
 
 impl<'a> Filter<'a> {
+    /// Create a new filter from the various Ui components
     pub const fn new(nodes: &'a ViewNodes, layout: &'a LayoutNodes, input: &'a InputState) -> Self {
         Self {
             nodes,
@@ -38,10 +64,20 @@ impl<'a> Filter<'a> {
         }
     }
 
+    /// Filter by region, starting at a [`ViewId`] and going for the specified [`Depth`].
+    ///
+    /// This will return all of the [`ViewId`] found from 'start' to 'depth' contained in the [`Rect`]
     pub fn by_region(&self, start: ViewId, depth: Depth, region: Rect) -> Vec<ViewId> {
         self.filter_layout(start, depth, |_, layout| region.contains_rect(layout.rect))
     }
 
+    /// Filter by property, starting a [`ViewId`] and going for the specified [`Depth`].
+    ///
+    /// This will give you a closure with each [`ViewId`] [`Properties`].
+    ///
+    /// This closure returns true or false. When you return true, that item is added to the output list.
+    ///
+    /// This will return all of the [`ViewId`] that matched the properties filter
     pub fn by_property(
         &self,
         start: ViewId,
@@ -53,6 +89,24 @@ impl<'a> Filter<'a> {
         })
     }
 
+    /// Look up a [`View`](crate::view::View) by its [`ViewId`]
+    ///
+    /// This gives you a closure of the provided `T` matches the [`Builder`] for the [`View`](crate::view::View) for [`ViewId`].
+    ///
+    /// This closure can return a value, but it must be `'static`.
+    ///
+    /// If this function returns a `None` then one of two things have occured:
+    /// - The [`ViewId`] wasn't in the tree
+    /// - The builder `T` wasn't the same type of what the `ViewId` is.
+    ///
+    /// Example:
+    ///
+    /// ```ignore
+    /// // Imagine that `SomeBuilder` creates a view that has `some_properties` on it.
+    /// render.filter().lookup::<SomeBuilder, _> (some_id, |view| {
+    ///     view.some_properties.clone()
+    /// });
+    /// ```
     pub fn lookup<'v, T, R>(
         &self,
         id: ViewId,
@@ -72,6 +126,11 @@ impl<'a> Filter<'a> {
         out
     }
 
+    /// Find the first [`ViewId`] that matches the [`Builder`] of `T` starting at a start [`ViewId`] and going for [`Depth`]
+    ///
+    /// If this function returns a `None` then one of two things have occured:
+    /// - The [`ViewId`] wasn't in the tree
+    /// - The builder `T` wasn't the same type of what the `ViewId` is.
     pub fn find_type<'v, T>(&self, start: ViewId, depth: Depth) -> Option<ViewId>
     where
         T: Builder<'v>,
@@ -81,6 +140,7 @@ impl<'a> Filter<'a> {
         })
     }
 
+    /// Find all of the [`ViewId`] that matches the [`Builder`] of `T` starting at a start [`ViewId`] and going for [`Depth`]
     pub fn by_type<'v, T>(&self, start: ViewId, depth: Depth) -> Vec<ViewId>
     where
         T: Builder<'v>,
@@ -90,6 +150,11 @@ impl<'a> Filter<'a> {
         })
     }
 
+    /// Filter the tree starting at a [`ViewId`] and going for [`Depth`]
+    ///
+    /// This gives you a closure with the [`ViewId`] and its [`LayoutNode`].
+    ///
+    /// If the closure returns true, then the [`ViewId`] is appended to the output list.
     pub fn filter_layout(
         &self,
         start: ViewId,
