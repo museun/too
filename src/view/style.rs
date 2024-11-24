@@ -9,11 +9,11 @@ use crate::renderer::Rgba;
 /// ## Convention
 ///
 /// Conventional types:
-/// ```rust,no_run
+/// ```ignore
 /// struct Style;
 /// type Class = fn(&Palette) -> Style;
-/// fn class(mut self, Class) -> Self;
-/// fn style(mut self, Style) -> Self;
+/// fn class(mut self, class: Class) -> Self;
+/// fn style(mut self, style: Style) -> Self;
 /// ```
 ///
 /// 3## Description
@@ -33,7 +33,13 @@ use crate::renderer::Rgba;
 ///
 /// ### Example
 /// A simple example:
-/// ```rust,no_run
+/// ```rust
+/// use too::{
+///     layout::Axis,
+///     renderer::{Rgba, Pixel},
+///     view::{Palette, StyleKind, Builder, View, Render}
+/// };
+///
 /// #[derive(Copy, Clone, Debug)]
 /// struct MyStyle {
 ///     background: Rgba,
@@ -114,8 +120,9 @@ use crate::renderer::Rgba;
 ///         render.fill_with(Pixel::new(style.fill).bg(style.background));
 ///     }
 /// }
-///
-/// // then a user can do:
+///```
+/// Then a user can do:
+/// ```ignore
 /// // for a deferred style:
 /// ui.show(builder().class(MyStyle::hash_at));
 /// // or for a pre-computed style

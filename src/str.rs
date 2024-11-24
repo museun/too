@@ -60,6 +60,6 @@ where
 #[macro_export]
 macro_rules! format_str {
     ($($arg:tt)*) => {
-        $crate::Str::from($crate::__dont_use_this_because_semver!($($arg)*))
+        $crate::Str::from($crate::ඞ_dont_use_this_because_semver!($($arg)*))
     }
 }

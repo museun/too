@@ -9,7 +9,7 @@
 //!
 //! # Simple examples
 //! ## Centering some text:
-//! ```rust,no_run
+//! ```no_run
 //! fn main() -> std::io::Result<()> {
 //!     too::run(|ui| {
 //!         ui.center(|ui| ui.label("hello world"));
@@ -17,7 +17,7 @@
 //! }
 //! ```
 //! ## A pair of buttons to increment and decrement a counter
-//! ```rust,no_run
+//! ```no_run
 //! fn main() -> std::io::Result<()> {
 //!     let mut counter = 0;
 //!     too::run(|ui| {
@@ -36,7 +36,7 @@
 //! }
 //! ```
 //! ## Storing state in a struct
-//! ```rust,no_run
+//! ```no_run
 //! use too::view::Ui;
 //!
 //! #[derive(Default)]
@@ -51,12 +51,12 @@
 //! }
 //!
 //! fn main() -> std::io::Result<()> {
-//!     let mut app = App::default()
+//!     let mut app = App::default();
 //!     too::run(|ui| app.view(ui))
 //! }
 //! ```
 //! ## Storing state seperately from an application
-//! ```rust,no_run
+//! ```no_run
 //! use too::view::Ui;
 //!
 //! #[derive(Default)]
@@ -64,7 +64,7 @@
 //!     value: f32
 //! }
 //!
-//! struct App ;
+//! struct App;
 //!
 //! impl App {
 //!     fn view(&self, state: &mut State, ui: &Ui) {
@@ -103,9 +103,19 @@ mod str;
 pub use str::Str;
 
 #[doc(hidden)]
-pub use compact_str::format_compact as __dont_use_this_because_semver;
+pub use compact_str::format_compact as ඞ_dont_use_this_because_semver;
 
 #[cfg(feature = "terminal")]
 mod run;
 #[cfg(feature = "terminal")]
 pub use run::{application, run, RunConfig};
+
+#[doc(hidden)]
+pub fn ඞrun_in_docs<R: 'static>(app: impl FnMut(&crate::view::Ui) -> R) -> std::io::Result<()> {
+    view::State::default().build(math::rect(math::vec2(80, 25)), app);
+    Ok(())
+}
+
+#[doc = include_str!("../README.md")]
+#[cfg(doctest)]
+pub struct ReadmeDocTests;

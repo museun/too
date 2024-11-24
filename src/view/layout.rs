@@ -26,7 +26,7 @@ impl<'a> Filterable for Layout<'a> {
 /// - return that size
 ///
 /// ## In your code:
-/// ```rust,no_run
+/// ```compile_fail
 /// let current = layout.nodes.get_current();
 /// let mut size = Size::ZERO;
 /// for &child in &current.children {
