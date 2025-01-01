@@ -17,7 +17,7 @@ mod ui;
 pub use ui::Ui;
 
 mod layout;
-pub use layout::{IntrinsicSize, Layer, Layout, LayoutNode, LayoutNodes};
+pub use layout::{IntrinsicSize, Layer, Layout, LayoutNode, LayoutNodes, Properties};
 
 mod render;
 pub use render::{CroppedSurface, Render};
