@@ -39,8 +39,8 @@ impl Deref for Str {
     }
 }
 
-impl From<&Str> for Str {
-    fn from(value: &Str) -> Self {
+impl From<&Self> for Str {
+    fn from(value: &Self) -> Self {
         value.clone()
     }
 }

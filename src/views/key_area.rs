@@ -73,27 +73,27 @@ impl KeyAreaResponse {
     }
 
     pub fn is_shift(&self) -> bool {
-        self.modifiers.filter(|m| m.is_shift()).is_some()
+        self.modifiers.filter(Modifiers::is_shift).is_some()
     }
 
     pub fn is_ctrl(&self) -> bool {
-        self.modifiers.filter(|m| m.is_ctrl()).is_some()
+        self.modifiers.filter(Modifiers::is_ctrl).is_some()
     }
 
     pub fn is_alt(&self) -> bool {
-        self.modifiers.filter(|m| m.is_alt()).is_some()
+        self.modifiers.filter(Modifiers::is_alt).is_some()
     }
 
     pub fn is_shift_only(&self) -> bool {
-        self.modifiers.filter(|m| m.is_shift_only()).is_some()
+        self.modifiers.filter(Modifiers::is_shift_only).is_some()
     }
 
     pub fn is_ctrl_only(&self) -> bool {
-        self.modifiers.filter(|m| m.is_ctrl_only()).is_some()
+        self.modifiers.filter(Modifiers::is_ctrl_only).is_some()
     }
 
     pub fn is_alt_only(&self) -> bool {
-        self.modifiers.filter(|m| m.is_alt_only()).is_some()
+        self.modifiers.filter(Modifiers::is_alt_only).is_some()
     }
 }
 

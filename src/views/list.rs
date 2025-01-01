@@ -140,7 +140,7 @@ impl List {
 }
 
 impl List {
-    fn draw_scrollbar(&mut self, render: &mut Render) {
+    fn draw_scrollbar(&self, render: &mut Render) {
         if self.total_extent() <= render.rect().height() as f32 {
             return;
         }

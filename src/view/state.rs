@@ -338,7 +338,7 @@ impl Debug {
         }
     }
 
-    pub(in crate::view) fn with<R: 'static>(f: impl FnOnce(&Debug) -> R) -> R {
+    pub(in crate::view) fn with<R: 'static>(f: impl FnOnce(&Self) -> R) -> R {
         #[cfg(not(feature = "sync"))]
         return DEBUG.with(|debug| f(debug));
         #[cfg(feature = "sync")]

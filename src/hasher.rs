@@ -9,12 +9,12 @@ use std::hash::BuildHasherDefault;
 pub struct IntHasher(u64);
 
 impl std::hash::Hasher for IntHasher {
-    #[inline(always)]
+    #[inline]
     fn finish(&self) -> u64 {
         self.0
     }
 
-    #[inline(always)]
+    #[inline]
     fn write_u64(&mut self, i: u64) {
         self.0 = i
     }
@@ -40,8 +40,8 @@ impl std::hash::BuildHasher for BuildIntHasher {
 /// A [`BuildHasherDefault`] for [`IntHasher`]
 pub type DefaultIntHasher = BuildHasherDefault<IntHasher>;
 
-#[inline(always)]
-pub(crate) const fn hash_fnv_1a(bytes: &[u8]) -> u64 {
+#[inline]
+pub const fn hash_fnv_1a(bytes: &[u8]) -> u64 {
     let mut hash = 0xcbf29ce484222325;
     let mut index = 0;
     while index < bytes.len() {

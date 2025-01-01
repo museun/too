@@ -118,7 +118,7 @@ impl TextInputResponse {
 
     pub fn selection(&self) -> Option<RefMapped<'_, str>> {
         let g = self.state.borrow();
-        Ref::filter_map(g, |i| i.selection_buffer())
+        Ref::filter_map(g, Inner::selection_buffer)
     }
 
     pub fn set_text(&self, data: impl ToString) {
@@ -538,7 +538,7 @@ impl Inner {
                     &self.buf, //
                     self.cursor,
                 )
-                .unwrap_or(self.buf.width())
+                .unwrap_or_else(|| self.buf.width())
             }
             Direction::Backward => WordSep::find_prev_word(
                 &self.buf, //
@@ -702,15 +702,11 @@ impl WordSep {
         if !data.is_ascii() {
             return Self::Other;
         }
-
-        data.chars()
-            .next()
-            .map(|c| match c {
-                c if c.is_ascii_whitespace() => Self::Space,
-                c if c.is_ascii_punctuation() => Self::Punctuation,
-                _ => Self::Other,
-            })
-            .unwrap_or(Self::Other)
+        data.chars().next().map_or(Self::Other, |c| match c {
+            c if c.is_ascii_whitespace() => Self::Space,
+            c if c.is_ascii_punctuation() => Self::Punctuation,
+            _ => Self::Other,
+        })
     }
 
     /// byte offset -> byte offset
@@ -718,11 +714,7 @@ impl WordSep {
         let start = str_indices::chars::from_byte_idx(data, start);
 
         let w = data.len();
-        let p = data
-            .grapheme_indices(true)
-            .nth(start)
-            .map(|(i, _)| i)
-            .unwrap_or(w);
+        let p = data.grapheme_indices(true).nth(start).map_or(w, |(i, _)| i);
 
         let mut graphemes = data[..p]
             .grapheme_indices(true)

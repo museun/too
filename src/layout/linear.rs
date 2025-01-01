@@ -11,7 +11,6 @@ use crate::math::{pos2, Pos2, Rect, Vec2};
 /// * top to bottom
 /// * right to left
 /// * bottom to top
-
 pub struct LinearAllocator {
     state: LinearLayout,
     cursor: Pos2,

@@ -20,6 +20,7 @@ where
 {
     type Target = T;
     fn deref(&self) -> &Self::Target {
+        #[allow(clippy::explicit_deref_methods)]
         self.inner.deref()
     }
 }
@@ -67,6 +68,7 @@ where
 {
     type Target = T;
     fn deref(&self) -> &Self::Target {
+        #[allow(clippy::explicit_deref_methods)]
         self.inner.deref()
     }
 }
@@ -130,6 +132,7 @@ where
 {
     type Target = T;
     fn deref(&self) -> &Self::Target {
+        #[allow(clippy::explicit_deref_methods)]
         self.inner.deref()
     }
 }
@@ -181,6 +184,7 @@ where
 {
     type Target = T;
     fn deref(&self) -> &Self::Target {
+        #[allow(clippy::explicit_deref_methods)]
         self.inner.deref()
     }
 }
@@ -190,6 +194,7 @@ where
     T: ?Sized,
 {
     fn deref_mut(&mut self) -> &mut Self::Target {
+        #[allow(clippy::explicit_deref_methods)]
         self.inner.deref_mut()
     }
 }
@@ -244,6 +249,7 @@ where
 {
     type Target = T;
     fn deref(&self) -> &Self::Target {
+        #[allow(clippy::explicit_deref_methods)]
         self.inner.deref()
     }
 }
@@ -253,6 +259,7 @@ where
     T: ?Sized,
 {
     fn deref_mut(&mut self) -> &mut Self::Target {
+        #[allow(clippy::explicit_deref_methods)]
         self.inner.deref_mut()
     }
 }

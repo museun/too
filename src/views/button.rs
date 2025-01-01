@@ -31,12 +31,7 @@ pub struct ButtonStyle {
 }
 
 impl ButtonStyle {
-    fn common(
-        palette: &Palette,
-        state: ButtonState,
-        primary: Rgba,
-        mut text_color: Rgba,
-    ) -> ButtonStyle {
+    fn common(palette: &Palette, state: ButtonState, primary: Rgba, mut text_color: Rgba) -> Self {
         let background = match state {
             ButtonState::Hovered => palette.accent,
             ButtonState::Held => palette.secondary,
@@ -48,7 +43,7 @@ impl ButtonStyle {
             ButtonState::None => primary,
         };
 
-        ButtonStyle {
+        Self {
             text_color,
             background,
         }
@@ -115,7 +110,7 @@ pub struct Button {
 
 impl Button {
     pub fn new(label: impl Into<Str>) -> Self {
-        Button {
+        Self {
             label: label.into().into_inner(),
             margin: Margin::symmetric(1, 0),
             state: ButtonState::None,

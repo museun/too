@@ -220,7 +220,7 @@ impl Palette {
     ///
     /// (All text is on the `Palette::background` color)
     pub const fn dark() -> Self {
-        Palette {
+        Self {
             background: Rgba::hex("#131313"),
             foreground: Rgba::hex("#FFFFFF"),
             surface: Rgba::hex("#232323"),
@@ -255,7 +255,7 @@ impl Palette {
     ///
     /// (All text is on the `Palette::background` color)
     pub const fn light() -> Self {
-        Palette {
+        Self {
             background: Rgba::hex("#E0E0E0"),
             foreground: Rgba::hex("#000000"),
             surface: Rgba::hex("#C3C5C8"),

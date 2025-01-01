@@ -68,14 +68,14 @@ impl std::ops::Sub<i32> for Vec2 {
 
 impl std::ops::Add for Vec2 {
     type Output = Self;
-    fn add(self, rhs: Vec2) -> Self::Output {
+    fn add(self, rhs: Self) -> Self::Output {
         vec2(self.x + rhs.x, self.y + rhs.y)
     }
 }
 
 impl std::ops::Sub for Vec2 {
     type Output = Self;
-    fn sub(self, rhs: Vec2) -> Self::Output {
+    fn sub(self, rhs: Self) -> Self::Output {
         vec2(self.x - rhs.x, self.y - rhs.y)
     }
 }

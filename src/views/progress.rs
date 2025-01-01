@@ -77,8 +77,8 @@ impl ProgressStyle {
         }
     }
 
-    pub fn thick_dashed(palette: &Palette, axis: Axis) -> ProgressStyle {
-        ProgressStyle {
+    pub fn thick_dashed(palette: &Palette, axis: Axis) -> Self {
+        Self {
             unfilled: axis.main((
                 Elements::THICK_DASH_HORIZONTAL_LINE,
                 Elements::THICK_DASH_VERTICAL_LINE,

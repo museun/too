@@ -92,20 +92,20 @@ impl Cell {
         }
 
         match (self, other) {
-            (Cell::Grapheme(left), Cell::Grapheme(right)) => {
+            (Self::Grapheme(left), Self::Grapheme(right)) => {
                 (left == right) || (left.cluster == right.cluster && check(right.bg, right.fg))
             }
-            (Cell::Grapheme(left), Cell::Pixel(right)) => {
+            (Self::Grapheme(left), Self::Pixel(right)) => {
                 compare(&left.cluster, right.char) && check(right.bg, right.fg)
             }
-            (Cell::Pixel(left), Cell::Grapheme(right)) => {
+            (Self::Pixel(left), Self::Grapheme(right)) => {
                 compare(&right.cluster, left.char) && check(right.bg, right.fg)
             }
-            (Cell::Pixel(left), Cell::Pixel(right)) => {
+            (Self::Pixel(left), Self::Pixel(right)) => {
                 (left == right) || ((left.char == right.char) && check(right.bg, right.fg))
             }
-            (Cell::Empty, Cell::Grapheme(..) | Cell::Pixel(..)) => false,
-            (Cell::Empty, Cell::Continuation | Cell::Empty) => true,
+            (Self::Empty, Self::Grapheme(..) | Self::Pixel(..)) => false,
+            (Self::Empty, Self::Continuation | Self::Empty) => true,
             _ => false,
         }
     }
@@ -126,13 +126,13 @@ impl Cell {
         }
 
         match (&mut this, other) {
-            (Cell::Grapheme(ref mut left), Cell::Grapheme(mut right)) => {
+            (Self::Grapheme(ref mut left), Self::Grapheme(mut right)) => {
                 merge_fg(&mut left.fg, right.fg);
                 merge_bg(&mut left.bg, right.bg);
                 left.attribute = right.attribute;
                 left.cluster = std::mem::take(&mut right.cluster);
             }
-            (Cell::Grapheme(ref mut left), Cell::Pixel(right)) => {
+            (Self::Grapheme(ref mut left), Self::Pixel(right)) => {
                 merge_fg(&mut left.fg, right.fg);
                 merge_bg(&mut left.bg, right.bg);
                 let pixel = Pixel {
@@ -141,9 +141,9 @@ impl Cell {
                     bg: left.bg,
                     attribute: right.attribute,
                 };
-                *this = Cell::Pixel(pixel)
+                *this = Self::Pixel(pixel)
             }
-            (Cell::Pixel(ref mut left), Cell::Grapheme(mut right)) => {
+            (Self::Pixel(ref mut left), Self::Grapheme(mut right)) => {
                 merge_fg(&mut left.fg, right.fg);
                 merge_bg(&mut left.bg, right.bg);
                 let grapheme = Grapheme {
@@ -152,17 +152,17 @@ impl Cell {
                     bg: left.bg,
                     attribute: right.attribute,
                 };
-                *this = Cell::Grapheme(grapheme)
+                *this = Self::Grapheme(grapheme)
             }
 
-            (Cell::Pixel(ref mut left), Cell::Pixel(right)) => {
+            (Self::Pixel(ref mut left), Self::Pixel(right)) => {
                 merge_fg(&mut left.fg, right.fg);
                 merge_bg(&mut left.bg, right.bg);
                 left.attribute = right.attribute;
                 left.char = right.char;
             }
 
-            (_, right @ (Cell::Grapheme(..) | Cell::Pixel(..))) => *this = right,
+            (_, right @ (Self::Grapheme(..) | Self::Pixel(..))) => *this = right,
             _ => {}
         }
     }
@@ -215,7 +215,7 @@ impl From<Pixel> for Cell {
 
 impl From<Rgba> for Cell {
     fn from(bg: Rgba) -> Self {
-        Cell::Pixel(Pixel::from(bg))
+        Self::Pixel(Pixel::from(bg))
     }
 }
 

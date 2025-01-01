@@ -46,7 +46,7 @@ pub struct Ui<'a> {
 }
 
 impl<'a> Ui<'a> {
-    pub(super) fn new(state: &'a mut State, client_rect: Rect) -> Self {
+    pub(super) fn new(state: &'a State, client_rect: Rect) -> Self {
         Self {
             nodes: &state.nodes,
             layout: &state.layout,

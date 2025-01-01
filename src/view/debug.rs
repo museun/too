@@ -44,7 +44,7 @@ enum InnerNode {
 
 impl DebugNode {
     pub fn from_state(state: &State) -> Self {
-        DebugNode::new(state.root(), &state.nodes, &state.layout)
+        Self::new(state.root(), &state.nodes, &state.layout)
     }
 
     pub fn compact_tree(&self) -> String {
@@ -437,7 +437,7 @@ fn render_pretty_tree(node: &DebugNode) -> String {
             }
         }
 
-        fn children_width(children: &[Node], spacing: usize) -> usize {
+        fn children_width(children: &[Self], spacing: usize) -> usize {
             if children.is_empty() {
                 return 0;
             }

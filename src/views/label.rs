@@ -15,26 +15,26 @@ pub struct LabelStyle {
 }
 
 impl LabelStyle {
-    pub const fn default(palette: &Palette) -> LabelStyle {
-        LabelStyle {
+    pub const fn default(palette: &Palette) -> Self {
+        Self {
             foreground: palette.foreground,
         }
     }
 
-    pub const fn info(palette: &Palette) -> LabelStyle {
-        LabelStyle {
+    pub const fn info(palette: &Palette) -> Self {
+        Self {
             foreground: palette.info,
         }
     }
 
-    pub const fn warning(palette: &Palette) -> LabelStyle {
-        LabelStyle {
+    pub const fn warning(palette: &Palette) -> Self {
+        Self {
             foreground: palette.warning,
         }
     }
 
-    pub const fn danger(palette: &Palette) -> LabelStyle {
-        LabelStyle {
+    pub const fn danger(palette: &Palette) -> Self {
+        Self {
             foreground: palette.danger,
         }
     }
@@ -48,7 +48,7 @@ pub fn label(label: impl Into<Str>) -> Label {
 
 impl Label {
     pub fn new(label: impl Into<Str>) -> Self {
-        Label {
+        Self {
             label: label.into().into_inner(),
             class: StyleKind::Deferred(LabelStyle::default),
             main: Align::Min,

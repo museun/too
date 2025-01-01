@@ -11,7 +11,7 @@ pub struct Constrain {
 
 impl Constrain {
     pub fn new(space: impl Into<Space>) -> Self {
-        Constrain {
+        Self {
             space: space.into(),
         }
     }
