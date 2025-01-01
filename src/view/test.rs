@@ -1,7 +1,7 @@
 //! A simplistic testing interface for your applications.
 //!
 //! This lets you assert how an application will render for specific inputs.
-use std::{borrow::Cow, ops::RangeInclusive};
+use std::ops::RangeInclusive;
 
 use crate::{
     animation::Animations,
@@ -76,12 +76,7 @@ impl Rasterizer for DebugRasterizer {
         self.push_shape(Shape::Line { start, end, pixel });
     }
 
-    fn text(&mut self, shape: TextShape<'_>) {
-        let shape = TextShape {
-            label: Cow::from(shape.label.to_string()),
-            ..shape
-        };
-
+    fn text(&mut self, shape: TextShape) {
         self.push_shape(Shape::Text {
             rect: self.rect,
             shape,

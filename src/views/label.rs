@@ -119,6 +119,15 @@ pub struct Label {
     attribute: Option<Attribute>,
 }
 
+impl Label {
+    pub fn resolve_style(&self, palette: &Palette) -> LabelStyle {
+        match self.class {
+            StyleKind::Deferred(class) => (class)(palette),
+            StyleKind::Direct(style) => style,
+        }
+    }
+}
+
 impl<'v> Builder<'v> for Label {
     type View = Self;
 }

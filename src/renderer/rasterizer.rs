@@ -1,4 +1,4 @@
-use std::{borrow::Cow, ops::RangeInclusive};
+use std::ops::RangeInclusive;
 
 use crate::{
     layout::Axis,
@@ -39,7 +39,7 @@ pub enum Shape {
         /// The region to use
         rect: Rect,
         /// The Text to use
-        shape: TextShape<'static>,
+        shape: TextShape,
     },
     /// Set a specific cell at a position with a [`Cell`]
     Set {
@@ -135,7 +135,7 @@ pub trait Rasterizer {
     fn line(&mut self, axis: Axis, offset: Pos2, range: RangeInclusive<i32>, pixel: Pixel);
 
     /// Draws a [`TextShape`] into the region
-    fn text(&mut self, shape: TextShape<'_>);
+    fn text(&mut self, shape: TextShape);
 
     /// Sets a pixel as a specific position
     fn pixel(&mut self, pos: Pos2, pixel: Pixel);
@@ -147,38 +147,63 @@ pub trait Rasterizer {
 
 /// A shape for drawing text
 #[derive(Clone, Debug, PartialEq)]
-pub struct TextShape<'a> {
-    pub(crate) label: Cow<'a, str>,
+pub struct TextShape {
+    pub(crate) label: Str,
     pub(crate) fg: Color,
     pub(crate) bg: Color,
     pub(crate) attribute: Option<Attribute>,
 }
 
-impl<'a> From<&'a str> for TextShape<'a> {
-    fn from(value: &'a str) -> Self {
+impl From<&str> for TextShape {
+    fn from(value: &str) -> Self {
         Self::new(value)
     }
 }
 
-impl<'a> From<&'a Str> for TextShape<'a> {
-    fn from(value: &'a Str) -> Self {
+impl From<Str> for TextShape {
+    fn from(value: Str) -> Self {
         Self::new(value)
     }
 }
 
-impl<'a> TextShape<'a> {
+impl TextShape {
     /// Create a new text shape from a label.
     ///
     /// By default, when drawn ontop of another shape, this will:
     /// - reset the foreground
     /// - reuse the background
-    pub const fn new(label: &'a str) -> Self {
+    pub fn new(label: impl Into<Str>) -> Self {
         Self {
-            label: Cow::Borrowed(label),
+            label: label.into(),
             fg: Color::Reset,
             bg: Color::Reuse,
             attribute: None,
         }
+    }
+
+    pub const fn const_new(label: Str) -> Self {
+        Self {
+            label,
+            fg: Color::Reset,
+            bg: Color::Reuse,
+            attribute: None,
+        }
+    }
+
+    /// Reuse the existing foreground
+    ///
+    /// By default, the foreground is reset. This changes that.
+    pub fn reuse_fg(mut self) -> Self {
+        self.fg = Color::Reuse;
+        self
+    }
+
+    /// Reset the existing background
+    ///
+    /// By default, the background is reused. This changes that.
+    pub fn reset_bg(mut self) -> Self {
+        self.bg = Color::Reset;
+        self
     }
 
     /// Sets the foreground to use for this label
