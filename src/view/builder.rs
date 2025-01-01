@@ -3,7 +3,10 @@ use crate::{
     math::{Size, Space},
 };
 
-use super::{EventCtx, Handled, Interest, IntrinsicSize, Layout, Render, Response, Ui, ViewEvent};
+use super::{
+    EventCtx, Handled, Interest, IntrinsicSize, Layout, Palette, Render, Response, Style, Ui,
+    ViewEvent,
+};
 
 /// Builders are required to build and update views
 ///
@@ -62,7 +65,22 @@ use super::{EventCtx, Handled, Interest, IntrinsicSize, Layout, Render, Response
 ///
 /// The associated view does not have to be public, but the builder _should_ be public
 pub trait Builder<'v>: Sized {
+    /// The target [`View`] for this builder
     type View: View<Args<'v> = Self>;
+    type Style: Style;
+
+    fn style(self, style: Self::Style) -> Self {
+        _ = style;
+        self
+    }
+
+    fn class(
+        self,
+        class: impl Fn(&Palette, <Self::Style as Style>::Args) -> Self::Style + 'static,
+    ) -> Self {
+        _ = class;
+        self
+    }
 }
 
 /// An extension trait that is implemented for all [`Builder`]s

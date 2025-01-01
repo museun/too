@@ -11,7 +11,7 @@ pub struct Constrain {
 
 impl Constrain {
     pub fn new(space: impl Into<Space>) -> Self {
-        Constrain {
+        Self {
             space: space.into(),
         }
     }
@@ -74,6 +74,7 @@ impl Constrain {
 
 impl<'v> Builder<'v> for Constrain {
     type View = Self;
+    type Style = ();
 }
 
 impl View for Constrain {
@@ -124,6 +125,7 @@ impl Unconstrained {
 
 impl<'v> Builder<'v> for Unconstrained {
     type View = Self;
+    type Style = ();
 }
 
 impl View for Unconstrained {

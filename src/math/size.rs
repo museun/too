@@ -89,7 +89,7 @@ impl Size {
 
 impl From<Size> for Pos2 {
     fn from(value: Size) -> Self {
-        Pos2::new(value.width.round() as i32, value.height.round() as i32)
+        Self::new(value.width.round() as i32, value.height.round() as i32)
     }
 }
 

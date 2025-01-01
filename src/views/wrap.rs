@@ -68,6 +68,7 @@ impl Wrap {
 
 impl<'v> Builder<'v> for Wrap {
     type View = WrapView;
+    type Style = ();
 }
 
 #[derive(Debug)]
@@ -199,10 +200,12 @@ impl WrapState {
     }
 }
 
+#[allow(clippy::module_name_repetitions)]
 pub const fn horizontal_wrap() -> Wrap {
     Wrap::horizontal()
 }
 
+#[allow(clippy::module_name_repetitions)]
 pub const fn vertical_wrap() -> Wrap {
     Wrap::vertical()
 }

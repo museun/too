@@ -6,8 +6,8 @@ use crate::{
     math::{lerp, Pos2, Size, Space},
     renderer::{Pixel, Rgba},
     view::{
-        Builder, Elements, EventCtx, Handled, Interest, Layout, Palette, Render, StyleKind, Ui,
-        View, ViewEvent,
+        ApplicableStyle, Builder, Elements, EventCtx, Handled, Interest, Layout, Palette, Render,
+        Style, Ui, View, ViewEvent,
     },
 };
 
@@ -27,10 +27,20 @@ pub struct ToggleStyle {
     pub off_knob_hovered: Option<Rgba>,
 }
 
-impl ToggleStyle {
-    pub fn default(palette: &Palette, axis: Axis, _toggled: bool) -> Self {
+#[derive(Copy, Clone, Debug, PartialEq)]
+pub struct ToggleStyleArgs {
+    pub axis: Axis,
+    pub toggled: bool,
+}
+
+impl Style for ToggleStyle {
+    type Args = ToggleStyleArgs;
+
+    fn default(palette: &Palette, args: ToggleStyleArgs) -> Self {
         Self {
-            track: axis.main((Elements::MEDIUM_RECT, Elements::LARGE_RECT)),
+            track: args
+                .axis
+                .main((Elements::MEDIUM_RECT, Elements::LARGE_RECT)),
             track_color: palette.outline,
             track_hovered: None,
             on_knob: Elements::LARGE_RECT,
@@ -41,49 +51,48 @@ impl ToggleStyle {
             off_knob_hovered: None,
         }
     }
-
-    pub fn large(palette: &Palette, axis: Axis, toggled: bool) -> Self {
-        Self::default(palette, axis, toggled)
+}
+impl ToggleStyle {
+    pub fn large(palette: &Palette, args: ToggleStyleArgs) -> Self {
+        Self::default(palette, args)
     }
 
-    pub fn small_rounded(palette: &Palette, axis: Axis, toggled: bool) -> Self {
+    pub fn small_rounded(palette: &Palette, args: ToggleStyleArgs) -> Self {
         Self {
-            track: axis.main((
+            track: args.axis.main((
                 Elements::THICK_HORIZONTAL_LINE,
                 Elements::THICK_VERTICAL_LINE,
             )),
             on_knob: Elements::CIRCLE,
             off_knob: Elements::CIRCLE,
-            ..Self::default(palette, axis, toggled)
+            ..Self::default(palette, args)
         }
     }
 
-    pub fn small_diamond(palette: &Palette, axis: Axis, toggled: bool) -> Self {
+    pub fn small_diamond(palette: &Palette, args: ToggleStyleArgs) -> Self {
         Self {
-            track: axis.main((
+            track: args.axis.main((
                 Elements::THICK_HORIZONTAL_LINE,
                 Elements::THICK_VERTICAL_LINE,
             )),
             on_knob: Elements::DIAMOND,
             off_knob: Elements::DIAMOND,
-            ..Self::default(palette, axis, toggled)
+            ..Self::default(palette, args)
         }
     }
 
-    pub fn small_square(palette: &Palette, axis: Axis, toggled: bool) -> Self {
+    pub fn small_square(palette: &Palette, args: ToggleStyleArgs) -> Self {
         Self {
-            track: axis.main((
+            track: args.axis.main((
                 Elements::THICK_HORIZONTAL_LINE,
                 Elements::THICK_VERTICAL_LINE,
             )),
             on_knob: Elements::MEDIUM_RECT,
             off_knob: Elements::MEDIUM_RECT,
-            ..Self::default(palette, axis, toggled)
+            ..Self::default(palette, args)
         }
     }
 }
-
-pub type ToggleClass = fn(&Palette, Axis, bool) -> ToggleStyle;
 
 #[derive(Copy, Clone, Debug, PartialEq, Default)]
 pub struct ToggleResponse {
@@ -100,7 +109,7 @@ impl ToggleResponse {
 pub struct ToggleSwitch<'a> {
     value: &'a mut bool,
     axis: Axis,
-    class: StyleKind<ToggleClass, ToggleStyle>,
+    style: ApplicableStyle<ToggleStyle>,
 }
 
 impl<'a> ToggleSwitch<'a> {
@@ -108,7 +117,7 @@ impl<'a> ToggleSwitch<'a> {
         Self {
             value,
             axis: Axis::Horizontal,
-            class: StyleKind::deferred(ToggleStyle::default),
+            style: ApplicableStyle::default(),
         }
     }
 
@@ -126,20 +135,21 @@ impl<'a> ToggleSwitch<'a> {
         self.axis = axis;
         self
     }
-
-    pub const fn class(mut self, class: ToggleClass) -> Self {
-        self.class = StyleKind::Deferred(class);
-        self
-    }
-
-    pub const fn style(mut self, style: ToggleStyle) -> Self {
-        self.class = StyleKind::Direct(style);
-        self
-    }
 }
 
 impl<'v> Builder<'v> for ToggleSwitch<'v> {
     type View = ToggleSwitchView;
+    type Style = ToggleStyle;
+
+    fn style(mut self, style: Self::Style) -> Self {
+        self.style = ApplicableStyle::value(style);
+        self
+    }
+
+    fn class(mut self, class: impl Fn(&Palette, ToggleStyleArgs) -> Self::Style + 'static) -> Self {
+        self.style = ApplicableStyle::new(class);
+        self
+    }
 }
 
 #[derive(Debug)]
@@ -147,7 +157,7 @@ pub struct ToggleSwitchView {
     value: bool,
     changed: bool,
     axis: Axis,
-    class: StyleKind<ToggleClass, ToggleStyle>,
+    style: ApplicableStyle<ToggleStyle>,
 }
 
 impl View for ToggleSwitchView {
@@ -159,13 +169,13 @@ impl View for ToggleSwitchView {
             value: *args.value,
             changed: false,
             axis: args.axis,
-            class: args.class,
+            style: args.style,
         }
     }
 
     fn update(&mut self, args: Self::Args<'_>, _: &Ui) -> Self::Response {
         self.axis = args.axis;
-        self.class = args.class;
+        self.style = args.style;
 
         let changed = self.changed;
         if std::mem::take(&mut self.changed) {
@@ -229,12 +239,14 @@ impl View for ToggleSwitchView {
     fn draw(&mut self, mut render: Render) {
         let rect = render.rect();
 
-        let selected = self.value;
-
-        let style = match self.class {
-            StyleKind::Deferred(style) => (style)(render.palette, self.axis, selected),
-            StyleKind::Direct(style) => style,
-        };
+        let toggled = self.value;
+        let style = self.style.apply(
+            render.palette,
+            ToggleStyleArgs {
+                axis: self.axis,
+                toggled,
+            },
+        );
 
         let color = if render.is_hovered() {
             style.track_hovered.unwrap_or(style.track_color)
@@ -247,20 +259,20 @@ impl View for ToggleSwitchView {
         let extent = self.axis.main::<f32>(rect.size()) - 1.0;
 
         let x = match render.animation.get_mut(render.current) {
-            Some(animation) if selected => lerp(0.0, extent, *animation.value),
-            Some(animation) if !selected => lerp(extent, 0.0, *animation.value),
-            _ if selected => extent,
+            Some(animation) if toggled => lerp(0.0, extent, *animation.value),
+            Some(animation) if !toggled => lerp(extent, 0.0, *animation.value),
+            _ if toggled => extent,
             _ => 0.0,
         };
 
-        let color = match (render.is_hovered(), selected) {
+        let color = match (render.is_hovered(), toggled) {
             (true, true) => style.on_knob_hovered.unwrap_or(style.on_knob_color),
             (true, false) => style.off_knob_hovered.unwrap_or(style.off_knob_color),
             (false, true) => style.on_knob_color,
             (false, false) => style.off_knob_color,
         };
 
-        let knob = if selected {
+        let knob = if toggled {
             style.on_knob
         } else {
             style.off_knob

@@ -244,7 +244,7 @@ impl InputState {
     }
 
     fn update_key_event(
-        &mut self,
+        &self,
         key: Key,
         nodes: &ViewNodes,
         layout: &LayoutNodes,
@@ -284,12 +284,7 @@ impl InputState {
         Handled::Bubble
     }
 
-    fn send_mouse_move(
-        &mut self,
-        nodes: &ViewNodes,
-        layout: &LayoutNodes,
-        animation: &mut Animations,
-    ) {
+    fn send_mouse_move(&self, nodes: &ViewNodes, layout: &LayoutNodes, animation: &mut Animations) {
         let event = ViewEvent::MouseMove {
             pos: self.mouse.pos,
             modifiers: self.modifiers,

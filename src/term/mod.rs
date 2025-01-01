@@ -41,6 +41,7 @@ use crate::{
 ///
 /// The others should be kept default for unsurprising behavior.
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
+#[allow(clippy::struct_excessive_bools)]
 pub struct Config {
     pub(crate) hide_cursor: bool,
     pub(crate) mouse_capture: bool,
@@ -258,12 +259,12 @@ impl Backend for Term {
 }
 
 impl std::io::Write for Term {
-    #[inline(always)]
+    #[inline]
     fn write(&mut self, buf: &[u8]) -> std::io::Result<usize> {
         self.output.out.write(buf)
     }
 
-    #[inline(always)]
+    #[inline]
     fn flush(&mut self) -> std::io::Result<()> {
         self.output.out.flush()
     }

@@ -1,5 +1,3 @@
-use compact_str::CompactString;
-
 #[allow(deprecated)]
 use crate::view::measure_text;
 
@@ -8,8 +6,8 @@ use crate::{
     math::{Margin, Size, Space},
     renderer::{Rgba, TextShape},
     view::{
-        Builder, EventCtx, Handled, Interest, Layout, Palette, Render, StyleKind, Ui, View,
-        ViewEvent,
+        ApplicableStyle, Builder, EventCtx, Handled, Interest, Layout, Palette, Render, Style, Ui,
+        View, ViewEvent,
     },
     Str,
 };
@@ -30,34 +28,14 @@ pub struct ButtonStyle {
     pub background: Rgba,
 }
 
+impl Style for ButtonStyle {
+    type Args = ButtonState;
+    fn default(palette: &Palette, args: Self::Args) -> Self {
+        Self::common(palette, args, palette.outline, palette.foreground)
+    }
+}
+
 impl ButtonStyle {
-    fn common(
-        palette: &Palette,
-        state: ButtonState,
-        primary: Rgba,
-        mut text_color: Rgba,
-    ) -> ButtonStyle {
-        let background = match state {
-            ButtonState::Hovered => palette.accent,
-            ButtonState::Held => palette.secondary,
-            ButtonState::Clicked => palette.primary,
-            ButtonState::Disabled => {
-                text_color = palette.outline;
-                palette.surface
-            }
-            ButtonState::None => primary,
-        };
-
-        ButtonStyle {
-            text_color,
-            background,
-        }
-    }
-
-    pub fn default(palette: &Palette, state: ButtonState) -> Self {
-        Self::common(palette, state, palette.outline, palette.foreground)
-    }
-
     pub fn success(palette: &Palette, state: ButtonState) -> Self {
         let fg = if palette.is_dark() {
             palette.background
@@ -93,9 +71,26 @@ impl ButtonStyle {
         };
         Self::common(palette, state, palette.danger, fg)
     }
-}
 
-pub type ButtonClass = fn(&Palette, ButtonState) -> ButtonStyle;
+    fn common(palette: &Palette, state: ButtonState, primary: Rgba, mut text_color: Rgba) -> Self {
+        let background = match state {
+            ButtonState::Hovered => palette.accent,
+            ButtonState::Held => palette.secondary,
+            ButtonState::Clicked => palette.primary,
+            ButtonState::Disabled => {
+                // why?
+                text_color = palette.outline;
+                palette.surface
+            }
+            ButtonState::None => primary,
+        };
+
+        Self {
+            text_color,
+            background,
+        }
+    }
+}
 
 pub fn button(label: impl Into<Str>) -> Button {
     Button::new(label)
@@ -104,25 +99,25 @@ pub fn button(label: impl Into<Str>) -> Button {
 #[derive(Debug)]
 #[must_use = "a view does nothing unless `show()` or `show_children()` is called"]
 pub struct Button {
-    label: CompactString,
+    label: Str,
     margin: Margin,
     state: ButtonState,
     disabled: bool,
     main: Align,
     cross: Align,
-    class: StyleKind<ButtonClass, ButtonStyle>,
+    style: ApplicableStyle<ButtonStyle>,
 }
 
 impl Button {
     pub fn new(label: impl Into<Str>) -> Self {
-        Button {
-            label: label.into().into_inner(),
+        Self {
+            label: label.into(),
             margin: Margin::symmetric(1, 0),
             state: ButtonState::None,
             disabled: false,
             main: Align::Min,
             cross: Align::Min,
-            class: StyleKind::Deferred(ButtonStyle::default),
+            style: ApplicableStyle::default(),
         }
     }
 
@@ -150,20 +145,21 @@ impl Button {
         };
         self
     }
-
-    pub const fn class(mut self, class: ButtonClass) -> Self {
-        self.class = StyleKind::Deferred(class);
-        self
-    }
-
-    pub const fn style(mut self, style: ButtonStyle) -> Self {
-        self.class = StyleKind::Direct(style);
-        self
-    }
 }
 
 impl<'v> Builder<'v> for Button {
     type View = Self;
+    type Style = ButtonStyle;
+
+    fn style(mut self, style: Self::Style) -> Self {
+        self.style = ApplicableStyle::value(style);
+        self
+    }
+
+    fn class(mut self, style: impl Fn(&Palette, ButtonState) -> Self::Style + 'static) -> Self {
+        self.style = ApplicableStyle::new(style);
+        self
+    }
 }
 
 impl View for Button {
@@ -182,7 +178,7 @@ impl View for Button {
         // TODO splat this
 
         self.label = builder.label;
-        self.class = builder.class;
+        self.style = builder.style;
         self.margin = builder.margin;
         self.disabled = builder.disabled;
         self.main = builder.main;
@@ -229,10 +225,7 @@ impl View for Button {
     }
 
     fn draw(&mut self, mut render: Render) {
-        let style = match self.class {
-            StyleKind::Deferred(class) => (class)(render.palette, self.state),
-            StyleKind::Direct(style) => style,
-        };
+        let style = self.style.apply(render.palette, self.state);
 
         render
             .fill_bg(style.background)

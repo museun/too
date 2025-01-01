@@ -1,6 +1,6 @@
 use crate::{
     renderer::Rgba,
-    view::{Builder, Palette, StyleKind, Ui, View},
+    view::{ApplicableStyle, Builder, Palette, Style, Ui, View},
     Str,
 };
 
@@ -17,8 +17,9 @@ pub struct SelectedStyle {
     pub hovered_background: Option<Rgba>,
 }
 
-impl SelectedStyle {
-    pub fn default(palette: &Palette, _selected: bool) -> Self {
+impl Style for SelectedStyle {
+    type Args = bool;
+    fn default(palette: &Palette, _args: Self::Args) -> Self {
         Self {
             text_color: palette.foreground,
             background: palette.outline,
@@ -27,7 +28,9 @@ impl SelectedStyle {
             hovered_background: None,
         }
     }
+}
 
+impl SelectedStyle {
     pub fn hovered(palette: &Palette, selected: bool) -> Self {
         Self {
             hovered_text: Some(palette.surface),
@@ -37,36 +40,32 @@ impl SelectedStyle {
     }
 }
 
-pub type SelectedClass = fn(&Palette, bool) -> SelectedStyle;
-
 #[derive(Debug)]
-#[must_use = "a view does nothing unless `ui.adhoc()` is called"]
+#[must_use = "a view does nothing unless `show()` or `show_children()` is called"]
 pub struct Selected<'a> {
     value: &'a mut bool,
     label: Str,
-    class: StyleKind<SelectedClass, SelectedStyle>,
-}
-
-impl<'a> Selected<'a> {
-    pub const fn class(mut self, class: SelectedClass) -> Self {
-        self.class = StyleKind::Deferred(class);
-        self
-    }
-
-    pub const fn style(mut self, style: SelectedStyle) -> Self {
-        self.class = StyleKind::Direct(style);
-        self
-    }
+    style: ApplicableStyle<SelectedStyle>,
 }
 
 impl<'v> Builder<'v> for Selected<'v> {
     type View = SelectedView;
+    type Style = SelectedStyle;
+    fn style(mut self, style: Self::Style) -> Self {
+        self.style = ApplicableStyle::value(style);
+        self
+    }
+
+    fn class(mut self, class: impl Fn(&Palette, bool) -> Self::Style + 'static) -> Self {
+        self.style = ApplicableStyle::new(class);
+        self
+    }
 }
 
 #[derive(Debug)]
 pub struct SelectedView {
     label: Str,
-    class: StyleKind<SelectedClass, SelectedStyle>,
+    style: ApplicableStyle<SelectedStyle>,
 }
 
 impl View for SelectedView {
@@ -76,17 +75,14 @@ impl View for SelectedView {
     fn create(args: Self::Args<'_>) -> Self {
         Self {
             label: args.label,
-            class: args.class,
+            style: args.style,
         }
     }
 
     fn update(&mut self, args: Self::Args<'_>, ui: &Ui) -> Self::Response {
         let resp = ui
             .mouse_area(|ui| {
-                let style = match self.class {
-                    StyleKind::Deferred(style) => (style)(&ui.palette(), *args.value),
-                    StyleKind::Direct(style) => style,
-                };
+                let style = self.style.apply(&ui.palette(), *args.value);
 
                 let hovered = ui.is_hovered();
                 let fill = match (hovered, *args.value) {
@@ -119,6 +115,6 @@ pub fn selected(value: &mut bool, label: impl Into<Str>) -> Selected<'_> {
     Selected {
         value,
         label: label.into(),
-        class: StyleKind::Deferred(SelectedStyle::default),
+        style: ApplicableStyle::default(),
     }
 }

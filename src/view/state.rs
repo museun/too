@@ -9,7 +9,7 @@ use crate::{
     layout::{Anchor2, LinearAllocator, LinearLayout},
     lock::{Lock, Ref},
     math::{Rect, Vec2},
-    renderer::{Rasterizer, TextShape},
+    renderer::{Rasterizer, Shape, TextShape},
     Str,
 };
 
@@ -63,6 +63,7 @@ pub struct State {
     pub(in crate::view) input: InputState,
     pub(in crate::view) animations: Animations,
     pub(in crate::view) palette: Lock<Palette>,
+    pub(in crate::view) shapes: Lock<Vec<Shape>>,
     pub(in crate::view) frame_count: u64,
     pub(in crate::view) dt: f32,
     pub(in crate::view) size_changed: Option<Vec2>,
@@ -88,6 +89,7 @@ impl State {
             input: InputState::default(),
             animations,
             palette: Lock::new(palette),
+            shapes: Lock::new(Vec::new()),
             frame_count: 0,
             dt: 1.0,
             size_changed: None,
@@ -197,7 +199,28 @@ impl State {
             }
         }
 
+        self.render_shapes(rect, rasterizer);
         self.render_debug(rect, rasterizer);
+    }
+
+    #[cfg_attr(feature = "profile", profiling::function)]
+    #[allow(unused_variables)]
+    fn render_shapes(&mut self, client_rect: Rect, rasterizer: &mut impl Rasterizer) {
+        rasterizer.set_rect(client_rect);
+        for shape in self.shapes.get_mut().drain(..) {
+            let old = rasterizer.rect();
+            match shape {
+                Shape::FillBg { rect, color } => todo!(),
+                Shape::FillWith { rect, pixel } => todo!(),
+                Shape::Line { start, end, pixel } => todo!(),
+                Shape::Text { rect, shape } => {
+                    rasterizer.set_rect(rect);
+                    rasterizer.text(shape);
+                }
+                Shape::Set { pos, cell } => todo!(),
+            }
+            rasterizer.set_rect(old);
+        }
     }
 
     #[cfg_attr(feature = "profile", profiling::function)]
@@ -315,7 +338,7 @@ impl Debug {
         }
     }
 
-    pub(in crate::view) fn with<R: 'static>(f: impl FnOnce(&Debug) -> R) -> R {
+    pub(in crate::view) fn with<R: 'static>(f: impl FnOnce(&Self) -> R) -> R {
         #[cfg(not(feature = "sync"))]
         return DEBUG.with(|debug| f(debug));
         #[cfg(feature = "sync")]

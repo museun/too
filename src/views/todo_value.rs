@@ -1,12 +1,10 @@
 use crate::{
     renderer::{Attribute, Rgba},
-    view::{Builder, Palette, StyleKind, Ui, View},
+    view::{ApplicableStyle, Builder, Palette, Style, Ui, View},
     Str,
 };
 
 use super::label::LabelStyle;
-
-pub type TodoClass = fn(&Palette, bool) -> TodoStyle;
 
 #[derive(Debug, Copy, Clone)]
 pub struct TodoStyle {
@@ -15,8 +13,10 @@ pub struct TodoStyle {
     pub hovered_color: Option<Rgba>,
 }
 
-impl TodoStyle {
-    pub fn default(palette: &Palette, _selected: bool) -> Self {
+impl Style for TodoStyle {
+    type Args = bool;
+
+    fn default(palette: &Palette, _selected: bool) -> Self {
         Self {
             selected: Attribute::STRIKEOUT | Attribute::FAINT,
             text_color: palette.foreground,
@@ -25,33 +25,32 @@ impl TodoStyle {
     }
 }
 
-#[must_use = "a view does nothing unless `ui.adhoc()` is called"]
+#[must_use = "a view does nothing unless `show()` or `show_children()` is called"]
 pub struct TodoValue<'a> {
     value: &'a mut bool,
     label: Str,
-    class: StyleKind<TodoClass, TodoStyle>,
-}
-
-impl<'a> TodoValue<'a> {
-    pub const fn class(mut self, class: TodoClass) -> Self {
-        self.class = StyleKind::Deferred(class);
-        self
-    }
-
-    pub const fn style(mut self, style: TodoStyle) -> Self {
-        self.class = StyleKind::Direct(style);
-        self
-    }
+    style: ApplicableStyle<TodoStyle>,
 }
 
 impl<'v> Builder<'v> for TodoValue<'v> {
     type View = TodoValueView;
+    type Style = TodoStyle;
+
+    fn style(mut self, style: Self::Style) -> Self {
+        self.style = ApplicableStyle::value(style);
+        self
+    }
+
+    fn class(mut self, class: impl Fn(&Palette, bool) -> Self::Style + 'static) -> Self {
+        self.style = ApplicableStyle::new(class);
+        self
+    }
 }
 
 #[derive(Debug)]
 pub struct TodoValueView {
     label: Str,
-    class: StyleKind<TodoClass, TodoStyle>,
+    style: ApplicableStyle<TodoStyle>,
 }
 
 impl View for TodoValueView {
@@ -61,17 +60,14 @@ impl View for TodoValueView {
     fn create(args: Self::Args<'_>) -> Self {
         Self {
             label: args.label,
-            class: args.class,
+            style: args.style,
         }
     }
 
     fn update(&mut self, args: Self::Args<'_>, ui: &Ui) -> Self::Response {
         let resp = ui
             .mouse_area(|ui| {
-                let style = match self.class {
-                    StyleKind::Deferred(style) => (style)(&ui.palette(), *args.value),
-                    StyleKind::Direct(style) => style,
-                };
+                let style = self.style.apply(&ui.palette(), *args.value);
 
                 let foreground = if ui.is_hovered() {
                     style.hovered_color.unwrap_or(style.text_color)
@@ -104,6 +100,6 @@ pub fn todo_value(value: &mut bool, label: impl Into<Str>) -> TodoValue<'_> {
     TodoValue {
         value,
         label: label.into(),
-        class: StyleKind::Deferred(TodoStyle::default),
+        style: ApplicableStyle::default(),
     }
 }

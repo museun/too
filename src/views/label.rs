@@ -5,7 +5,7 @@ use crate::{
     layout::Align,
     math::{Size, Space},
     renderer::{Attribute, Rgba, TextShape},
-    view::{Builder, Layout, Palette, Render, StyleKind, View},
+    view::{ApplicableStyle, Builder, Layout, Palette, Render, Style, View},
     Str,
 };
 
@@ -14,33 +14,34 @@ pub struct LabelStyle {
     pub foreground: Rgba,
 }
 
-impl LabelStyle {
-    pub const fn default(palette: &Palette) -> LabelStyle {
-        LabelStyle {
+impl Style for LabelStyle {
+    type Args = ();
+    fn default(palette: &Palette, _args: Self::Args) -> Self {
+        Self {
             foreground: palette.foreground,
-        }
-    }
-
-    pub const fn info(palette: &Palette) -> LabelStyle {
-        LabelStyle {
-            foreground: palette.info,
-        }
-    }
-
-    pub const fn warning(palette: &Palette) -> LabelStyle {
-        LabelStyle {
-            foreground: palette.warning,
-        }
-    }
-
-    pub const fn danger(palette: &Palette) -> LabelStyle {
-        LabelStyle {
-            foreground: palette.danger,
         }
     }
 }
 
-pub type LabelClass = fn(&Palette) -> LabelStyle;
+impl LabelStyle {
+    pub const fn info(palette: &Palette) -> Self {
+        Self {
+            foreground: palette.info,
+        }
+    }
+
+    pub const fn warning(palette: &Palette) -> Self {
+        Self {
+            foreground: palette.warning,
+        }
+    }
+
+    pub const fn danger(palette: &Palette) -> Self {
+        Self {
+            foreground: palette.danger,
+        }
+    }
+}
 
 pub fn label(label: impl Into<Str>) -> Label {
     Label::new(label)
@@ -48,22 +49,12 @@ pub fn label(label: impl Into<Str>) -> Label {
 
 impl Label {
     pub fn new(label: impl Into<Str>) -> Self {
-        Label {
+        Self {
             label: label.into().into_inner(),
-            class: StyleKind::Deferred(LabelStyle::default),
+            style: ApplicableStyle::default(),
             main: Align::Min,
             attribute: None,
         }
-    }
-
-    pub const fn class(mut self, class: LabelClass) -> Self {
-        self.class = StyleKind::Deferred(class);
-        self
-    }
-
-    pub const fn style(mut self, style: LabelStyle) -> Self {
-        self.class = StyleKind::Direct(style);
-        self
     }
 
     pub const fn horizontal_align(mut self, justify: Align) -> Self {
@@ -72,9 +63,8 @@ impl Label {
     }
 
     pub fn fg(self, fg: impl Into<Rgba>) -> Self {
-        self.style(LabelStyle {
-            foreground: fg.into(),
-        })
+        let foreground = fg.into();
+        self.class(move |_p, _| LabelStyle { foreground })
     }
 
     pub fn italic(self) -> Self {
@@ -114,13 +104,24 @@ impl Label {
 #[derive(Debug)]
 pub struct Label {
     label: CompactString,
-    class: StyleKind<LabelClass, LabelStyle>,
+    style: ApplicableStyle<LabelStyle>,
     main: Align,
     attribute: Option<Attribute>,
 }
 
 impl<'v> Builder<'v> for Label {
     type View = Self;
+    type Style = LabelStyle;
+
+    fn style(mut self, style: Self::Style) -> Self {
+        self.style = ApplicableStyle::value(style);
+        self
+    }
+
+    fn class(mut self, style: impl Fn(&Palette, ()) -> Self::Style + 'static) -> Self {
+        self.style = ApplicableStyle::new(style);
+        self
+    }
 }
 
 impl View for Label {
@@ -136,11 +137,7 @@ impl View for Label {
     }
 
     fn draw(&mut self, mut render: Render) {
-        let style = match self.class {
-            StyleKind::Deferred(class) => (class)(render.palette),
-            StyleKind::Direct(style) => style,
-        };
-
+        let style = self.style.apply(render.palette, ());
         render.text(
             TextShape::new(&self.label)
                 .fg(style.foreground)

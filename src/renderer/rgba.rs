@@ -439,25 +439,25 @@ impl LinearRgba {
 struct Hsva(f32, f32, f32, f32);
 impl Hsva {
     fn saturate(mut self, ratio: f32) -> Self {
-        let Hsva(_, s, _, _) = &mut self;
+        let Self(_, s, _, _) = &mut self;
         *s += (*s - 1.0) * ratio.clamp(0.0, 1.0);
         self
     }
 
     fn desaturate(mut self, ratio: f32) -> Self {
-        let Hsva(_, s, _, _) = &mut self;
+        let Self(_, s, _, _) = &mut self;
         *s *= ratio.clamp(0.0, 1.0);
         self
     }
 
     fn lighten(mut self, ratio: f32) -> Self {
-        let Hsva(_, _, v, _) = &mut self;
+        let Self(_, _, v, _) = &mut self;
         *v += (*v - 1.0) * ratio.clamp(0.0, 1.0);
         self
     }
 
     fn darken(mut self, ratio: f32) -> Self {
-        let Hsva(_, _, v, _) = &mut self;
+        let Self(_, _, v, _) = &mut self;
         *v *= ratio.clamp(0.0, 1.0);
         self
     }

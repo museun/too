@@ -2,7 +2,7 @@ use crate::{
     layout::{Axis, Flex},
     math::{Size, Space},
     renderer::{Pixel, Rgba},
-    view::{Builder, Elements, Layout, Palette, Render, StyleKind, View},
+    view::{ApplicableStyle, Builder, Elements, Layout, Palette, Render, Style, View},
 };
 
 #[derive(Debug, Copy, Clone)]
@@ -11,6 +11,7 @@ pub struct Expander;
 
 impl<'v> Builder<'v> for Expander {
     type View = Self;
+    type Style = ();
 }
 
 impl View for Expander {
@@ -35,13 +36,19 @@ pub const fn expander() -> Expander {
     Expander
 }
 
-pub type SeparatorClass = fn(&Palette, Axis) -> SeparatorStyle;
-
 #[derive(Debug, Copy, Clone)]
 pub struct SeparatorStyle {
     pub fg: Rgba,
     pub bg: Option<Rgba>,
     pub pixel: char,
+}
+
+impl Style for SeparatorStyle {
+    type Args = Axis;
+
+    fn default(palette: &Palette, args: Self::Args) -> Self {
+        Self::thick(palette, args)
+    }
 }
 
 impl SeparatorStyle {
@@ -101,32 +108,31 @@ impl SeparatorStyle {
     }
 }
 
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug)]
 #[must_use = "a view does nothing unless `show()` or `show_children()` is called"]
 pub struct Separator {
-    class: StyleKind<SeparatorClass, SeparatorStyle>,
+    style: ApplicableStyle<SeparatorStyle>,
 }
 
-pub const fn separator() -> Separator {
+pub fn separator() -> Separator {
     Separator {
-        class: StyleKind::Deferred(SeparatorStyle::thick),
-    }
-}
-
-impl Separator {
-    pub const fn class(mut self, class: SeparatorClass) -> Self {
-        self.class = StyleKind::Deferred(class);
-        self
-    }
-
-    pub const fn style(mut self, style: SeparatorStyle) -> Self {
-        self.class = StyleKind::Direct(style);
-        self
+        style: ApplicableStyle::default(),
     }
 }
 
 impl<'v> Builder<'v> for Separator {
     type View = Self;
+    type Style = SeparatorStyle;
+
+    fn style(mut self, style: Self::Style) -> Self {
+        self.style = ApplicableStyle::value(style);
+        self
+    }
+
+    fn class(mut self, style: impl Fn(&Palette, Axis) -> Self::Style + 'static) -> Self {
+        self.style = ApplicableStyle::new(style);
+        self
+    }
 }
 
 impl View for Separator {
@@ -149,11 +155,7 @@ impl View for Separator {
 
     fn draw(&mut self, mut render: Render) {
         let axis = render.parent_axis();
-
-        let style = match self.class {
-            StyleKind::Deferred(style) => (style)(render.palette, axis),
-            StyleKind::Direct(style) => style,
-        };
+        let style = self.style.apply(render.palette, axis);
 
         let mut pixel = Pixel::new(style.pixel).fg(style.fg);
         if let Some(bg) = style.bg {

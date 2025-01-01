@@ -19,7 +19,6 @@ use crate::{
 /// | [`ctrl_c_quits`](Self::ctrl_c_quits) | `true` |
 /// | [`ctrl_z_switches`](Self::ctrl_z_switches) | `false` |
 /// | [`hook_panics`](Self::hook_panics) | `false` |
-
 pub struct RunConfig {
     /// The palette to initially use
     ///

@@ -10,12 +10,10 @@ use crate::{
     math::{pos2, Size, Space},
     renderer::{Attribute, Grapheme, Pixel, Rgba},
     view::{
-        Builder, EventCtx, Handled, Interest, Layout, Palette, Render, StyleKind, Ui, View,
-        ViewEvent,
+        ApplicableStyle, Builder, EventCtx, Handled, Interest, Layout, Palette, Render, Style, Ui,
+        View, ViewEvent,
     },
 };
-
-pub type TextInputClass = fn(&Palette, bool) -> TextInputStyle;
 
 #[derive(Copy, Clone, Debug)]
 pub struct TextInputStyle {
@@ -30,8 +28,10 @@ pub struct TextInputStyle {
     pub selection: Rgba,
 }
 
-impl TextInputStyle {
-    pub fn default(palette: &Palette, _focused: bool) -> Self {
+impl Style for TextInputStyle {
+    type Args = bool;
+
+    fn default(palette: &Palette, _focused: Self::Args) -> Self {
         Self {
             background: palette.surface,
             placeholder: palette.secondary,
@@ -52,7 +52,7 @@ pub struct TextInput<'a> {
     enabled: bool,
     placeholder: Option<&'a str>,
     initial: Option<&'a str>,
-    class: StyleKind<TextInputClass, TextInputStyle>,
+    style: ApplicableStyle<TextInputStyle>,
 }
 
 impl<'a> TextInput<'a> {
@@ -70,20 +70,24 @@ impl<'a> TextInput<'a> {
         self.initial = Some(text);
         self
     }
-
-    pub const fn class(mut self, class: TextInputClass) -> Self {
-        self.class = StyleKind::deferred(class);
-        self
-    }
-
-    pub const fn style(mut self, style: TextInputStyle) -> Self {
-        self.class = StyleKind::direct(style);
-        self
-    }
 }
 
 impl<'v> Builder<'v> for TextInput<'v> {
     type View = TextInputView;
+    type Style = TextInputStyle;
+
+    fn style(mut self, style: Self::Style) -> Self {
+        self.style = ApplicableStyle::value(style);
+        self
+    }
+
+    fn class(
+        mut self,
+        class: impl Fn(&Palette, <Self::Style as crate::view::Style>::Args) -> Self::Style + 'static,
+    ) -> Self {
+        self.style = ApplicableStyle::new(class);
+        self
+    }
 }
 
 #[derive(Debug, Default)]
@@ -116,7 +120,7 @@ impl TextInputResponse {
 
     pub fn selection(&self) -> Option<RefMapped<'_, str>> {
         let g = self.state.borrow();
-        Ref::filter_map(g, |i| i.selection_buffer())
+        Ref::filter_map(g, Inner::selection_buffer)
     }
 
     pub fn set_text(&self, data: impl ToString) {
@@ -132,7 +136,7 @@ impl TextInputResponse {
 pub struct TextInputView {
     state: InputState,
     enabled: bool,
-    class: StyleKind<TextInputClass, TextInputStyle>,
+    style: ApplicableStyle<TextInputStyle>,
 }
 
 impl View for TextInputView {
@@ -154,13 +158,13 @@ impl View for TextInputView {
                 inner: Shared::new(Lock::new(input)),
             },
             enabled: args.enabled,
-            class: args.class,
+            style: args.style,
         }
     }
 
     fn update(&mut self, args: Self::Args<'_>, _ui: &Ui) -> Self::Response {
         self.enabled = args.enabled;
-        self.class = args.class;
+        self.style = args.style;
 
         let mut resp = TextInputResponse {
             state: Shared::clone(&self.state.inner),
@@ -308,10 +312,7 @@ impl View for TextInputView {
     }
 
     fn draw(&mut self, mut render: Render) {
-        let style = match self.class {
-            StyleKind::Deferred(style) => (style)(render.palette, render.is_focused()),
-            StyleKind::Direct(style) => style,
-        };
+        let style = self.style.apply(render.palette, render.is_focused());
 
         render.fill_bg(if self.enabled {
             style.background
@@ -536,7 +537,7 @@ impl Inner {
                     &self.buf, //
                     self.cursor,
                 )
-                .unwrap_or(self.buf.width())
+                .unwrap_or_else(|| self.buf.width())
             }
             Direction::Backward => WordSep::find_prev_word(
                 &self.buf, //
@@ -700,15 +701,11 @@ impl WordSep {
         if !data.is_ascii() {
             return Self::Other;
         }
-
-        data.chars()
-            .next()
-            .map(|c| match c {
-                c if c.is_ascii_whitespace() => Self::Space,
-                c if c.is_ascii_punctuation() => Self::Punctuation,
-                _ => Self::Other,
-            })
-            .unwrap_or(Self::Other)
+        data.chars().next().map_or(Self::Other, |c| match c {
+            c if c.is_ascii_whitespace() => Self::Space,
+            c if c.is_ascii_punctuation() => Self::Punctuation,
+            _ => Self::Other,
+        })
     }
 
     /// byte offset -> byte offset
@@ -716,11 +713,7 @@ impl WordSep {
         let start = str_indices::chars::from_byte_idx(data, start);
 
         let w = data.len();
-        let p = data
-            .grapheme_indices(true)
-            .nth(start)
-            .map(|(i, _)| i)
-            .unwrap_or(w);
+        let p = data.grapheme_indices(true).nth(start).map_or(w, |(i, _)| i);
 
         let mut graphemes = data[..p]
             .grapheme_indices(true)
@@ -758,6 +751,6 @@ pub fn text_input<'a>() -> TextInput<'a> {
         enabled: true,
         placeholder: None,
         initial: None,
-        class: StyleKind::deferred(TextInputStyle::default),
+        style: ApplicableStyle::default(),
     }
 }

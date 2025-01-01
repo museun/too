@@ -9,22 +9,22 @@ mod background;
 pub use background::Background;
 
 mod border;
-pub use border::{border, frame, BorderClass, BorderStyle, Frame};
+pub use border::{border, frame, BorderStyle, BorderStyleArgs, Frame};
 
 mod button;
-pub use button::{button, Button, ButtonClass, ButtonResponse, ButtonStyle};
+pub use button::{button, Button, ButtonResponse, ButtonStyle};
 
 mod checkbox;
-pub use checkbox::{checkbox, Checkbox, CheckboxClass, CheckboxStyle};
+pub use checkbox::{checkbox, Checkbox, CheckboxStyle};
 
 // mod collapsible;
-// pub use collapsible::{collapsible, Collapsible, CollapsibleClass, CollapsibleStyle};
+// pub use collapsible::{collapsible, Collapsible,  CollapsibleStyle};
 
 mod constrain;
 pub use constrain::{Constrain, Unconstrained};
 
 mod expander;
-pub use expander::{expander, separator, Expander, Separator, SeparatorClass, SeparatorStyle};
+pub use expander::{expander, separator, Expander, Separator, SeparatorStyle};
 
 mod fill;
 pub use fill::{fill, Fill};
@@ -36,10 +36,10 @@ mod key_area;
 pub use key_area::{key_area, KeyArea, KeyAreaResponse};
 
 mod label;
-pub use label::{label, Label, LabelClass, LabelStyle};
+pub use label::{label, Label, LabelStyle};
 
 mod list;
-pub use list::{list, List, ScrollClass, ScrollStyle};
+pub use list::{list, List, ScrollStyle};
 
 mod margin;
 pub use margin::Padding;
@@ -51,28 +51,30 @@ mod offset;
 pub use offset::Offset;
 
 mod progress;
-pub use progress::{progress, Progress, ProgressClass, ProgressStyle};
+pub use progress::{progress, Progress, ProgressStyle};
 
 mod radio;
-pub use radio::{radio, Radio, RadioClass, RadioStyle};
+pub use radio::{radio, Radio, RadioStyle};
 
 mod selected;
-pub use selected::{selected, Selected, SelectedClass, SelectedStyle};
+pub use selected::{selected, Selected, SelectedStyle};
 
 mod slider;
-pub use slider::{slider, Slider, SliderClass, SliderStyle};
+pub use slider::{slider, Slider, SliderStyle};
 
 mod text_input;
-pub use text_input::{text_input, TextInput, TextInputClass, TextInputResponse, TextInputStyle};
+pub use text_input::{text_input, TextInput, TextInputResponse, TextInputStyle};
 
 mod todo_value;
-pub use todo_value::{todo_value, TodoClass, TodoStyle, TodoValue};
+pub use todo_value::{todo_value, TodoStyle, TodoValue};
 
 mod toggle;
 pub use toggle::{toggle, Toggle};
 
 mod toggle_switch;
-pub use toggle_switch::{toggle_switch, ToggleClass, ToggleResponse, ToggleStyle, ToggleSwitch};
+pub use toggle_switch::{
+    toggle_switch, ToggleResponse, ToggleStyle, ToggleStyleArgs, ToggleSwitch,
+};
 
 mod wrap;
 pub use wrap::{horizontal_wrap, vertical_wrap, Wrap};

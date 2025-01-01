@@ -1,9 +1,9 @@
 use crate::{
     backend::Keybind,
     layout::{Align2, Flex},
-    lock::{Lock, Ref, RefMapped},
+    lock::{Lock, Ref, RefMapped, RefMut},
     math::{Margin, Pos2, Rect, Size, Vec2},
-    renderer::{Border, Rgba},
+    renderer::{Border, Rgba, Shape, TextShape},
     views::{self, Constrain},
     Str,
 };
@@ -20,12 +20,25 @@ impl<'a> Filterable for Ui<'a> {
     }
 }
 
+pub struct Painter<'a> {
+    shapes: RefMut<'a, Vec<Shape>>,
+}
+
+impl<'a> Painter<'a> {
+    pub fn text(&mut self, rect: Rect, text: impl Into<TextShape>) {
+        self.shapes.push(Shape::Text {
+            rect,
+            shape: text.into(),
+        });
+    }
+}
+
 pub struct Ui<'a> {
     nodes: &'a ViewNodes,
     layout: &'a LayoutNodes,
     input: &'a InputState,
     palette: &'a Lock<Palette>,
-
+    shapes: &'a Lock<Vec<Shape>>,
     client_rect: Rect,
     size_changed: Option<Vec2>,
     frame_count: u64,
@@ -33,12 +46,13 @@ pub struct Ui<'a> {
 }
 
 impl<'a> Ui<'a> {
-    pub(super) fn new(state: &'a mut State, client_rect: Rect) -> Self {
+    pub(super) fn new(state: &'a State, client_rect: Rect) -> Self {
         Self {
             nodes: &state.nodes,
             layout: &state.layout,
             input: &state.input,
             palette: &state.palette,
+            shapes: &state.shapes,
             client_rect,
             frame_count: state.frame_count,
             dt: state.dt,
@@ -72,6 +86,15 @@ impl<'a> Ui<'a> {
 }
 
 impl<'a> Ui<'a> {
+    pub fn painter<'b>(&'b self) -> Painter<'b>
+    where
+        'a: 'b,
+    {
+        Painter {
+            shapes: self.shapes.borrow_mut(),
+        }
+    }
+
     pub fn filter(&self) -> Filter<'_> {
         <Self as Filterable>::filter(self)
     }

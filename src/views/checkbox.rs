@@ -1,12 +1,10 @@
 use crate::{
     renderer::Rgba,
-    view::{Builder, Palette, StyleKind, Ui, View},
+    view::{ApplicableStyle, Builder, Palette, Style, Ui, View},
     Str,
 };
 
 use super::label::LabelStyle;
-
-pub type CheckboxClass = fn(&Palette, bool) -> CheckboxStyle;
 
 #[derive(Debug, Copy, Clone)]
 pub struct CheckboxStyle {
@@ -16,16 +14,10 @@ pub struct CheckboxStyle {
     pub hovered_color: Option<Rgba>,
 }
 
-impl CheckboxStyle {
-    pub fn markdown(palette: &Palette, checked: bool) -> Self {
-        Self {
-            checked: "[X]",
-            unchecked: "[ ]",
-            ..Self::ascii(palette, checked)
-        }
-    }
+impl Style for CheckboxStyle {
+    type Args = bool;
 
-    pub fn ascii(palette: &Palette, _checked: bool) -> Self {
+    fn default(palette: &Palette, _args: Self::Args) -> Self {
         Self {
             checked: "🗹",
             unchecked: "☐",
@@ -35,34 +27,47 @@ impl CheckboxStyle {
     }
 }
 
+impl CheckboxStyle {
+    pub fn markdown(palette: &Palette, checked: bool) -> Self {
+        Self {
+            checked: "[X]",
+            unchecked: "[ ]",
+            ..Self::default(palette, checked)
+        }
+    }
+
+    pub fn ascii(palette: &Palette, checked: bool) -> Self {
+        Self::default(palette, checked)
+    }
+}
+
 #[derive(Debug)]
-#[must_use = "a view does nothing unless `ui.adhoc()` is called"]
+#[must_use = "a view does nothing unless `show()` or `show_children()` is called"]
 pub struct Checkbox<'a> {
     value: &'a mut bool,
     label: Str,
-    class: StyleKind<CheckboxClass, CheckboxStyle>,
-}
-
-impl<'a> Checkbox<'a> {
-    pub const fn class(mut self, class: CheckboxClass) -> Self {
-        self.class = StyleKind::deferred(class);
-        self
-    }
-
-    pub const fn style(mut self, style: CheckboxStyle) -> Self {
-        self.class = StyleKind::direct(style);
-        self
-    }
+    style: ApplicableStyle<CheckboxStyle>,
 }
 
 impl<'v> Builder<'v> for Checkbox<'v> {
     type View = CheckboxView;
+    type Style = CheckboxStyle;
+
+    fn style(mut self, style: Self::Style) -> Self {
+        self.style = ApplicableStyle::value(style);
+        self
+    }
+
+    fn class(mut self, style: impl Fn(&Palette, bool) -> Self::Style + 'static) -> Self {
+        self.style = ApplicableStyle::new(style);
+        self
+    }
 }
 
 #[derive(Debug)]
 pub struct CheckboxView {
     label: Str,
-    class: StyleKind<CheckboxClass, CheckboxStyle>,
+    style: ApplicableStyle<CheckboxStyle>,
 }
 
 impl View for CheckboxView {
@@ -72,17 +77,14 @@ impl View for CheckboxView {
     fn create(args: Self::Args<'_>) -> Self {
         Self {
             label: args.label,
-            class: args.class,
+            style: args.style,
         }
     }
 
     fn update(&mut self, args: Self::Args<'_>, ui: &Ui) -> Self::Response {
         let resp = ui
             .mouse_area(|ui| {
-                let style = match self.class {
-                    StyleKind::Deferred(style) => (style)(&ui.palette(), *args.value),
-                    StyleKind::Direct(style) => style,
-                };
+                let style = self.style.apply(&ui.palette(), *args.value);
 
                 let foreground = if ui.is_hovered() {
                     style.hovered_color.unwrap_or(style.text_color)
@@ -111,6 +113,6 @@ pub fn checkbox(value: &mut bool, label: impl Into<Str>) -> Checkbox<'_> {
     Checkbox {
         value,
         label: label.into(),
-        class: StyleKind::deferred(CheckboxStyle::ascii),
+        style: ApplicableStyle::default(),
     }
 }

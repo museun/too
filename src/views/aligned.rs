@@ -16,6 +16,7 @@ pub struct Aligned {
 
 impl<'v> Builder<'v> for Aligned {
     type View = Self;
+    type Style = ();
 }
 
 impl View for Aligned {

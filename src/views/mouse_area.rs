@@ -32,6 +32,7 @@ impl DraggingResponse {
 }
 
 #[derive(Copy, Clone, Debug, Default, PartialEq)]
+#[allow(clippy::struct_excessive_bools)]
 pub struct MouseAreaResponse {
     clicked: bool,
     hovered: bool,
@@ -109,6 +110,7 @@ impl MouseArea {
 
 impl<'v> Builder<'v> for MouseArea {
     type View = Self;
+    type Style = ();
 }
 
 impl View for MouseArea {
@@ -121,10 +123,10 @@ impl View for MouseArea {
 
     fn update(&mut self, _: Self::Args<'_>, _: &Ui) -> Self::Response {
         let state = std::mem::take(&mut self.state);
-        let dragged = if !matches!(state, MouseState::Held) {
-            self.dragged.take()
-        } else {
+        let dragged = if matches!(state, MouseState::Held) {
             self.dragged
+        } else {
+            self.dragged.take()
         };
 
         if matches!(state, MouseState::Hovering) {

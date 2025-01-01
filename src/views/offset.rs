@@ -17,6 +17,7 @@ impl Offset {
 
 impl<'v> Builder<'v> for Offset {
     type View = Self;
+    type Style = ();
 }
 
 impl View for Offset {

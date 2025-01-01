@@ -6,8 +6,8 @@ use crate::{
     math::{remap, vec2, Pos2, Rect, Size, Space, Vec2},
     renderer::{Pixel, Rgba},
     view::{
-        Builder, Elements, EventCtx, Handled, Interest, Layout, Palette, Render, StyleKind, Ui,
-        View, ViewEvent,
+        ApplicableStyle, Builder, Elements, EventCtx, Handled, Interest, Layout, Palette, Render,
+        Style, Ui, View, ViewEvent,
     },
 };
 
@@ -57,8 +57,6 @@ struct ScrollState {
     knob_held: bool,
 }
 
-pub type ScrollClass = fn(&Palette, Axis) -> ScrollStyle;
-
 #[derive(Copy, Clone)]
 pub struct ScrollStyle {
     pub knob: char,
@@ -70,18 +68,20 @@ pub struct ScrollStyle {
     pub background: Rgba,
 }
 
-impl ScrollStyle {
-    pub fn default(palette: &Palette, axis: Axis) -> Self {
+impl Style for ScrollStyle {
+    type Args = Axis;
+
+    fn default(palette: &Palette, args: Self::Args) -> Self {
         Self {
-            knob: axis.main((
+            knob: args.main((
                 Elements::THICK_HORIZONTAL_LINE,
                 Elements::THICK_VERTICAL_LINE,
             )),
-            knob_grab: Some(axis.main((
+            knob_grab: Some(args.main((
                 Elements::MEDIUM_RECT, //
                 Elements::LARGE_RECT,
             ))),
-            track: Some(axis.main((
+            track: Some(args.main((
                 Elements::DASH_HORIZONTAL_LINE, //
                 Elements::DASH_VERTICAL_LINE,
             ))),
@@ -101,7 +101,7 @@ pub struct List {
     gap: f32,
     state: ListState,
     scroll: ScrollState,
-    class: StyleKind<ScrollClass, ScrollStyle>,
+    style: ApplicableStyle<ScrollStyle>,
 }
 
 impl List {
@@ -137,28 +137,15 @@ impl List {
         self.scroll.scrollable = scrollable;
         self
     }
-
-    pub const fn class(mut self, class: ScrollClass) -> Self {
-        self.class = StyleKind::Deferred(class);
-        self
-    }
-
-    pub const fn style(mut self, style: ScrollStyle) -> Self {
-        self.class = StyleKind::Direct(style);
-        self
-    }
 }
 
 impl List {
-    fn draw_scrollbar(&mut self, render: &mut Render) {
+    fn draw_scrollbar(&self, render: &mut Render) {
         if self.total_extent() <= render.rect().height() as f32 {
             return;
         }
 
-        let style = match self.class {
-            StyleKind::Deferred(style) => (style)(render.palette, self.axis),
-            StyleKind::Direct(style) => style,
-        };
+        let style = self.style.apply(render.palette, self.axis);
 
         let rect = render.local_rect();
         let extent = self.axis.cross(rect.right_bottom() - 1);
@@ -311,6 +298,17 @@ impl std::fmt::Debug for List {
 
 impl<'v> Builder<'v> for List {
     type View = Self;
+    type Style = ScrollStyle;
+
+    fn style(mut self, style: Self::Style) -> Self {
+        self.style = ApplicableStyle::value(style);
+        self
+    }
+
+    fn class(mut self, class: impl Fn(&Palette, Axis) -> Self::Style + 'static) -> Self {
+        self.style = ApplicableStyle::new(class);
+        self
+    }
 }
 
 impl View for List {
@@ -539,7 +537,7 @@ impl View for List {
     }
 }
 
-pub const fn list() -> List {
+pub fn list() -> List {
     List {
         axis: Axis::Horizontal,
         justify: Justify::Start,
@@ -551,6 +549,6 @@ pub const fn list() -> List {
             pos: 0,
             knob_held: false,
         },
-        class: StyleKind::deferred(ScrollStyle::default),
+        style: ApplicableStyle::default(),
     }
 }

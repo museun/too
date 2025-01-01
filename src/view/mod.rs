@@ -17,7 +17,7 @@ mod ui;
 pub use ui::Ui;
 
 mod layout;
-pub use layout::{IntrinsicSize, Layer, Layout, LayoutNode, LayoutNodes};
+pub use layout::{IntrinsicSize, Layer, Layout, LayoutNode, LayoutNodes, Properties};
 
 mod render;
 pub use render::{CroppedSurface, Render};
@@ -26,7 +26,7 @@ mod view_nodes;
 pub use view_nodes::{ViewNode, ViewNodes};
 
 mod style;
-pub use style::{Elements, Palette, StyleKind};
+pub use style::{ApplicableStyle, Elements, Palette, Style};
 
 mod internal_views;
 

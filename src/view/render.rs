@@ -31,12 +31,13 @@ pub struct Render<'a, 'b> {
     pub palette: &'a Palette,
     /// Mutable access to the animation context
     pub animation: &'a mut Animations,
+    /// Immutable access to the input tree
+    pub input: &'a InputState,
 
     pub(super) rect: Rect,
     pub(super) pending: &'a mut VecDeque<ViewId>,
     pub(super) rasterizer: &'b mut dyn Rasterizer,
     pub(super) render: &'a mut RenderNodes,
-    pub(super) input: &'a InputState,
 }
 
 // TODO determine if this should always be in local space or absolute space
@@ -186,7 +187,7 @@ impl<'a, 'b> Render<'a, 'b> {
     }
 
     /// Draws a [`TextShape`] into the region
-    pub fn text<'t>(&mut self, text: impl Into<TextShape<'t>>) -> &mut Self {
+    pub fn text(&mut self, text: impl Into<TextShape>) -> &mut Self {
         self.rasterizer.text(text.into());
         self
     }
@@ -408,7 +409,7 @@ impl<'a> Rasterizer for CroppedSurface<'a> {
         }
     }
 
-    fn text(&mut self, shape: TextShape<'_>) {
+    fn text(&mut self, shape: TextShape) {
         for (x, g) in shape.label.graphemes(true).enumerate() {
             let mut cell = Grapheme::new(g).fg(shape.fg).bg(shape.bg);
             if let Some(attr) = shape.attribute {

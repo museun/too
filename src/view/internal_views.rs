@@ -31,6 +31,7 @@ impl View for Root {
 pub struct Layer;
 impl<'v> Builder<'v> for Layer {
     type View = Self;
+    type Style = ();
 }
 
 impl View for Layer {
@@ -51,6 +52,7 @@ impl View for Layer {
 pub struct Float(pub super::Layer);
 impl<'v> Builder<'v> for Float {
     type View = Self;
+    type Style = ();
 }
 
 impl View for Float {
