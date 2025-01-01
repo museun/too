@@ -32,20 +32,22 @@ pub struct TodoValue<'a> {
     class: StyleKind<TodoClass, TodoStyle>,
 }
 
-impl<'a> TodoValue<'a> {
-    pub const fn class(mut self, class: TodoClass) -> Self {
-        self.class = StyleKind::Deferred(class);
-        self
-    }
-
-    pub const fn style(mut self, style: TodoStyle) -> Self {
-        self.class = StyleKind::Direct(style);
-        self
-    }
-}
+impl<'a> TodoValue<'a> {}
 
 impl<'v> Builder<'v> for TodoValue<'v> {
     type View = TodoValueView;
+    type Class = TodoClass;
+    type Style = TodoStyle;
+
+    fn class(mut self, class: Self::Class) -> Self {
+        self.class = StyleKind::deferred(class);
+        self
+    }
+
+    fn style(mut self, style: Self::Style) -> Self {
+        self.class = StyleKind::direct(style);
+        self
+    }
 }
 
 #[derive(Debug)]

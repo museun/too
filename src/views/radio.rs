@@ -55,6 +55,18 @@ pub struct Radio<'a, V> {
 
 impl<'v, V: PartialEq + 'static> Builder<'v> for Radio<'v, V> {
     type View = RadioView<V>;
+    type Class = RadioClass;
+    type Style = RadioStyle;
+
+    fn class(mut self, class: Self::Class) -> Self {
+        self.class = StyleKind::deferred(class);
+        self
+    }
+
+    fn style(mut self, style: Self::Style) -> Self {
+        self.class = StyleKind::direct(style);
+        self
+    }
 }
 
 pub struct RadioView<V>

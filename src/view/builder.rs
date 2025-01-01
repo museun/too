@@ -63,6 +63,18 @@ use super::{EventCtx, Handled, Interest, IntrinsicSize, Layout, Render, Response
 /// The associated view does not have to be public, but the builder _should_ be public
 pub trait Builder<'v>: Sized {
     type View: View<Args<'v> = Self>;
+
+    type Class;
+    type Style;
+
+    fn class(self, class: Self::Class) -> Self {
+        _ = class;
+        self
+    }
+    fn style(self, style: Self::Style) -> Self {
+        _ = style;
+        self
+    }
 }
 
 /// An extension trait that is implemented for all [`Builder`]s

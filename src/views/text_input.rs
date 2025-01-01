@@ -70,20 +70,22 @@ impl<'a> TextInput<'a> {
         self.initial = Some(text);
         self
     }
-
-    pub const fn class(mut self, class: TextInputClass) -> Self {
-        self.class = StyleKind::deferred(class);
-        self
-    }
-
-    pub const fn style(mut self, style: TextInputStyle) -> Self {
-        self.class = StyleKind::direct(style);
-        self
-    }
 }
 
 impl<'v> Builder<'v> for TextInput<'v> {
     type View = TextInputView;
+    type Class = TextInputClass;
+    type Style = TextInputStyle;
+
+    fn class(mut self, class: Self::Class) -> Self {
+        self.class = StyleKind::deferred(class);
+        self
+    }
+
+    fn style(mut self, style: Self::Style) -> Self {
+        self.class = StyleKind::direct(style);
+        self
+    }
 }
 
 #[derive(Debug, Default)]

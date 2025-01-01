@@ -23,6 +23,8 @@ impl Flexible {
 
 impl<'v> Builder<'v> for Flexible {
     type View = Self;
+    type Class = ();
+    type Style = ();
 }
 
 impl View for Flexible {

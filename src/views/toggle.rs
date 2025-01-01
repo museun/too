@@ -16,6 +16,8 @@ pub struct Toggle {
 
 impl<'v> Builder<'v> for Toggle {
     type View = Self;
+    type Class = ();
+    type Style = ();
 }
 
 impl View for Toggle {

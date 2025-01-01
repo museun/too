@@ -11,6 +11,8 @@ pub struct Expander;
 
 impl<'v> Builder<'v> for Expander {
     type View = Self;
+    type Class = ();
+    type Style = ();
 }
 
 impl View for Expander {
@@ -113,20 +115,20 @@ pub const fn separator() -> Separator {
     }
 }
 
-impl Separator {
-    pub const fn class(mut self, class: SeparatorClass) -> Self {
+impl<'v> Builder<'v> for Separator {
+    type View = Self;
+    type Class = SeparatorClass;
+    type Style = SeparatorStyle;
+
+    fn class(mut self, class: SeparatorClass) -> Self {
         self.class = StyleKind::Deferred(class);
         self
     }
 
-    pub const fn style(mut self, style: SeparatorStyle) -> Self {
+    fn style(mut self, style: SeparatorStyle) -> Self {
         self.class = StyleKind::Direct(style);
         self
     }
-}
-
-impl<'v> Builder<'v> for Separator {
-    type View = Self;
 }
 
 impl View for Separator {

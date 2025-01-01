@@ -19,6 +19,8 @@ impl Padding {
 
 impl<'v> Builder<'v> for Padding {
     type View = Self;
+    type Class = ();
+    type Style = ();
 }
 
 impl View for Padding {

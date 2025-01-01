@@ -126,20 +126,22 @@ impl<'a> ToggleSwitch<'a> {
         self.axis = axis;
         self
     }
-
-    pub const fn class(mut self, class: ToggleClass) -> Self {
-        self.class = StyleKind::Deferred(class);
-        self
-    }
-
-    pub const fn style(mut self, style: ToggleStyle) -> Self {
-        self.class = StyleKind::Direct(style);
-        self
-    }
 }
 
 impl<'v> Builder<'v> for ToggleSwitch<'v> {
     type View = ToggleSwitchView;
+    type Class = ToggleClass;
+    type Style = ToggleStyle;
+
+    fn class(mut self, class: Self::Class) -> Self {
+        self.class = StyleKind::deferred(class);
+        self
+    }
+
+    fn style(mut self, style: Self::Style) -> Self {
+        self.class = StyleKind::direct(style);
+        self
+    }
 }
 
 #[derive(Debug)]

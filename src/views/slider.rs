@@ -125,20 +125,22 @@ impl<'v> Slider<'v> {
     pub const fn vertical(self) -> Self {
         self.axis(Axis::Vertical)
     }
-
-    pub const fn class(mut self, class: SliderClass) -> Self {
-        self.class = StyleKind::Deferred(class);
-        self
-    }
-
-    pub const fn style(mut self, style: SliderStyle) -> Self {
-        self.class = StyleKind::Direct(style);
-        self
-    }
 }
 
 impl<'v> Builder<'v> for Slider<'v> {
     type View = SliderView;
+    type Class = SliderClass;
+    type Style = SliderStyle;
+
+    fn class(mut self, class: Self::Class) -> Self {
+        self.class = StyleKind::deferred(class);
+        self
+    }
+
+    fn style(mut self, style: Self::Style) -> Self {
+        self.class = StyleKind::direct(style);
+        self
+    }
 }
 
 #[derive(Debug)]

@@ -23,6 +23,8 @@ impl Background {
 
 impl<'v> Builder<'v> for Background {
     type View = Self;
+    type Class = ();
+    type Style = ();
 }
 
 impl View for Background {

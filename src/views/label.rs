@@ -56,16 +56,6 @@ impl Label {
         }
     }
 
-    pub const fn class(mut self, class: LabelClass) -> Self {
-        self.class = StyleKind::Deferred(class);
-        self
-    }
-
-    pub const fn style(mut self, style: LabelStyle) -> Self {
-        self.class = StyleKind::Direct(style);
-        self
-    }
-
     pub const fn horizontal_align(mut self, justify: Align) -> Self {
         self.main = justify;
         self
@@ -130,6 +120,18 @@ impl Label {
 
 impl<'v> Builder<'v> for Label {
     type View = Self;
+    type Class = LabelClass;
+    type Style = LabelStyle;
+
+    fn class(mut self, class: LabelClass) -> Self {
+        self.class = StyleKind::Deferred(class);
+        self
+    }
+
+    fn style(mut self, style: LabelStyle) -> Self {
+        self.class = StyleKind::Direct(style);
+        self
+    }
 }
 
 impl View for Label {

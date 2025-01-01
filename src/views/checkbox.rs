@@ -43,20 +43,20 @@ pub struct Checkbox<'a> {
     class: StyleKind<CheckboxClass, CheckboxStyle>,
 }
 
-impl<'a> Checkbox<'a> {
-    pub const fn class(mut self, class: CheckboxClass) -> Self {
+impl<'v> Builder<'v> for Checkbox<'v> {
+    type View = CheckboxView;
+    type Class = CheckboxClass;
+    type Style = CheckboxStyle;
+
+    fn class(mut self, class: CheckboxClass) -> Self {
         self.class = StyleKind::deferred(class);
         self
     }
 
-    pub const fn style(mut self, style: CheckboxStyle) -> Self {
+    fn style(mut self, style: CheckboxStyle) -> Self {
         self.class = StyleKind::direct(style);
         self
     }
-}
-
-impl<'v> Builder<'v> for Checkbox<'v> {
-    type View = CheckboxView;
 }
 
 #[derive(Debug)]

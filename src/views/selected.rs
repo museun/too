@@ -47,20 +47,20 @@ pub struct Selected<'a> {
     class: StyleKind<SelectedClass, SelectedStyle>,
 }
 
-impl<'a> Selected<'a> {
-    pub const fn class(mut self, class: SelectedClass) -> Self {
-        self.class = StyleKind::Deferred(class);
-        self
-    }
-
-    pub const fn style(mut self, style: SelectedStyle) -> Self {
-        self.class = StyleKind::Direct(style);
-        self
-    }
-}
-
 impl<'v> Builder<'v> for Selected<'v> {
     type View = SelectedView;
+    type Class = SelectedClass;
+    type Style = SelectedStyle;
+
+    fn class(mut self, class: Self::Class) -> Self {
+        self.class = StyleKind::deferred(class);
+        self
+    }
+
+    fn style(mut self, style: Self::Style) -> Self {
+        self.class = StyleKind::direct(style);
+        self
+    }
 }
 
 #[derive(Debug)]

@@ -128,20 +128,22 @@ impl Progress {
         self.axis = axis;
         self
     }
-
-    pub const fn class(mut self, class: ProgressClass) -> Self {
-        self.class = StyleKind::Deferred(class);
-        self
-    }
-
-    pub const fn style(mut self, style: ProgressStyle) -> Self {
-        self.class = StyleKind::Direct(style);
-        self
-    }
 }
 
 impl<'v> Builder<'v> for Progress {
     type View = Self;
+    type Class = ProgressClass;
+    type Style = ProgressStyle;
+
+    fn class(mut self, class: ProgressClass) -> Self {
+        self.class = StyleKind::Deferred(class);
+        self
+    }
+
+    fn style(mut self, style: ProgressStyle) -> Self {
+        self.class = StyleKind::Direct(style);
+        self
+    }
 }
 
 impl View for Progress {

@@ -75,20 +75,22 @@ impl Frame {
         self.align = align;
         self
     }
-
-    pub const fn class(mut self, class: BorderClass) -> Self {
-        self.class = StyleKind::deferred(class);
-        self
-    }
-
-    pub const fn style(mut self, style: BorderStyle) -> Self {
-        self.class = StyleKind::direct(style);
-        self
-    }
 }
 
 impl<'v> Builder<'v> for Frame {
     type View = Self;
+    type Class = BorderClass;
+    type Style = BorderStyle;
+
+    fn class(mut self, class: BorderClass) -> Self {
+        self.class = StyleKind::deferred(class);
+        self
+    }
+
+    fn style(mut self, style: BorderStyle) -> Self {
+        self.class = StyleKind::direct(style);
+        self
+    }
 }
 
 impl View for Frame {

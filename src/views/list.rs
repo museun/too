@@ -137,16 +137,6 @@ impl List {
         self.scroll.scrollable = scrollable;
         self
     }
-
-    pub const fn class(mut self, class: ScrollClass) -> Self {
-        self.class = StyleKind::Deferred(class);
-        self
-    }
-
-    pub const fn style(mut self, style: ScrollStyle) -> Self {
-        self.class = StyleKind::Direct(style);
-        self
-    }
 }
 
 impl List {
@@ -311,6 +301,18 @@ impl std::fmt::Debug for List {
 
 impl<'v> Builder<'v> for List {
     type View = Self;
+    type Class = ScrollClass;
+    type Style = ScrollStyle;
+
+    fn class(mut self, class: ScrollClass) -> Self {
+        self.class = StyleKind::Deferred(class);
+        self
+    }
+
+    fn style(mut self, style: ScrollStyle) -> Self {
+        self.class = StyleKind::Direct(style);
+        self
+    }
 }
 
 impl View for List {

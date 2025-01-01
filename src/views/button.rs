@@ -150,20 +150,22 @@ impl Button {
         };
         self
     }
-
-    pub const fn class(mut self, class: ButtonClass) -> Self {
-        self.class = StyleKind::Deferred(class);
-        self
-    }
-
-    pub const fn style(mut self, style: ButtonStyle) -> Self {
-        self.class = StyleKind::Direct(style);
-        self
-    }
 }
 
 impl<'v> Builder<'v> for Button {
     type View = Self;
+    type Class = ButtonClass;
+    type Style = ButtonStyle;
+
+    fn class(mut self, class: ButtonClass) -> Self {
+        self.class = StyleKind::Deferred(class);
+        self
+    }
+
+    fn style(mut self, style: ButtonStyle) -> Self {
+        self.class = StyleKind::Direct(style);
+        self
+    }
 }
 
 impl View for Button {

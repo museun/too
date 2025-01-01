@@ -33,6 +33,8 @@ impl Fill {
 
 impl<'v> Builder<'v> for Fill {
     type View = Self;
+    type Class = ();
+    type Style = ();
 }
 
 impl View for Fill {
