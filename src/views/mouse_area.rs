@@ -110,7 +110,6 @@ impl MouseArea {
 
 impl<'v> Builder<'v> for MouseArea {
     type View = Self;
-    type Class = ();
     type Style = ();
 }
 

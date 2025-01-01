@@ -2,13 +2,11 @@ use std::marker::PhantomData;
 
 use crate::{
     renderer::Rgba,
-    view::{Builder, Palette, StyleKind, Ui, View},
+    view::{ApplicableStyle, Builder, Palette, Style, Ui, View},
     Str,
 };
 
 use super::label::{label, LabelStyle};
-
-pub type RadioClass = fn(&Palette, bool) -> RadioStyle;
 
 #[derive(Debug, Copy, Clone)]
 pub struct RadioStyle {
@@ -24,8 +22,9 @@ pub struct RadioStyle {
     pub hovered_background: Option<Rgba>,
 }
 
-impl RadioStyle {
-    pub fn default(palette: &Palette, _selected: bool) -> Self {
+impl Style for RadioStyle {
+    type Args = bool;
+    fn default(palette: &Palette, _args: Self::Args) -> Self {
         Self {
             selected: None,
             unselected: None,
@@ -36,7 +35,9 @@ impl RadioStyle {
             hovered_background: None,
         }
     }
+}
 
+impl RadioStyle {
     pub fn hovered(palette: &Palette, selected: bool) -> Self {
         Self {
             hovered_text: Some(palette.surface),
@@ -50,21 +51,23 @@ pub struct Radio<'a, V> {
     value: V,
     existing: &'a mut V,
     label: Str,
-    class: StyleKind<RadioClass, RadioStyle>,
+    style: ApplicableStyle<RadioStyle>,
 }
 
 impl<'v, V: PartialEq + 'static> Builder<'v> for Radio<'v, V> {
     type View = RadioView<V>;
-    type Class = RadioClass;
     type Style = RadioStyle;
 
-    fn class(mut self, class: Self::Class) -> Self {
-        self.class = StyleKind::deferred(class);
+    fn style(mut self, style: Self::Style) -> Self {
+        self.style = ApplicableStyle::value(style);
         self
     }
 
-    fn style(mut self, style: Self::Style) -> Self {
-        self.class = StyleKind::direct(style);
+    fn class(
+        mut self,
+        class: impl Fn(&Palette, <Self::Style as crate::view::Style>::Args) -> Self::Style + 'static,
+    ) -> Self {
+        self.style = ApplicableStyle::new(class);
         self
     }
 }
@@ -74,7 +77,7 @@ where
     V: PartialEq + 'static,
 {
     label: Str,
-    class: StyleKind<RadioClass, RadioStyle>,
+    style: ApplicableStyle<RadioStyle>,
     _marker: std::marker::PhantomData<V>,
 }
 
@@ -82,7 +85,7 @@ impl<V: PartialEq> std::fmt::Debug for RadioView<V> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("RadioView")
             .field("label", &self.label)
-            .field("class", &self.class)
+            .field("class", &self.style)
             .finish()
     }
 }
@@ -97,7 +100,7 @@ where
     fn create(args: Self::Args<'_>) -> Self {
         Self {
             label: args.label,
-            class: args.class,
+            style: args.style,
             _marker: PhantomData,
         }
     }
@@ -105,15 +108,11 @@ where
     fn update(&mut self, args: Self::Args<'_>, ui: &Ui) -> Self::Response {
         let resp = ui
             .mouse_area(|ui| {
-                let style = match self.class {
-                    StyleKind::Deferred(style) => {
-                        (style)(&ui.palette(), args.value == *args.existing)
-                    }
-                    StyleKind::Direct(style) => style,
-                };
+                let selected = args.value == *args.existing;
+                let style = self.style.apply(&ui.palette(), selected);
 
                 let hovered = ui.is_hovered();
-                let fill = match (hovered, args.value == *args.existing) {
+                let fill = match (hovered, selected) {
                     (false, true) => style.selected_background,
                     (false, false) => style.background,
                     (true, true) => style
@@ -129,8 +128,19 @@ where
                 };
 
                 ui.background(fill, |ui| {
-                    ui.show(label(&self.label).style(LabelStyle { foreground }))
-                });
+                    let left = if selected {
+                        style.selected
+                    } else {
+                        style.unselected
+                    };
+
+                    ui.horizontal(|ui| {
+                        if let Some(left) = left {
+                            ui.label(left);
+                        }
+                        ui.show(label(&self.label).style(LabelStyle { foreground }));
+                    });
+                })
             })
             .flatten_left();
 
@@ -150,6 +160,6 @@ where
         value,
         existing,
         label: label.into(),
-        class: StyleKind::deferred(RadioStyle::default),
+        style: ApplicableStyle::default(),
     }
 }

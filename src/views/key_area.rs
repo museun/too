@@ -11,7 +11,6 @@ pub struct KeyArea {
 
 impl<'v> Builder<'v> for KeyArea {
     type View = Self;
-    type Class = ();
     type Style = ();
 }
 

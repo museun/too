@@ -10,12 +10,10 @@ use crate::{
     math::{pos2, Size, Space},
     renderer::{Attribute, Grapheme, Pixel, Rgba},
     view::{
-        Builder, EventCtx, Handled, Interest, Layout, Palette, Render, StyleKind, Ui, View,
-        ViewEvent,
+        ApplicableStyle, Builder, EventCtx, Handled, Interest, Layout, Palette, Render, Style, Ui,
+        View, ViewEvent,
     },
 };
-
-pub type TextInputClass = fn(&Palette, bool) -> TextInputStyle;
 
 #[derive(Copy, Clone, Debug)]
 pub struct TextInputStyle {
@@ -30,8 +28,10 @@ pub struct TextInputStyle {
     pub selection: Rgba,
 }
 
-impl TextInputStyle {
-    pub fn default(palette: &Palette, _focused: bool) -> Self {
+impl Style for TextInputStyle {
+    type Args = bool;
+
+    fn default(palette: &Palette, _focused: Self::Args) -> Self {
         Self {
             background: palette.surface,
             placeholder: palette.secondary,
@@ -52,7 +52,7 @@ pub struct TextInput<'a> {
     enabled: bool,
     placeholder: Option<&'a str>,
     initial: Option<&'a str>,
-    class: StyleKind<TextInputClass, TextInputStyle>,
+    style: ApplicableStyle<TextInputStyle>,
 }
 
 impl<'a> TextInput<'a> {
@@ -74,16 +74,18 @@ impl<'a> TextInput<'a> {
 
 impl<'v> Builder<'v> for TextInput<'v> {
     type View = TextInputView;
-    type Class = TextInputClass;
     type Style = TextInputStyle;
 
-    fn class(mut self, class: Self::Class) -> Self {
-        self.class = StyleKind::deferred(class);
+    fn style(mut self, style: Self::Style) -> Self {
+        self.style = ApplicableStyle::value(style);
         self
     }
 
-    fn style(mut self, style: Self::Style) -> Self {
-        self.class = StyleKind::direct(style);
+    fn class(
+        mut self,
+        class: impl Fn(&Palette, <Self::Style as crate::view::Style>::Args) -> Self::Style + 'static,
+    ) -> Self {
+        self.style = ApplicableStyle::new(class);
         self
     }
 }
@@ -134,7 +136,7 @@ impl TextInputResponse {
 pub struct TextInputView {
     state: InputState,
     enabled: bool,
-    class: StyleKind<TextInputClass, TextInputStyle>,
+    style: ApplicableStyle<TextInputStyle>,
 }
 
 impl View for TextInputView {
@@ -156,13 +158,13 @@ impl View for TextInputView {
                 inner: Shared::new(Lock::new(input)),
             },
             enabled: args.enabled,
-            class: args.class,
+            style: args.style,
         }
     }
 
     fn update(&mut self, args: Self::Args<'_>, _ui: &Ui) -> Self::Response {
         self.enabled = args.enabled;
-        self.class = args.class;
+        self.style = args.style;
 
         let mut resp = TextInputResponse {
             state: Shared::clone(&self.state.inner),
@@ -310,10 +312,7 @@ impl View for TextInputView {
     }
 
     fn draw(&mut self, mut render: Render) {
-        let style = match self.class {
-            StyleKind::Deferred(style) => (style)(render.palette, render.is_focused()),
-            StyleKind::Direct(style) => style,
-        };
+        let style = self.style.apply(render.palette, render.is_focused());
 
         render.fill_bg(if self.enabled {
             style.background
@@ -752,6 +751,6 @@ pub fn text_input<'a>() -> TextInput<'a> {
         enabled: true,
         placeholder: None,
         initial: None,
-        class: StyleKind::deferred(TextInputStyle::default),
+        style: ApplicableStyle::default(),
     }
 }

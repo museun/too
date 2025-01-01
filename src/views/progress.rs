@@ -4,10 +4,8 @@ use crate::{
     layout::Axis,
     math::{lerp, normalize, Pos2, Size, Space},
     renderer::{Pixel, Rgba},
-    view::{Builder, Elements, Layout, Palette, Render, StyleKind, View},
+    view::{ApplicableStyle, Builder, Elements, Layout, Palette, Render, Style, View},
 };
-
-pub type ProgressClass = fn(&Palette, Axis) -> ProgressStyle;
 
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub struct ProgressStyle {
@@ -19,18 +17,22 @@ pub struct ProgressStyle {
     pub filled: char,
 }
 
-impl ProgressStyle {
-    pub fn default(palette: &Palette, axis: Axis) -> Self {
+impl Style for ProgressStyle {
+    type Args = Axis;
+
+    fn default(palette: &Palette, args: Self::Args) -> Self {
         Self {
             unfilled_color: palette.outline,
             filled_color: palette.primary,
             unfilled_hovered: None,
             filled_hovered: None,
-            unfilled: axis.main((Elements::MEDIUM_RECT, Elements::LARGE_RECT)),
+            unfilled: args.main((Elements::MEDIUM_RECT, Elements::LARGE_RECT)),
             filled: Elements::LARGE_RECT,
         }
     }
+}
 
+impl ProgressStyle {
     pub fn medium_filled(palette: &Palette, axis: Axis) -> Self {
         Self {
             unfilled: axis.main((Elements::MEDIUM_RECT, Elements::MEDIUM_RECT)),
@@ -98,16 +100,16 @@ pub struct Progress {
     value: f32,
     range: RangeInclusive<f32>,
     axis: Axis,
-    class: StyleKind<ProgressClass, ProgressStyle>,
+    style: ApplicableStyle<ProgressStyle>,
 }
 
 impl Progress {
-    pub const fn new(value: f32) -> Self {
+    pub fn new(value: f32) -> Self {
         Self {
             value,
             range: 0.0..=1.0,
             axis: Axis::Horizontal,
-            class: StyleKind::deferred(ProgressStyle::default),
+            style: ApplicableStyle::default(),
         }
     }
 
@@ -132,16 +134,15 @@ impl Progress {
 
 impl<'v> Builder<'v> for Progress {
     type View = Self;
-    type Class = ProgressClass;
     type Style = ProgressStyle;
 
-    fn class(mut self, class: Self::Class) -> Self {
-        self.class = StyleKind::deferred(class);
+    fn style(mut self, style: Self::Style) -> Self {
+        self.style = ApplicableStyle::value(style);
         self
     }
 
-    fn style(mut self, style: Self::Style) -> Self {
-        self.class = StyleKind::direct(style);
+    fn class(mut self, class: impl Fn(&Palette, Axis) -> Self::Style + 'static) -> Self {
+        self.style = ApplicableStyle::new(class);
         self
     }
 }
@@ -164,10 +165,7 @@ impl View for Progress {
         let rect = render.rect();
         let axis = self.axis;
 
-        let style = match self.class {
-            StyleKind::Deferred(style) => (style)(render.palette, self.axis),
-            StyleKind::Direct(style) => style,
-        };
+        let style = self.style.apply(render.palette, self.axis);
 
         let color = if render.is_hovered() {
             style.unfilled_hovered.unwrap_or(style.unfilled_color)
@@ -197,6 +195,6 @@ impl View for Progress {
     }
 }
 
-pub const fn progress(value: f32) -> Progress {
+pub fn progress(value: f32) -> Progress {
     Progress::new(value)
 }

@@ -3,7 +3,10 @@ use crate::{
     math::{Size, Space},
 };
 
-use super::{EventCtx, Handled, Interest, IntrinsicSize, Layout, Render, Response, Ui, ViewEvent};
+use super::{
+    EventCtx, Handled, Interest, IntrinsicSize, Layout, Palette, Render, Response, Style, Ui,
+    ViewEvent,
+};
 
 /// Builders are required to build and update views
 ///
@@ -29,8 +32,6 @@ use super::{EventCtx, Handled, Interest, IntrinsicSize, Layout, Render, Response
 ///
 /// impl<'v> Builder<'v> for Foo {
 ///     type View = Self; // we cannot borrow anything for 'v because a View must be 'static
-///     type Class = ();
-///     type Style = ();
 /// }
 ///
 /// impl View for Foo {
@@ -66,32 +67,18 @@ use super::{EventCtx, Handled, Interest, IntrinsicSize, Layout, Render, Response
 pub trait Builder<'v>: Sized {
     /// The target [`View`] for this builder
     type View: View<Args<'v> = Self>;
-    /// The (style) class of the view
-    ///
-    /// If a view does not use styling, this should be set to `()`
-    ///
-    /// See [`StyleKind`](crate::view::StyleKind) for more information
-    type Class;
-    /// The (style) style of the view
-    ///
-    /// If a view does not use styling, this should be set to `()`
-    ///
-    /// See [`StyleKind`](crate::view::StyleKind) for more information
-    type Style;
+    type Style: Style;
 
-    /// Override the default class with the provided class
-    ///
-    /// See [`StyleKind`](crate::view::StyleKind) for more information
-    fn class(self, class: Self::Class) -> Self {
-        _ = class;
+    fn style(self, style: Self::Style) -> Self {
+        _ = style;
         self
     }
 
-    /// Override the default style with the provided style
-    ///
-    /// See [`StyleKind`](crate::view::StyleKind) for more information
-    fn style(self, style: Self::Style) -> Self {
-        _ = style;
+    fn class(
+        self,
+        class: impl Fn(&Palette, <Self::Style as Style>::Args) -> Self::Style + 'static,
+    ) -> Self {
+        _ = class;
         self
     }
 }

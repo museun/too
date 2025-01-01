@@ -74,7 +74,6 @@ impl Constrain {
 
 impl<'v> Builder<'v> for Constrain {
     type View = Self;
-    type Class = ();
     type Style = ();
 }
 
@@ -126,7 +125,6 @@ impl Unconstrained {
 
 impl<'v> Builder<'v> for Unconstrained {
     type View = Self;
-    type Class = ();
     type Style = ();
 }
 

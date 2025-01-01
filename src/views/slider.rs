@@ -6,12 +6,10 @@ use crate::{
     math::{denormalize, inverse_lerp, lerp, normalize, Pos2, Size, Space},
     renderer::{Pixel, Rgba},
     view::{
-        Builder, Elements, EventCtx, Handled, Interest, Layout, Palette, Render, StyleKind, Ui,
-        View, ViewEvent,
+        ApplicableStyle, Builder, Elements, EventCtx, Handled, Interest, Layout, Palette, Render,
+        Style, Ui, View, ViewEvent,
     },
 };
-
-pub type SliderClass = fn(&Palette, Axis) -> SliderStyle;
 
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub struct SliderStyle {
@@ -23,24 +21,29 @@ pub struct SliderStyle {
     pub track: char,
 }
 
-impl SliderStyle {
-    pub fn default(palette: &Palette, axis: Axis) -> Self {
+impl Style for SliderStyle {
+    type Args = Axis;
+
+    fn default(palette: &Palette, args: Self::Args) -> Self {
         Self {
             track_color: palette.outline,
             knob_color: palette.primary,
             track_hovered: None,
             knob_hovered: None,
-            knob: axis.main((
+            knob: args.main((
                 Elements::MEDIUM_RECT, //
                 Elements::LARGE_RECT,
             )),
-            track: axis.main((
+            track: args.main((
                 Elements::THICK_HORIZONTAL_LINE,
                 Elements::THICK_VERTICAL_LINE,
             )),
         }
     }
+}
 
+impl SliderStyle {
+    // TODO why isn't this default style? (its selected as the default in the builder)
     pub fn small_rounded(palette: &Palette, axis: Axis) -> Self {
         Self {
             knob: Elements::CIRCLE,
@@ -88,7 +91,7 @@ pub fn slider(value: &mut f32) -> Slider {
         range: 0.0..=1.0,
         clickable: true,
         axis: Axis::Horizontal,
-        class: StyleKind::Deferred(SliderStyle::small_rounded),
+        style: ApplicableStyle::new(SliderStyle::small_rounded),
     }
 }
 
@@ -99,7 +102,7 @@ pub struct Slider<'v> {
     range: RangeInclusive<f32>,
     clickable: bool,
     axis: Axis,
-    class: StyleKind<SliderClass, SliderStyle>,
+    style: ApplicableStyle<SliderStyle>,
 }
 
 impl<'v> Slider<'v> {
@@ -129,16 +132,15 @@ impl<'v> Slider<'v> {
 
 impl<'v> Builder<'v> for Slider<'v> {
     type View = SliderView;
-    type Class = SliderClass;
     type Style = SliderStyle;
 
-    fn class(mut self, class: Self::Class) -> Self {
-        self.class = StyleKind::deferred(class);
+    fn style(mut self, style: Self::Style) -> Self {
+        self.style = ApplicableStyle::value(style);
         self
     }
 
-    fn style(mut self, style: Self::Style) -> Self {
-        self.class = StyleKind::direct(style);
+    fn class(mut self, class: impl Fn(&Palette, Axis) -> Self::Style + 'static) -> Self {
+        self.style = ApplicableStyle::new(class);
         self
     }
 }
@@ -150,7 +152,7 @@ pub struct SliderView {
     range: RangeInclusive<f32>,
     clickable: bool,
     axis: Axis,
-    class: StyleKind<SliderClass, SliderStyle>,
+    style: ApplicableStyle<SliderStyle>,
 }
 
 impl View for SliderView {
@@ -164,7 +166,7 @@ impl View for SliderView {
             range: args.range.clone(),
             clickable: args.clickable,
             axis: args.axis,
-            class: args.class,
+            style: args.style,
         }
     }
 
@@ -172,7 +174,7 @@ impl View for SliderView {
         self.range = args.range.clone();
         self.clickable = args.clickable;
         self.axis = args.axis;
-        self.class = args.class;
+        self.style = args.style;
 
         if std::mem::take(&mut self.changed) {
             *args.value = self.value;
@@ -223,10 +225,7 @@ impl View for SliderView {
     }
 
     fn draw(&mut self, mut render: Render) {
-        let style = match self.class {
-            StyleKind::Deferred(style) => (style)(render.palette, self.axis),
-            StyleKind::Direct(style) => style,
-        };
+        let style = self.style.apply(render.palette, self.axis);
 
         let track_color = if render.is_hovered() {
             style.track_hovered.unwrap_or(style.track_color)

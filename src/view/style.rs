@@ -1,157 +1,83 @@
-use crate::renderer::Rgba;
+use crate::{helpers::short_name, renderer::Rgba};
 
-/// Views have the ability to style themselves.
-///
-/// This type allow a view to have a pre-computed style,
-///
-/// Or allows it to compute the style when it needs it
-///
-/// ## Convention
-///
-/// Conventional types:
-/// ```ignore
-/// struct Style;
-/// type Class = fn(&Palette) -> Style;
-///
-/// // and in the Builder implementation:
-/// type Class = Class;
-/// type Style = Style;
-/// fn class(mut self, class: Self::Class) -> Self;
-/// fn style(mut self, style: Self::Style) -> Self;
-/// ```
-///
-/// 3## Description
-/// When a view wants to style itself, it has to define a few 'by-convention' types.
-///
-/// Generally this means making a struct `YourViewStyle` and then a type aliasing for a way to construct this style.
-///
-/// The deferred style is generally called `YourViewClass` and its just a function pointer that takes a palette, some arguments and produces your style.
-///
-/// And on your builder, you implement 2 builder methods:
-///
-/// `class(YourClass)`
-///
-/// and
-///
-/// `style(YourStyle)`
-///
-/// ### Example
-/// A simple example:
-/// ```rust
-/// use too::{
-///     layout::Axis,
-///     renderer::{Rgba, Pixel},
-///     view::{Palette, StyleKind, Builder, View, Render}
-/// };
-///
-/// #[derive(Copy, Clone, Debug)]
-/// struct MyStyle {
-///     background: Rgba,
-///     fill: char,
-/// }
-///
-/// impl MyStyle {
-///     // by convention, styles provide a default 'class'
-///     fn default(palette: &Palette, axis: Axis) -> Self {
-///         Self {
-///             background: palette.background,
-///             // when in horizontal, we should use a ?, otherwise a !
-///             fill: axis.main(('?', '!')),
-///         }
-///     }
-///
-///     // we can delegate to the default style
-///     fn hash_at(palette: &Palette, axis: Axis) -> Self {
-///         Self {
-///             fill: axis.main(('#', '@')),
-///             ..Self::default(palette, axis)
-///         }
-///     }
-/// }
-///
-/// /// A `class` is just a function pointer that takes in a &Palette, some
-/// /// of your args and returns your Style
-/// type MyClass = fn(&Palette, Axis) -> MyStyle;
-///
-/// fn builder() -> MyBuilder {
-///     MyBuilder {
-///         class: StyleKind::Deferred(MyStyle::default),
-///     }
-/// }
-///
-/// struct MyBuilder {
-///     /// We make the StyleKind mapping
-///     class: StyleKind<MyClass, MyStyle>,
-/// }
-///
-///
-/// impl<'v> Builder<'v> for MyBuilder {
-///     type View = MyView;
-///     type Class = MyClass;
-///     type Style = MyStyle;
-///
-///     fn class(mut self, class: Self::Class) -> Self {
-///         self.class = StyleKind::deferred(class);
-///         self
-///     }
-///
-///     fn style(mut self, style: Self::Style) -> Self {
-///         self.class = StyleKind::direct(style);
-///         self
-///     }
-/// }
-///
-/// #[derive(Debug)]
-/// struct MyView {
-///     class: StyleKind<MyClass, MyStyle>,
-/// }
-///
-/// impl View for MyView {
-///     type Args<'v> = MyBuilder;
-///     type Response = ();
-///
-///     fn create(args: Self::Args<'_>) -> Self {
-///         Self { class: args.class }
-///     }
-///
-///     fn draw(&mut self, mut render: Render) {
-///         // Then when we want to 'resolve' the style, we simply match on
-///         // it, and pass in the palette + some arguments
-///         let style = match self.class {
-///             StyleKind::Deferred(style) => (style)(render.palette, Axis::Horizontal),
-///             StyleKind::Direct(style) => style,
-///         };
-///
-///         render.fill_with(Pixel::new(style.fill).bg(style.background));
-///     }
-/// }
-///```
-/// Then a user can do:
-/// ```ignore
-/// // for a deferred style:
-/// use too::view::Builder as _; // for .class() and .style()
-/// ui.show(builder().class(MyStyle::hash_at));
-/// // or for a pre-computed style
-/// ui.show(builder().style(MyStyle {
-///     background: Rgba::hex("#123"),
-///     ..MyStyle::hash_at(&ui.palette(), Axis::Horizontal)
-/// }));
-/// ```
-#[derive(Copy, Clone, Debug)]
-pub enum StyleKind<Class, Style> {
-    /// Compute the style on use
-    Deferred(Class),
-    /// A pre-computed styled
-    Direct(Style),
+use super::builder::ViewMarker;
+
+pub trait Style: Sized + Copy + Clone {
+    type Args: 'static + ViewMarker;
+    fn default(palette: &Palette, args: Self::Args) -> Self;
+    fn indirect() -> impl FnOnce(&Palette, Self::Args) -> Self {
+        move |palette, args| Self::default(palette, args)
+    }
 }
 
-impl<F, T> StyleKind<F, T> {
-    pub const fn deferred(class: F) -> Self {
-        Self::Deferred(class)
+impl Style for () {
+    type Args = ();
+    fn default(_palette: &Palette, _args: Self::Args) -> Self {}
+}
+
+enum ApplicableStyleKind<S>
+where
+    S: Style + 'static + ViewMarker,
+{
+    Direct(S),
+    Indirect(Box<dyn Fn(&Palette, S::Args) -> S>),
+}
+
+pub struct ApplicableStyle<S>(ApplicableStyleKind<S>)
+where
+    S: Style + 'static + ViewMarker;
+
+impl<S> ApplicableStyle<S>
+where
+    S: Style + 'static + ViewMarker,
+{
+    pub fn new<T>(make: T) -> Self
+    where
+        T: Fn(&Palette, S::Args) -> S + 'static + ViewMarker,
+    {
+        Self(ApplicableStyleKind::Indirect(Box::new(move |p, a| {
+            make(p, a)
+        })))
     }
 
-    pub const fn direct(style: T) -> Self {
-        Self::Direct(style)
+    pub fn value(value: S) -> Self {
+        Self(ApplicableStyleKind::Direct(value))
+    }
+
+    pub fn default() -> Self {
+        Self::new(S::default)
+    }
+
+    pub fn deferred() -> Self {
+        Self(ApplicableStyleKind::Indirect(Box::new(move |p, a| {
+            S::indirect()(p, a)
+        })))
+    }
+
+    pub fn apply(&self, palette: &Palette, args: S::Args) -> S {
+        match &self.0 {
+            &ApplicableStyleKind::Direct(value) => value,
+            ApplicableStyleKind::Indirect(indirect) => indirect(palette, args),
+        }
+    }
+}
+
+impl<S> std::fmt::Debug for ApplicableStyle<S>
+where
+    S: Style,
+{
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        struct NoQuote<'a>(&'a str);
+        impl<'a> std::fmt::Debug for NoQuote<'a> {
+            fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+                f.write_str(self.0)
+            }
+        }
+        use std::any::type_name;
+        f.debug_struct("ApplicableStyle")
+            .field("args", &NoQuote(&short_name(type_name::<S::Args>())))
+            .field("style", &NoQuote(&short_name(type_name::<S>())))
+            .finish()
     }
 }
 

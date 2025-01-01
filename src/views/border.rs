@@ -9,11 +9,15 @@ use crate::{
     layout::Align,
     math::{pos2, Size, Space},
     renderer::{Border, Grapheme, Pixel, Rgba},
-    view::{Builder, Interest, Layout, Palette, Render, StyleKind, View},
+    view::{ApplicableStyle, Builder, Interest, Layout, Palette, Render, Style, View},
     Str,
 };
 
-pub type BorderClass = fn(&Palette, bool, bool) -> BorderStyle;
+#[derive(Copy, Clone, Debug, PartialEq)]
+pub struct BorderStyleArgs {
+    pub hovered: bool,
+    pub focused: bool,
+}
 
 #[derive(Copy, Clone, Debug)]
 pub struct BorderStyle {
@@ -23,8 +27,9 @@ pub struct BorderStyle {
     pub border_hovered: Option<Rgba>,
 }
 
-impl BorderStyle {
-    pub fn default(palette: &Palette, _hovered: bool, _focused: bool) -> Self {
+impl Style for BorderStyle {
+    type Args = BorderStyleArgs;
+    fn default(palette: &Palette, _args: Self::Args) -> Self {
         Self {
             title: palette.foreground,
             border: palette.outline,
@@ -32,12 +37,14 @@ impl BorderStyle {
             border_hovered: None,
         }
     }
+}
 
+impl BorderStyle {
     pub fn interactive(palette: &Palette, hovered: bool, focused: bool) -> Self {
         Self {
             border_focused: Some(palette.contrast),
             border_hovered: Some(palette.secondary),
-            ..Self::default(palette, hovered, focused)
+            ..Self::default(palette, BorderStyleArgs { hovered, focused })
         }
     }
 }
@@ -47,7 +54,7 @@ pub struct Frame {
     border: Border,
     title: Option<CompactString>,
     align: Align,
-    class: StyleKind<BorderClass, BorderStyle>,
+    style: ApplicableStyle<BorderStyle>,
 }
 
 impl std::fmt::Debug for Frame {
@@ -55,7 +62,7 @@ impl std::fmt::Debug for Frame {
         f.debug_struct("BorderView")
             .field("title", &self.title)
             .field("align", &self.align)
-            .field("class", &self.class)
+            .field("style", &self.style)
             .finish()
     }
 }
@@ -79,16 +86,15 @@ impl Frame {
 
 impl<'v> Builder<'v> for Frame {
     type View = Self;
-    type Class = BorderClass;
     type Style = BorderStyle;
 
-    fn class(mut self, class: Self::Class) -> Self {
-        self.class = StyleKind::deferred(class);
+    fn style(mut self, style: Self::Style) -> Self {
+        self.style = ApplicableStyle::value(style);
         self
     }
 
-    fn style(mut self, style: Self::Style) -> Self {
-        self.class = StyleKind::direct(style);
+    fn class(mut self, style: impl Fn(&Palette, BorderStyleArgs) -> Self::Style + 'static) -> Self {
+        self.style = ApplicableStyle::new(style);
         self
     }
 }
@@ -128,9 +134,7 @@ impl View for Frame {
         let title_size = self
             .title
             .as_deref()
-            .map(measure_text)
-            .map(|c| c + Size::new(2.0, 0.0))
-            .unwrap_or(Size::ZERO);
+            .map_or(Size::ZERO, |c| measure_text(c) + Size::new(2.0, 0.0));
 
         space.fit((size + sum).max(title_size))
     }
@@ -142,10 +146,13 @@ impl View for Frame {
         let is_hovered = render.is_hovered();
         let is_focused = render.is_focused();
 
-        let style = match self.class {
-            StyleKind::Deferred(style) => (style)(render.palette, is_hovered, is_focused),
-            StyleKind::Direct(style) => style,
-        };
+        let style = self.style.apply(
+            render.palette,
+            BorderStyleArgs {
+                hovered: is_hovered,
+                focused: is_focused,
+            },
+        );
 
         let color = match (is_focused, is_hovered) {
             (true, true) => style
@@ -202,7 +209,7 @@ pub fn border(border: Border) -> Frame {
         border,
         title: None,
         align: Align::Min,
-        class: StyleKind::deferred(BorderStyle::default),
+        style: ApplicableStyle::default(),
     }
 }
 
@@ -211,6 +218,6 @@ pub fn frame(border: Border, title: impl Into<Str>) -> Frame {
         border,
         title: Some(title.into().into_inner()),
         align: Align::Min,
-        class: StyleKind::deferred(BorderStyle::default),
+        style: ApplicableStyle::default(),
     }
 }

@@ -68,7 +68,6 @@ impl Wrap {
 
 impl<'v> Builder<'v> for Wrap {
     type View = WrapView;
-    type Class = ();
     type Style = ();
 }
 
