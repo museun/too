@@ -29,6 +29,8 @@ use super::{EventCtx, Handled, Interest, IntrinsicSize, Layout, Render, Response
 ///
 /// impl<'v> Builder<'v> for Foo {
 ///     type View = Self; // we cannot borrow anything for 'v because a View must be 'static
+///     type Class = ();
+///     type Style = ();
 /// }
 ///
 /// impl View for Foo {
@@ -62,15 +64,32 @@ use super::{EventCtx, Handled, Interest, IntrinsicSize, Layout, Render, Response
 ///
 /// The associated view does not have to be public, but the builder _should_ be public
 pub trait Builder<'v>: Sized {
+    /// The target [`View`] for this builder
     type View: View<Args<'v> = Self>;
-
+    /// The (style) class of the view
+    ///
+    /// If a view does not use styling, this should be set to `()`
+    ///
+    /// See [`StyleKind`](crate::view::StyleKind) for more information
     type Class;
+    /// The (style) style of the view
+    ///
+    /// If a view does not use styling, this should be set to `()`
+    ///
+    /// See [`StyleKind`](crate::view::StyleKind) for more information
     type Style;
 
+    /// Override the default class with the provided class
+    ///
+    /// See [`StyleKind`](crate::view::StyleKind) for more information
     fn class(self, class: Self::Class) -> Self {
         _ = class;
         self
     }
+
+    /// Override the default style with the provided style
+    ///
+    /// See [`StyleKind`](crate::view::StyleKind) for more information
     fn style(self, style: Self::Style) -> Self {
         _ = style;
         self

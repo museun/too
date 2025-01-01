@@ -135,13 +135,13 @@ impl<'v> Builder<'v> for Progress {
     type Class = ProgressClass;
     type Style = ProgressStyle;
 
-    fn class(mut self, class: ProgressClass) -> Self {
-        self.class = StyleKind::Deferred(class);
+    fn class(mut self, class: Self::Class) -> Self {
+        self.class = StyleKind::deferred(class);
         self
     }
 
-    fn style(mut self, style: ProgressStyle) -> Self {
-        self.class = StyleKind::Direct(style);
+    fn style(mut self, style: Self::Style) -> Self {
+        self.class = StyleKind::direct(style);
         self
     }
 }

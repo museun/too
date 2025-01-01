@@ -120,13 +120,13 @@ impl<'v> Builder<'v> for Separator {
     type Class = SeparatorClass;
     type Style = SeparatorStyle;
 
-    fn class(mut self, class: SeparatorClass) -> Self {
-        self.class = StyleKind::Deferred(class);
+    fn class(mut self, class: Self::Class) -> Self {
+        self.class = StyleKind::deferred(class);
         self
     }
 
-    fn style(mut self, style: SeparatorStyle) -> Self {
-        self.class = StyleKind::Direct(style);
+    fn style(mut self, style: Self::Style) -> Self {
+        self.class = StyleKind::direct(style);
         self
     }
 }

@@ -12,8 +12,12 @@ use crate::renderer::Rgba;
 /// ```ignore
 /// struct Style;
 /// type Class = fn(&Palette) -> Style;
-/// fn class(mut self, class: Class) -> Self;
-/// fn style(mut self, style: Style) -> Self;
+///
+/// // and in the Builder implementation:
+/// type Class = Class;
+/// type Style = Style;
+/// fn class(mut self, class: Self::Class) -> Self;
+/// fn style(mut self, style: Self::Style) -> Self;
 /// ```
 ///
 /// 3## Description
@@ -29,7 +33,7 @@ use crate::renderer::Rgba;
 ///
 /// and
 ///
-/// `style(YouStyle)`
+/// `style(YourStyle)`
 ///
 /// ### Example
 /// A simple example:
@@ -80,20 +84,21 @@ use crate::renderer::Rgba;
 ///     class: StyleKind<MyClass, MyStyle>,
 /// }
 ///
-/// impl MyBuilder {
-///     const fn class(mut self, class: MyClass) -> Self {
-///         self.class = StyleKind::Deferred(class);
-///         self
-///     }
-///
-///     const fn style(mut self, style: MyStyle) -> Self {
-///         self.class = StyleKind::Direct(style);
-///         self
-///     }
-/// }
 ///
 /// impl<'v> Builder<'v> for MyBuilder {
 ///     type View = MyView;
+///     type Class = MyClass;
+///     type Style = MyStyle;
+///
+///     fn class(mut self, class: Self::Class) -> Self {
+///         self.class = StyleKind::deferred(class);
+///         self
+///     }
+///
+///     fn style(mut self, style: Self::Style) -> Self {
+///         self.class = StyleKind::direct(style);
+///         self
+///     }
 /// }
 ///
 /// #[derive(Debug)]
@@ -124,6 +129,7 @@ use crate::renderer::Rgba;
 /// Then a user can do:
 /// ```ignore
 /// // for a deferred style:
+/// use too::view::Builder as _; // for .class() and .style()
 /// ui.show(builder().class(MyStyle::hash_at));
 /// // or for a pre-computed style
 /// ui.show(builder().style(MyStyle {

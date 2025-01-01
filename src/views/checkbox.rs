@@ -48,12 +48,12 @@ impl<'v> Builder<'v> for Checkbox<'v> {
     type Class = CheckboxClass;
     type Style = CheckboxStyle;
 
-    fn class(mut self, class: CheckboxClass) -> Self {
+    fn class(mut self, class: Self::Class) -> Self {
         self.class = StyleKind::deferred(class);
         self
     }
 
-    fn style(mut self, style: CheckboxStyle) -> Self {
+    fn style(mut self, style: Self::Style) -> Self {
         self.class = StyleKind::direct(style);
         self
     }

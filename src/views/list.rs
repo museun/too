@@ -304,13 +304,13 @@ impl<'v> Builder<'v> for List {
     type Class = ScrollClass;
     type Style = ScrollStyle;
 
-    fn class(mut self, class: ScrollClass) -> Self {
-        self.class = StyleKind::Deferred(class);
+    fn class(mut self, class: Self::Class) -> Self {
+        self.class = StyleKind::deferred(class);
         self
     }
 
-    fn style(mut self, style: ScrollStyle) -> Self {
-        self.class = StyleKind::Direct(style);
+    fn style(mut self, style: Self::Style) -> Self {
+        self.class = StyleKind::direct(style);
         self
     }
 }

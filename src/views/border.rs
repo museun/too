@@ -82,12 +82,12 @@ impl<'v> Builder<'v> for Frame {
     type Class = BorderClass;
     type Style = BorderStyle;
 
-    fn class(mut self, class: BorderClass) -> Self {
+    fn class(mut self, class: Self::Class) -> Self {
         self.class = StyleKind::deferred(class);
         self
     }
 
-    fn style(mut self, style: BorderStyle) -> Self {
+    fn style(mut self, style: Self::Style) -> Self {
         self.class = StyleKind::direct(style);
         self
     }
