@@ -36,7 +36,7 @@ impl CheckboxStyle {
 }
 
 #[derive(Debug)]
-#[must_use = "a view does nothing unless `ui.adhoc()` is called"]
+#[must_use = "a view does nothing unless `show()` or `show_children()` is called"]
 pub struct Checkbox<'a> {
     value: &'a mut bool,
     label: Str,
