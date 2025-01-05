@@ -9,7 +9,7 @@ use crate::{
 
 use super::{input::InputState, Filter, Filterable, Interest, ViewId, ViewNodes};
 
-impl<'a> Filterable for Layout<'a> {
+impl Filterable for Layout<'_> {
     fn filter(&self) -> super::Filter<'_> {
         Filter::new(self.nodes, self.layout, self.input)
     }
@@ -52,7 +52,7 @@ pub struct Layout<'a> {
     pub current: ViewId,
 }
 
-impl<'a> Layout<'a> {
+impl Layout<'_> {
     /// Compute the layout size of a view with the provided space
     pub fn compute(&mut self, id: ViewId, space: Space) -> Size {
         self.layout.compute(self.nodes, self.input, id, space)
@@ -143,7 +143,7 @@ pub struct IntrinsicSize<'a> {
     pub layout: &'a LayoutNodes,
 }
 
-impl<'a> IntrinsicSize<'a> {
+impl IntrinsicSize<'_> {
     /// Calculate the intrinsic size for a view, with the provided access and extent.
     ///
     /// The `extent` is the 'length' of the axis. (e.g. height or width)
@@ -213,7 +213,7 @@ pub struct LayoutNodes {
 impl std::fmt::Debug for LayoutNodes {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         struct NodeDebug<'a>(&'a SecondaryMap<ViewId, LayoutNode>);
-        impl<'a> std::fmt::Debug for NodeDebug<'a> {
+        impl std::fmt::Debug for NodeDebug<'_> {
             fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
                 f.debug_map()
                     .entries(self.0.iter().map(|(k, v)| (k.data(), v)))
@@ -315,7 +315,7 @@ impl LayoutNodes {
         }
     }
 
-    #[inline(always)]
+    #[inline]
     pub(super) fn compute(
         &mut self,
         nodes: &ViewNodes,
@@ -425,7 +425,7 @@ impl LayoutNodes {
 }
 
 /// A layer a view should be on, relative to its parent
-#[derive(Copy, Clone, Default, Debug, PartialEq, PartialOrd)]
+#[derive(Copy, Clone, Default, Debug, PartialEq, PartialOrd, Eq, Ord)]
 pub enum Layer {
     /// At the bottom layer relative to its siblings
     Bottom,
@@ -439,7 +439,7 @@ pub enum Layer {
 }
 
 /// Properties for a layout node
-#[derive(Copy, Clone, Debug, PartialEq)]
+#[derive(Copy, Clone, Debug, PartialEq, Eq)]
 pub struct Properties {
     /// Is this node interactive?
     pub interactive: bool,

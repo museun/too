@@ -13,7 +13,7 @@ use crate::{
     Str,
 };
 
-#[derive(Copy, Clone, Debug, PartialEq)]
+#[derive(Copy, Clone, Debug, PartialEq, Eq)]
 pub struct BorderStyleArgs {
     pub hovered: bool,
     pub focused: bool,
@@ -84,7 +84,7 @@ impl Frame {
     }
 }
 
-impl<'v> Builder<'v> for Frame {
+impl Builder<'_> for Frame {
     type View = Self;
     type Style = BorderStyle;
 
@@ -157,7 +157,7 @@ impl View for Frame {
         let color = match (is_focused, is_hovered) {
             (true, true) => style
                 .border_focused
-                .unwrap_or(style.border_hovered.unwrap_or(style.border)),
+                .unwrap_or_else(|| style.border_hovered.unwrap_or(style.border)),
             (true, false) => style.border_focused.unwrap_or(style.border),
             (false, true) => style.border_hovered.unwrap_or(style.border),
             (false, false) => style.border,
@@ -190,7 +190,7 @@ impl View for Frame {
             let mut start = 0.0;
             let fg = style.title;
             for grapheme in title.graphemes(true) {
-                if grapheme.chars().all(|c| c.is_whitespace()) {
+                if grapheme.chars().all(<char>::is_whitespace) {
                     start += grapheme.width() as f32;
                     continue;
                 }

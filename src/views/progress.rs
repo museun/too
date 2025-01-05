@@ -7,7 +7,7 @@ use crate::{
     view::{ApplicableStyle, Builder, Elements, Layout, Palette, Render, Style, View},
 };
 
-#[derive(Copy, Clone, Debug, PartialEq)]
+#[derive(Copy, Clone, Debug, PartialEq, Eq)]
 pub struct ProgressStyle {
     pub unfilled_color: Rgba,
     pub filled_color: Rgba,
@@ -132,7 +132,7 @@ impl Progress {
     }
 }
 
-impl<'v> Builder<'v> for Progress {
+impl Builder<'_> for Progress {
     type View = Self;
     type Style = ProgressStyle;
 

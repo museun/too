@@ -13,7 +13,7 @@ use super::{
     input::InputState, Filter, Filterable, Layer, LayoutNodes, Palette, ViewId, ViewNodes,
 };
 
-impl<'a, 'b> Filterable for Render<'a, 'b> {
+impl Filterable for Render<'_, '_> {
     fn filter(&self) -> Filter<'_> {
         Filter::new(self.nodes, self.layout, self.input)
     }
@@ -41,7 +41,7 @@ pub struct Render<'a, 'b> {
 }
 
 // TODO determine if this should always be in local space or absolute space
-impl<'a, 'b> Render<'a, 'b> {
+impl Render<'_, '_> {
     /// Draw a specific view
     pub fn draw(&mut self, id: ViewId) {
         self.render.draw(
@@ -138,7 +138,7 @@ impl<'a, 'b> Render<'a, 'b> {
     }
 }
 
-impl<'a, 'b> Render<'a, 'b> {
+impl Render<'_, '_> {
     /// Fill this render context with a specific color
     pub fn fill_bg(&mut self, color: impl Into<Rgba>) -> &mut Self {
         self.rasterizer.fill_bg(color.into());
@@ -353,7 +353,7 @@ pub struct CroppedSurface<'a> {
     pub surface: &'a mut Surface,
 }
 
-impl<'a> CroppedSurface<'a> {
+impl CroppedSurface<'_> {
     pub fn get_mut(&mut self, pos: impl Into<Pos2>) -> Option<&mut Cell> {
         // let offset = self.clip_rect.left_top();
         // let pos = pos.into() + offset;
@@ -375,7 +375,7 @@ impl<'a> CroppedSurface<'a> {
     }
 }
 
-impl<'a> Rasterizer for CroppedSurface<'a> {
+impl Rasterizer for CroppedSurface<'_> {
     fn set_rect(&mut self, rect: Rect) {
         self.clip_rect = rect;
     }

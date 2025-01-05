@@ -123,6 +123,7 @@ impl TextInputResponse {
         Ref::filter_map(g, Inner::selection_buffer)
     }
 
+    #[allow(clippy::needless_pass_by_value)]
     pub fn set_text(&self, data: impl ToString) {
         let mut state = self.state.borrow_mut();
         state.clear();

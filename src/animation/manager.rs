@@ -156,14 +156,14 @@ impl Animations {
     /// Update all animations with this delta-time
     pub fn update(&mut self, dt: f32) {
         let mut dead = vec![];
-        for (key, (animation, value)) in self.animations.iter_mut() {
+        for (key, (animation, value)) in &mut self.animations {
             *value = animation.update(dt);
             if animation.is_done() {
                 dead.push(*key);
             }
         }
 
-        for dead in dead.drain(..) {
+        for dead in dead {
             self.animations.remove(&dead);
         }
     }

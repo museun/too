@@ -44,12 +44,7 @@ impl Surface {
         let (width, x) = (self.size.x as usize, pos.x as usize);
         let index = Self::pos_to_index(pos, self.size.x);
 
-        let empty = self
-            .back
-            .get(index)
-            .map(Cell::width)
-            .unwrap_or(0)
-            .min(width - x);
+        let empty = self.back.get(index).map_or(0, Cell::width).min(width - x);
 
         // take the old one so we can merge it with the new one
         let mut old = std::mem::take(&mut self.back[index]);

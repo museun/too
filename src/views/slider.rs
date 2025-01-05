@@ -11,7 +11,7 @@ use crate::{
     },
 };
 
-#[derive(Copy, Clone, Debug, PartialEq)]
+#[derive(Copy, Clone, Debug, PartialEq, Eq)]
 pub struct SliderStyle {
     pub track_color: Rgba,
     pub knob_color: Rgba,
@@ -105,7 +105,7 @@ pub struct Slider<'v> {
     style: ApplicableStyle<SliderStyle>,
 }
 
-impl<'v> Slider<'v> {
+impl Slider<'_> {
     pub const fn range(mut self, range: RangeInclusive<f32>) -> Self {
         self.range = range;
         self

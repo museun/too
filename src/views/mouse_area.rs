@@ -3,14 +3,14 @@ use crate::{
     view::{Builder, EventCtx, Handled, Interest, Ui, View, ViewEvent},
 };
 
-#[derive(Copy, Clone, Debug, Default, PartialEq)]
+#[derive(Copy, Clone, Debug, Default, PartialEq, Eq)]
 struct DragState {
     start: Pos2,
     pos: Pos2,
     offset: Vec2,
 }
 
-#[derive(Copy, Clone, Debug, Default, PartialEq)]
+#[derive(Copy, Clone, Debug, Default, PartialEq, Eq)]
 pub struct DraggingResponse {
     start: Pos2,
     current: Pos2,
@@ -31,7 +31,7 @@ impl DraggingResponse {
     }
 }
 
-#[derive(Copy, Clone, Debug, Default, PartialEq)]
+#[derive(Copy, Clone, Debug, Default, PartialEq, Eq)]
 #[allow(clippy::struct_excessive_bools)]
 pub struct MouseAreaResponse {
     clicked: bool,
@@ -108,7 +108,7 @@ impl MouseArea {
     }
 }
 
-impl<'v> Builder<'v> for MouseArea {
+impl Builder<'_> for MouseArea {
     type View = Self;
     type Style = ();
 }

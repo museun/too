@@ -9,7 +9,7 @@ use crate::{
 };
 
 /// Shapes that a [`Rasterizer`] can produce
-#[derive(Clone, PartialEq)]
+#[derive(Clone, PartialEq, Eq)]
 pub enum Shape {
     /// Fill the region with a color
     FillBg {
@@ -53,7 +53,7 @@ pub enum Shape {
 impl std::fmt::Debug for Shape {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         struct CompactRect<'a>(&'a Rect);
-        impl<'a> std::fmt::Debug for CompactRect<'a> {
+        impl std::fmt::Debug for CompactRect<'_> {
             fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
                 write!(
                     f,
@@ -146,7 +146,7 @@ pub trait Rasterizer {
 }
 
 /// A shape for drawing text
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct TextShape {
     pub(crate) label: Str,
     pub(crate) fg: Color,
@@ -228,13 +228,10 @@ impl TextShape {
     }
 
     /// Use this attribute for the label, maybe
-    pub fn maybe_attribute(mut self, attribute: Option<Attribute>) -> Self {
+    pub fn maybe_attribute(self, attribute: Option<Attribute>) -> Self {
         match attribute {
             Some(attr) => self.attribute(attr),
-            None => {
-                self.attribute.take();
-                self
-            }
+            None => self,
         }
     }
 }

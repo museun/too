@@ -1,5 +1,5 @@
 /// Interests for events that a view want to recieve
-#[derive(Copy, Clone, Default, PartialEq)]
+#[derive(Copy, Clone, Default, PartialEq, Eq)]
 pub struct Interest(u8);
 
 impl std::fmt::Debug for Interest {

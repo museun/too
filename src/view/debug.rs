@@ -122,6 +122,18 @@ impl DebugNode {
 
 fn render_compact_tree(node: &DebugNode, show_sizes: bool) -> String {
     use std::fmt::Write as _;
+    const fn count_digits(d: usize) -> usize {
+        let (mut len, mut n) = (1, 1);
+        while len < 20 {
+            n *= 10;
+            if n > d {
+                return len;
+            }
+            len += 1;
+        }
+        len
+    }
+
     fn print(
         children: &[DebugNode],
         prefix: &str,
@@ -170,18 +182,6 @@ fn render_compact_tree(node: &DebugNode, show_sizes: bool) -> String {
     print(&node.children, "", &mut tree, &mut geom);
 
     let left = tree.lines().fold(usize::MIN, |a, c| a.max(c.width()));
-
-    const fn count_digits(d: usize) -> usize {
-        let (mut len, mut n) = (1, 1);
-        while len < 20 {
-            n *= 10;
-            if n > d {
-                return len;
-            }
-            len += 1;
-        }
-        len
-    }
 
     let [x, y, w, h] = geom
         .iter()
@@ -332,16 +332,17 @@ fn render_pretty_tree(node: &DebugNode) -> String {
                         DebugLabel::Separator,
                         DebugLabel::Split {
                             min: CompactString::const_new("Interactive"),
-                            max: CompactString::const_new(match interactive {
-                                true => "true",
-                                false => "false",
+                            max: CompactString::const_new(if interactive {
+                                "true"
+                            } else {
+                                "false"
                             }),
                         },
                         DebugLabel::Separator,
                     ]);
 
                     if !interest.is_none() {
-                        for label in format!("{:?}", interest).split(" | ") {
+                        for label in format!("{interest:?}").split(" | ") {
                             labels.push(DebugLabel::Label {
                                 align: Align::Center,
                                 text: label.into(),
@@ -395,9 +396,12 @@ fn render_pretty_tree(node: &DebugNode) -> String {
         fn new(node: &DebugNode, spacing: usize) -> Self {
             let labels = Self::build_labels(node);
 
-            let labels = labels.iter().flat_map(|s| s.split()).collect::<Vec<_>>();
+            let labels = labels
+                .iter()
+                .flat_map(<DebugLabel>::split)
+                .collect::<Vec<_>>();
 
-            let node_width = labels.iter().map(|c| c.len()).max().unwrap() + 4;
+            let node_width = labels.iter().map(<DebugLabel>::len).max().unwrap() + 4;
             let node_height = labels.len() + 2;
 
             let children = node
@@ -549,7 +553,7 @@ fn render_pretty_tree(node: &DebugNode) -> String {
                 let end = cx0 + child.total_width + spacing + self.children[id + 1].center;
 
                 for x in start..end {
-                    grid[y0 + self.height][x] = if x != x0 + self.center { '╌' } else { '┴' };
+                    grid[y0 + self.height][x] = if x == x0 + self.center { '┴' } else { '╌' };
                 }
 
                 if id == 0 {

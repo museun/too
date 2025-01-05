@@ -1,6 +1,6 @@
 use super::{Pos2, Rect, Size, Vec2};
 
-#[derive(Copy, Clone, Debug, PartialEq)]
+#[derive(Copy, Clone, Debug, PartialEq, Eq)]
 pub struct Margin {
     pub left: i32,
     pub top: i32,

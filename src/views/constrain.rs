@@ -72,7 +72,7 @@ impl Constrain {
     }
 }
 
-impl<'v> Builder<'v> for Constrain {
+impl Builder<'_> for Constrain {
     type View = Self;
     type Style = ();
 }
@@ -91,7 +91,7 @@ impl View for Constrain {
     }
 }
 
-#[derive(Copy, Clone, Default, Debug, PartialEq)]
+#[derive(Copy, Clone, Default, Debug, PartialEq, Eq)]
 pub struct Unconstrained {
     pub horizontal: bool,
     pub vertical: bool,
@@ -123,7 +123,7 @@ impl Unconstrained {
     }
 }
 
-impl<'v> Builder<'v> for Unconstrained {
+impl Builder<'_> for Unconstrained {
     type View = Self;
     type Style = ();
 }

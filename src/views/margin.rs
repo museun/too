@@ -3,7 +3,7 @@ use crate::{
     view::{Builder, Layout, View},
 };
 
-#[derive(Copy, Clone, Debug, PartialEq)]
+#[derive(Copy, Clone, Debug, PartialEq, Eq)]
 #[must_use = "a view does nothing unless `show()` or `show_children()` is called"]
 pub struct Padding {
     margin: Margin,
@@ -17,7 +17,7 @@ impl Padding {
     }
 }
 
-impl<'v> Builder<'v> for Padding {
+impl Builder<'_> for Padding {
     type View = Self;
     type Style = ();
 }

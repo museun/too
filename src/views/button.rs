@@ -12,7 +12,7 @@ use crate::{
     Str,
 };
 
-#[derive(Copy, Clone, Default, Debug, PartialEq)]
+#[derive(Copy, Clone, Default, Debug, PartialEq, Eq)]
 pub enum ButtonState {
     Hovered,
     Held,
@@ -147,7 +147,7 @@ impl Button {
     }
 }
 
-impl<'v> Builder<'v> for Button {
+impl Builder<'_> for Button {
     type View = Self;
     type Style = ButtonStyle;
 
@@ -185,7 +185,7 @@ impl View for Button {
         self.cross = builder.cross;
 
         let state = self.state;
-        if let ButtonState::Clicked = self.state {
+        if self.state == ButtonState::Clicked {
             self.state = ButtonState::Hovered
         }
 
@@ -235,7 +235,7 @@ impl View for Button {
     }
 }
 
-#[derive(Copy, Clone, Debug, Default, PartialEq)]
+#[derive(Copy, Clone, Debug, Default, PartialEq, Eq)]
 pub struct ButtonResponse {
     state: ButtonState,
 }

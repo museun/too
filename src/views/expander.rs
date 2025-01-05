@@ -9,7 +9,7 @@ use crate::{
 #[must_use = "a view does nothing unless `show()` or `show_children()` is called"]
 pub struct Expander;
 
-impl<'v> Builder<'v> for Expander {
+impl Builder<'_> for Expander {
     type View = Self;
     type Style = ();
 }
@@ -120,7 +120,7 @@ pub fn separator() -> Separator {
     }
 }
 
-impl<'v> Builder<'v> for Separator {
+impl Builder<'_> for Separator {
     type View = Self;
     type Style = SeparatorStyle;
 

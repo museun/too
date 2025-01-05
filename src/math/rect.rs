@@ -80,9 +80,9 @@ impl Rect {
     pub fn distance_sq_to_point(&self, pos: Pos2) -> i32 {
         const fn distance(min: i32, max: i32, t: i32) -> i32 {
             match () {
-                _ if min > t => min - t,
-                _ if t > max => t - max,
-                _ => 0,
+                () if min > t => min - t,
+                () if t > max => t - max,
+                () => 0,
             }
         }
 

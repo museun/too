@@ -129,7 +129,7 @@ impl Animation {
     ///
     /// If `total_time` is less than the provided key frames, an error is returned.
     pub fn schedule(mut self, total_time: impl Into<Duration>) -> Result<Self, &'static str> {
-        self.reschedule(total_time).map(|_| self)
+        self.reschedule(total_time).map(|()| self)
     }
 
     /// Returns whether the animation is done and should be discarded

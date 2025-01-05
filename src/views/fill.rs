@@ -31,7 +31,7 @@ impl Fill {
     }
 }
 
-impl<'v> Builder<'v> for Fill {
+impl Builder<'_> for Fill {
     type View = Self;
     type Style = ();
 }

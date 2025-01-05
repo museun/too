@@ -31,7 +31,7 @@ impl Default for ColorSelect {
     }
 }
 
-impl<'v> Builder<'v> for ColorSelect {
+impl Builder<'_> for ColorSelect {
     type View = Self;
     type Style = ();
 }
@@ -75,7 +75,7 @@ fn color_select(val: f32) -> ColorFill {
     }
 }
 
-impl<'v> Builder<'v> for ColorFill {
+impl Builder<'_> for ColorFill {
     type View = Self;
     type Style = ();
 }

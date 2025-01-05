@@ -5,7 +5,7 @@ use crate::{
 };
 
 /// Events a view can receive
-#[derive(Copy, Clone, Debug, PartialEq)]
+#[derive(Copy, Clone, Debug, PartialEq, Eq)]
 pub enum ViewEvent {
     /// A key was pressed
     KeyInput {

@@ -47,7 +47,7 @@ pub mod test;
 
 // TODO get rid of this
 use crate::math::Size;
-#[inline(always)]
+#[inline]
 #[deprecated(note = "don't use this, use Text when its implemented")]
 pub fn measure_text(data: &str) -> Size {
     use unicode_width::UnicodeWidthStr as _;

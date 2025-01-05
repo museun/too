@@ -21,7 +21,7 @@ impl Background {
     }
 }
 
-impl<'v> Builder<'v> for Background {
+impl Builder<'_> for Background {
     type View = Self;
     type Style = ();
 }

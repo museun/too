@@ -393,6 +393,7 @@ impl Debug {
         true
     }
 
+    #[allow(clippy::needless_pass_by_value)]
     fn push(&self, msg: impl ToCompactString) {
         if matches!(*self.mode.borrow(), DebugMode::Off) {
             return;

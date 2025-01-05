@@ -20,12 +20,23 @@ where
     S: Style + 'static + ViewMarker,
 {
     Direct(S),
+    #[allow(clippy::type_complexity)]
+    // we cannot type alias this because it was an associated type from the generic 'S'
     Indirect(Box<dyn Fn(&Palette, S::Args) -> S>),
 }
 
 pub struct ApplicableStyle<S>(ApplicableStyleKind<S>)
 where
     S: Style + 'static + ViewMarker;
+
+impl<S> Default for ApplicableStyle<S>
+where
+    S: Style + 'static + ViewMarker,
+{
+    fn default() -> Self {
+        Self::new(S::default)
+    }
+}
 
 impl<S> ApplicableStyle<S>
 where
@@ -42,10 +53,6 @@ where
 
     pub fn value(value: S) -> Self {
         Self(ApplicableStyleKind::Direct(value))
-    }
-
-    pub fn default() -> Self {
-        Self::new(S::default)
     }
 
     pub fn deferred() -> Self {
@@ -68,7 +75,7 @@ where
 {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         struct NoQuote<'a>(&'a str);
-        impl<'a> std::fmt::Debug for NoQuote<'a> {
+        impl std::fmt::Debug for NoQuote<'_> {
             fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
                 f.write_str(self.0)
             }
@@ -82,7 +89,7 @@ where
 }
 
 /// A color palette used by the common [`crate::views`]
-#[derive(Copy, Clone, Debug, PartialEq)]
+#[derive(Copy, Clone, Debug, PartialEq, Eq)]
 pub struct Palette {
     /// The background color
     pub background: Rgba,

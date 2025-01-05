@@ -104,6 +104,8 @@ impl Cell {
             (Self::Pixel(left), Self::Pixel(right)) => {
                 (left == right) || ((left.char == right.char) && check(right.bg, right.fg))
             }
+            #[allow(clippy::match_same_arms)]
+            // we're explicit with this match so it reads logically
             (Self::Empty, Self::Grapheme(..) | Self::Pixel(..)) => false,
             (Self::Empty, Self::Continuation | Self::Empty) => true,
             _ => false,
@@ -245,7 +247,7 @@ impl From<Rgba> for Pixel {
     }
 }
 
-pub(crate) fn compare(left: &str, right: char) -> bool {
+fn compare(left: &str, right: char) -> bool {
     let mut b: [u8; 4] = [0; 4];
     left == right.encode_utf8(&mut b)
 }

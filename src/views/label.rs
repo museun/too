@@ -9,7 +9,7 @@ use crate::{
     Str,
 };
 
-#[derive(Copy, Clone, Debug, PartialEq)]
+#[derive(Copy, Clone, Debug, PartialEq, Eq)]
 pub struct LabelStyle {
     pub foreground: Rgba,
 }
@@ -64,7 +64,7 @@ impl Label {
 
     pub fn fg(self, fg: impl Into<Rgba>) -> Self {
         let foreground = fg.into();
-        self.class(move |_p, _| LabelStyle { foreground })
+        self.class(move |_p, ()| LabelStyle { foreground })
     }
 
     pub fn italic(self) -> Self {
@@ -109,7 +109,7 @@ pub struct Label {
     attribute: Option<Attribute>,
 }
 
-impl<'v> Builder<'v> for Label {
+impl Builder<'_> for Label {
     type View = Self;
     type Style = LabelStyle;
 

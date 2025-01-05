@@ -10,7 +10,7 @@ impl View for Root {
     type Args<'v> = ();
     type Response = ();
 
-    fn create(_: Self::Args<'_>) -> Self {
+    fn create((): Self::Args<'_>) -> Self {
         Self
     }
 
@@ -29,7 +29,7 @@ impl View for Root {
 // TODO this is a bad name, this means input layer not render layer
 #[derive(Debug)]
 pub struct Layer;
-impl<'v> Builder<'v> for Layer {
+impl Builder<'_> for Layer {
     type View = Self;
     type Style = ();
 }
@@ -50,7 +50,7 @@ impl View for Layer {
 
 #[derive(Debug)]
 pub struct Float(pub super::Layer);
-impl<'v> Builder<'v> for Float {
+impl Builder<'_> for Float {
     type View = Self;
     type Style = ();
 }

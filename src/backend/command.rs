@@ -14,6 +14,7 @@ pub enum Command {
 
 impl Command {
     /// Set the title to this string
+    #[allow(clippy::needless_pass_by_value)]
     pub fn set_title(title: impl ToString) -> Self {
         Self::SetTitle(title.to_string())
     }

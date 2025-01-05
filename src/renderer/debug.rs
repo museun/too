@@ -66,7 +66,7 @@ impl Renderer for DebugRenderer {
         self.incomplete = true;
 
         for cluster in data.graphemes(true) {
-            let cluster = if cluster.chars().all(|c| c.is_whitespace()) {
+            let cluster = if cluster.chars().all(<char>::is_whitespace) {
                 Cow::from("▪".repeat(cluster.width()))
             } else {
                 Cow::from(cluster)

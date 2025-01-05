@@ -1,3 +1,4 @@
 /target
 *.txt
 examples_/
+.vscode/

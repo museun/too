@@ -14,7 +14,7 @@ use super::{
     internal_views, Builder, LayoutNodes, Palette, Response, State, View, ViewId, ViewNodes,
 };
 
-impl<'a> Filterable for Ui<'a> {
+impl Filterable for Ui<'_> {
     fn filter(&self) -> Filter<'_> {
         Filter::new(self.nodes, self.layout, self.input)
     }
@@ -24,7 +24,7 @@ pub struct Painter<'a> {
     shapes: RefMut<'a, Vec<Shape>>,
 }
 
-impl<'a> Painter<'a> {
+impl Painter<'_> {
     pub fn text(&mut self, rect: Rect, text: impl Into<TextShape>) {
         self.shapes.push(Shape::Text {
             rect,
@@ -61,7 +61,7 @@ impl<'a> Ui<'a> {
     }
 }
 
-impl<'a> Ui<'a> {
+impl Ui<'_> {
     pub fn show<'v, B>(&self, args: B) -> Response<<B::View as View>::Response>
     where
         B: Builder<'v>,
@@ -100,7 +100,7 @@ impl<'a> Ui<'a> {
     }
 }
 
-impl<'a> Ui<'a> {
+impl Ui<'_> {
     pub fn root(&self) -> ViewId {
         self.nodes.root()
     }
@@ -152,11 +152,10 @@ impl<'a> Ui<'a> {
     }
 }
 
-impl<'a> Ui<'a> {
+impl Ui<'_> {
     pub fn key_pressed(&self, keybind: impl Into<Keybind>) -> bool {
-        let prev = match self.input.key_press() {
-            Some(prev) => prev,
-            None => return false,
+        let Some(prev) = self.input.key_press() else {
+            return false;
         };
 
         let keybind = keybind.into();
@@ -192,7 +191,7 @@ impl<'a> Ui<'a> {
     }
 }
 
-impl<'a> Ui<'a> {
+impl Ui<'_> {
     pub fn current(&self) -> ViewId {
         self.nodes.current()
     }
@@ -207,7 +206,7 @@ impl<'a> Ui<'a> {
     }
 }
 
-impl<'a> Ui<'a> {
+impl Ui<'_> {
     // TODO this is a bad name, this means input layer not render layer
     pub fn layer<R>(&self, show: impl FnOnce(&Ui) -> R) -> Response<R>
     where
@@ -233,7 +232,7 @@ impl<'a> Ui<'a> {
     }
 }
 
-impl<'a> Ui<'a> {
+impl Ui<'_> {
     pub fn center<R>(&self, show: impl FnOnce(&Ui) -> R) -> Response<R>
     where
         R: 'static,

@@ -24,19 +24,19 @@ macro_rules! csi {
 }
 
 impl<W: Write> Renderer for TermRenderer<W> {
-    #[inline(always)]
+    #[inline]
     fn begin(&mut self) -> std::io::Result<()> {
         self.out.write_all(csi!("?2026h"))
     }
 
-    #[inline(always)]
+    #[inline]
     #[cfg_attr(feature = "profile", profiling::function)]
     fn end(&mut self) -> std::io::Result<()> {
         self.out.write_all(csi!("?2026l"))?;
         self.out.flush()
     }
 
-    #[inline(always)]
+    #[inline]
     fn move_to(&mut self, pos: Pos2) -> std::io::Result<()> {
         const FIXUP: Pos2 = Pos2::splat(1);
         // terminals are 1-based, but we use 0-based indexing
@@ -44,7 +44,7 @@ impl<W: Write> Renderer for TermRenderer<W> {
         write!(self.out, "\x1b[{y};{x};H")
     }
 
-    // #[inline(always)]
+    // #[inline]
     // fn write_underline_color(
     //     &mut self,
     //     underline: super::Underline,
@@ -73,24 +73,24 @@ impl<W: Write> Renderer for TermRenderer<W> {
     //     write!(self.out, "\x1b[58:2::{r}:{g}:{b}m")
     // }
 
-    #[inline(always)]
+    #[inline]
     fn write_str(&mut self, data: &str) -> std::io::Result<()> {
         write!(self.out, "{data}")
     }
 
-    #[inline(always)]
+    #[inline]
     fn set_fg(&mut self, rgb: Rgba) -> std::io::Result<()> {
         let Rgba(r, g, b, ..) = rgb;
         write!(self.out, "\x1b[38;2;{r};{g};{b}m")
     }
 
-    #[inline(always)]
+    #[inline]
     fn set_bg(&mut self, rgb: Rgba) -> std::io::Result<()> {
         let Rgba(r, g, b, ..) = rgb;
         write!(self.out, "\x1b[48;2;{r};{g};{b}m")
     }
 
-    #[inline(always)]
+    #[inline]
     fn set_attr(&mut self, attr: Attribute) -> std::io::Result<()> {
         fn iter(data: u16) -> impl Iterator<Item = u8> {
             let mut pos = 0;
@@ -120,17 +120,17 @@ impl<W: Write> Renderer for TermRenderer<W> {
         Ok(())
     }
 
-    #[inline(always)]
+    #[inline]
     fn reset_fg(&mut self) -> std::io::Result<()> {
         self.out.write_all(csi!("39m"))
     }
 
-    #[inline(always)]
+    #[inline]
     fn reset_bg(&mut self) -> std::io::Result<()> {
         self.out.write_all(csi!("49m"))
     }
 
-    #[inline(always)]
+    #[inline]
     fn reset_attr(&mut self) -> std::io::Result<()> {
         self.out.write_all(csi!("0m"))
     }

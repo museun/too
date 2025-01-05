@@ -27,42 +27,42 @@ pub trait Erased: std::any::Any + std::fmt::Debug + ViewMarker {
 }
 
 impl<T: View + ViewMarker> Erased for T {
-    #[inline(always)]
+    #[inline]
     fn interests(&self) -> Interest {
         T::interests(self)
     }
 
-    #[inline(always)]
+    #[inline]
     fn flex(&self) -> Flex {
         T::flex(self)
     }
 
-    #[inline(always)]
+    #[inline]
     fn interactive(&self) -> bool {
         T::interactive(self)
     }
 
-    #[inline(always)]
+    #[inline]
     fn event(&mut self, event: ViewEvent, ctx: EventCtx) -> Handled {
         T::event(self, event, ctx)
     }
 
-    #[inline(always)]
+    #[inline]
     fn size(&self, size: IntrinsicSize, axis: Axis, extent: f32) -> f32 {
         T::size(self, size, axis, extent)
     }
 
-    #[inline(always)]
+    #[inline]
     fn primary_axis(&self) -> Axis {
         T::primary_axis(self)
     }
 
-    #[inline(always)]
+    #[inline]
     fn layout(&mut self, layout: Layout, space: Space) -> Size {
         T::layout(self, layout, space)
     }
 
-    #[inline(always)]
+    #[inline]
     fn draw(&mut self, render: Render) {
         T::draw(self, render)
     }

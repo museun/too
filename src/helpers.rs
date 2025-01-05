@@ -145,3 +145,16 @@ impl<T> Extend<T> for Queue<T> {
         }
     }
 }
+
+/// Count how many digits are in this unsigned number
+pub const fn count_digits(d: usize) -> usize {
+    let (mut len, mut n) = (1, 1);
+    while len < 20 {
+        n *= 10;
+        if n > d {
+            return len;
+        }
+        len += 1;
+    }
+    len
+}

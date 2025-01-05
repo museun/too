@@ -1,3 +1,4 @@
+#![allow(clippy::needless_lifetimes)]
 //! Abstraction for providing interior mutability over for a type.
 //!
 //! By default, the `unsync` types are used. The `sync` flag switches to the `Send + Sync` variants

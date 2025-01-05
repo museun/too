@@ -27,7 +27,7 @@ pub struct ToggleStyle {
     pub off_knob_hovered: Option<Rgba>,
 }
 
-#[derive(Copy, Clone, Debug, PartialEq)]
+#[derive(Copy, Clone, Debug, PartialEq, Eq)]
 pub struct ToggleStyleArgs {
     pub axis: Axis,
     pub toggled: bool,
@@ -94,7 +94,7 @@ impl ToggleStyle {
     }
 }
 
-#[derive(Copy, Clone, Debug, PartialEq, Default)]
+#[derive(Copy, Clone, Debug, PartialEq, Eq, Default)]
 pub struct ToggleResponse {
     pub(super) changed: bool,
 }

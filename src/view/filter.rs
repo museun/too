@@ -8,7 +8,7 @@ use super::{
 };
 
 /// A filter depth
-#[derive(Copy, Clone, Debug, Default, PartialEq)]
+#[derive(Copy, Clone, Debug, Default, PartialEq, Eq)]
 pub enum Depth {
     /// Only visit the immeditate children
     Immediate,
@@ -179,6 +179,7 @@ impl<'a> Filter<'a> {
                 return false;
             }
 
+            #[allow(clippy::equatable_if_let)]
             if let Some(true) = self
                 .nodes
                 .scoped(id, |erased| filter(id, erased, self.layout.get(id)))
@@ -204,6 +205,8 @@ impl<'a> Filter<'a> {
             if !Self::depth_check(depth, d) {
                 return false;
             }
+
+            #[allow(clippy::equatable_if_let)]
             if let Some(true) = self
                 .nodes
                 .scoped(id, |erased| filter(id, erased, self.layout.get(id)))
@@ -236,7 +239,7 @@ impl<'a> Filter<'a> {
             return;
         }
 
-        let mut queue = VecDeque::from_iter(node.children.iter().copied());
+        let mut queue: VecDeque<ViewId> = node.children.iter().copied().collect();
 
         // the only way the get/parent can fail is if the 'start' node has a child of the root
         // be its impossible to form a DAG with our tree, nothing can be acylic

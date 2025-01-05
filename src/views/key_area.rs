@@ -9,7 +9,7 @@ pub struct KeyArea {
     modifiers: Option<Modifiers>,
 }
 
-impl<'v> Builder<'v> for KeyArea {
+impl Builder<'_> for KeyArea {
     type View = Self;
     type Style = ();
 }
@@ -49,7 +49,7 @@ impl View for KeyArea {
     }
 }
 
-#[derive(Copy, Clone, Debug, Default, PartialEq)]
+#[derive(Copy, Clone, Debug, Default, PartialEq, Eq)]
 pub struct KeyAreaResponse {
     key: Option<Key>,
     modifiers: Option<Modifiers>,

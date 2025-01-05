@@ -16,7 +16,7 @@ pub struct ViewNodes {
 impl std::fmt::Debug for ViewNodes {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         struct NodeDebug<'a>(&'a SlotMap<ViewId, ViewNode>);
-        impl<'a> std::fmt::Debug for NodeDebug<'a> {
+        impl std::fmt::Debug for NodeDebug<'_> {
             fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
                 f.debug_map()
                     .entries(self.0.iter().map(|(k, v)| (k.data(), v)))
@@ -197,7 +197,7 @@ impl ViewNodes {
         let node = &mut nodes[start];
 
         let children = &node.children[node.next..];
-        let mut queue = VecDeque::from_iter(children.iter().copied());
+        let mut queue: VecDeque<ViewId> = children.iter().copied().collect();
         node.children.truncate(node.next);
 
         let mut removed = self.removed.borrow_mut();
@@ -286,10 +286,10 @@ pub struct ViewNode {
 impl std::fmt::Debug for ViewNode {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         struct ChildrenDebug<'a>(&'a [ViewId]);
-        impl<'a> std::fmt::Debug for ChildrenDebug<'a> {
+        impl std::fmt::Debug for ChildrenDebug<'_> {
             fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
                 f.debug_list()
-                    .entries(self.0.iter().map(|c| c.data()))
+                    .entries(self.0.iter().map(<ViewId>::data))
                     .finish()
             }
         }
@@ -340,7 +340,7 @@ impl Slot {
 
 impl std::ops::Deref for Slot {
     type Target = Box<dyn Erased>;
-    #[inline(always)]
+    #[inline]
     #[track_caller]
     fn deref(&self) -> &Self::Target {
         let Self::Inhabited(view) = self else {
@@ -351,7 +351,7 @@ impl std::ops::Deref for Slot {
 }
 
 impl std::ops::DerefMut for Slot {
-    #[inline(always)]
+    #[inline]
     #[track_caller]
     fn deref_mut(&mut self) -> &mut Self::Target {
         let Self::Inhabited(view) = self else {

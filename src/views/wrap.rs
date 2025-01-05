@@ -66,7 +66,7 @@ impl Wrap {
     }
 }
 
-impl<'v> Builder<'v> for Wrap {
+impl Builder<'_> for Wrap {
     type View = WrapView;
     type Style = ();
 }

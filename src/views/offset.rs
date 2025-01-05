@@ -3,7 +3,7 @@ use crate::{
     view::{Builder, Layout, View},
 };
 
-#[derive(Copy, Clone, Debug, PartialEq)]
+#[derive(Copy, Clone, Debug, PartialEq, Eq)]
 #[must_use = "a view does nothing unless `show()` or `show_children()` is called"]
 pub struct Offset {
     pos: Pos2,
@@ -15,7 +15,7 @@ impl Offset {
     }
 }
 
-impl<'v> Builder<'v> for Offset {
+impl Builder<'_> for Offset {
     type View = Self;
     type Style = ();
 }

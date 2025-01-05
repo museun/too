@@ -21,7 +21,7 @@ impl Flexible {
     }
 }
 
-impl<'v> Builder<'v> for Flexible {
+impl Builder<'_> for Flexible {
     type View = Self;
     type Style = ();
 }

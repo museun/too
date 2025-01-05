@@ -20,7 +20,7 @@ pub use view_event::ViewEvent;
 /// If a view consumes the event, it should return `Sink`
 ///
 /// otherwise it should return `Bubble` so it can be processed by other views
-#[derive(Copy, Clone, Default, Debug, PartialEq)]
+#[derive(Copy, Clone, Default, Debug, PartialEq, Eq)]
 pub enum Handled {
     Sink,
     #[default]
@@ -37,7 +37,7 @@ impl Handled {
     }
 }
 
-#[derive(Copy, Clone, Debug, PartialEq)]
+#[derive(Copy, Clone, Debug, PartialEq, Eq)]
 pub enum ButtonState {
     JustDown,
     Down,
@@ -513,12 +513,12 @@ impl InputState {
                     self.send_event(nodes, layout, animation, id, node, ev)
                 });
 
-                if let Some(Handled::Sink) = resp {
-                    break;
-                } else if resp.is_none() {
+                if resp.is_none() {
                     // if the node doesn't exist clear the notification
                     self.selection.notify.set(None);
                     current = None;
+                } else if resp == Some(Handled::Sink) {
+                    break;
                 }
             }
         }
@@ -638,7 +638,7 @@ impl InputState {
     }
 }
 
-impl<'a> Filterable for EventCtx<'a> {
+impl Filterable for EventCtx<'_> {
     fn filter(&self) -> super::Filter<'_> {
         Filter::new(self.nodes, self.layout, self.input)
     }
@@ -666,7 +666,7 @@ pub struct EventCtx<'a> {
     pub animation: &'a mut Animations,
 }
 
-impl<'a> EventCtx<'a> {
+impl EventCtx<'_> {
     /// Send an event to a id
     pub fn send_event(&mut self, id: ViewId, event: ViewEvent) -> Handled {
         self.input.dispatch(

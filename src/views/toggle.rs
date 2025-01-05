@@ -14,7 +14,7 @@ pub struct Toggle {
     state: bool,
 }
 
-impl<'v> Builder<'v> for Toggle {
+impl Builder<'_> for Toggle {
     type View = Self;
     type Style = ();
 }

@@ -131,7 +131,7 @@ impl Drop for Output {
 
 impl Output {
     #[cfg(not(windows))]
-    fn new(out: StdoutLock<'static>) -> Self {
+    fn new(out: &StdoutLock<'static>) -> Self {
         use std::os::fd::AsFd as _;
         let owned = out.as_fd().try_clone_to_owned().expect("ownable fd");
         Self {
@@ -140,7 +140,7 @@ impl Output {
     }
 
     #[cfg(windows)]
-    fn new(out: StdoutLock<'static>) -> Self {
+    fn new(out: &StdoutLock<'static>) -> Self {
         use std::os::windows::io::AsHandle as _;
 
         extern "system" {
@@ -205,7 +205,7 @@ impl Term {
             _handle: std::thread::spawn(move || read_event(tx)),
             events,
             config,
-            output: Output::new(out.lock()),
+            output: Output::new(&out.lock()),
             _stdout: out.lock(),
             size,
             commands: VecDeque::new(),
@@ -425,6 +425,7 @@ fn translate(ev: crossterm::event::Event) -> Option<Event> {
     Some(ev)
 }
 
+#[allow(clippy::needless_pass_by_value)]
 fn read_event(tx: flume::Sender<Event>) {
     while let Ok(ev) = crossterm::event::read() {
         let Some(ev) = translate(ev) else {

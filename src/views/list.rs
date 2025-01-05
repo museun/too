@@ -207,7 +207,7 @@ impl List {
     }
 
     #[cfg_attr(feature = "profile", profiling::function)]
-    fn flex_layout(&mut self, layout: &mut Layout, args: ListParams) {
+    fn flex_layout(&mut self, layout: &mut Layout, args: &ListParams) {
         self.state.flex = 0.0;
 
         let node = layout.nodes.get_current();
@@ -296,7 +296,7 @@ impl std::fmt::Debug for List {
     }
 }
 
-impl<'v> Builder<'v> for List {
+impl Builder<'_> for List {
     type View = Self;
     type Style = ScrollStyle;
 
@@ -467,7 +467,7 @@ impl View for List {
                 max_minor,
                 total_gap,
             };
-            self.flex_layout(&mut layout, args);
+            self.flex_layout(&mut layout, &args);
         } else {
             let args = ListParams {
                 max_major,
@@ -475,7 +475,7 @@ impl View for List {
                 max_minor,
                 total_gap,
             };
-            self.flex_layout(&mut layout, args);
+            self.flex_layout(&mut layout, &args);
 
             if align.is_stretch() {
                 let minor = f32::clamp(self.state.cross_sum(), min_minor, max_minor);
@@ -485,7 +485,7 @@ impl View for List {
                     max_minor: minor,
                     total_gap,
                 };
-                self.flex_layout(&mut layout, args);
+                self.flex_layout(&mut layout, &args);
             }
         }
 
