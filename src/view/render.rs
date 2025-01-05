@@ -303,7 +303,7 @@ impl RenderNodes {
             return;
         }
 
-        // debug(format_str!("drawing: {id:?}"));
+        // super::debug(crate::format_str!("drawing: {id:?}"));
 
         self.current_layer = node.layer;
 

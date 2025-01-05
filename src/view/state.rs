@@ -69,6 +69,12 @@ pub struct State {
     pub(in crate::view) size_changed: Option<Vec2>,
 }
 
+impl std::fmt::Debug for State {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        self.nodes.fmt(f)
+    }
+}
+
 impl Default for State {
     fn default() -> Self {
         Self::new(Palette::default(), Animations::default())
@@ -262,6 +268,7 @@ impl State {
     fn begin(&mut self) {
         self.nodes.start();
         self.render.start();
+
         self.layout.begin();
         self.input.begin(
             &self.nodes, //
@@ -378,6 +385,11 @@ impl Debug {
     /// Is the debug overlay enabled? (E.g. is it on?)
     pub fn is_enabled() -> bool {
         !matches!(Self::with(|c| *c.mode.borrow()), DebugMode::Off)
+    }
+
+    /// Clear any debug messages up to this point in time
+    pub fn clear() {
+        Self::with(|c| c.queue.borrow_mut().clear())
     }
 
     pub(crate) fn resize(size: usize) {

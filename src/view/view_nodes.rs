@@ -53,6 +53,7 @@ impl ViewNodes {
     }
 
     pub(super) fn finish(&mut self) -> impl ExactSizeIterator<Item = ViewId> + use<'_> {
+        self.cleanup(self.root);
         self.removed.get_mut().drain(..)
     }
 
@@ -200,10 +201,7 @@ impl ViewNodes {
         let mut queue: VecDeque<ViewId> = children.iter().copied().collect();
         node.children.truncate(node.next);
 
-        let mut removed = self.removed.borrow_mut();
-
         while let Some(id) = queue.pop_front() {
-            removed.push(id);
             let Some(next) = nodes.remove(id) else {
                 unreachable!("child {id:?} should exist for {start:?}");
             };
