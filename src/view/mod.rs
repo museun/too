@@ -1,5 +1,4 @@
 //! Types for implementing and interacting with Ui elements
-pub mod debug;
 
 mod state;
 pub use state::{debug, Debug, DebugMode, State};
@@ -42,8 +41,6 @@ slotmap::new_key_type! {
     /// Nothing is guaranteed about this type.
     pub struct ViewId;
 }
-
-pub mod test;
 
 // TODO get rid of this
 use crate::math::Size;

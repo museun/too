@@ -204,7 +204,7 @@ impl EventInterest {
 /// The tree for the layouts of all of the views
 #[derive(Default)]
 pub struct LayoutNodes {
-    pub(super) nodes: SecondaryMap<ViewId, LayoutNode>,
+    pub(crate) nodes: SecondaryMap<ViewId, LayoutNode>,
     clip_stack: Vec<ViewId>,
     axis_stack: Vec<Axis>,
     pub(super) interest: EventInterest,

@@ -10,10 +10,8 @@ use crate::{
     layout::Axis,
     math::{vec2, Pos2, Rect, Vec2},
     renderer::{Cell, Grapheme, Pixel, Rasterizer, Rgba, Shape, TextShape},
-    view::{Palette, State, ViewId},
+    view::{Palette, State, Ui, ViewId},
 };
-
-use super::Ui;
 
 /// A debug rasterizer
 ///

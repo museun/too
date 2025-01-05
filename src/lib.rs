@@ -90,6 +90,9 @@ pub mod renderer;
 pub mod view;
 pub mod views;
 
+pub mod debug;
+pub mod test;
+
 pub mod lock;
 
 #[cfg(feature = "terminal")]

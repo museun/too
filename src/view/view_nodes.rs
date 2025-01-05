@@ -279,7 +279,7 @@ pub struct ViewNode {
     pub parent: Option<ViewId>,
     /// Your childrens ids, if you have any
     pub children: Vec<ViewId>,
-    pub(in crate::view) view: Lock<Slot>,
+    pub(crate) view: Lock<Slot>,
     pub(in crate::view) next: usize,
 }
 
@@ -304,7 +304,7 @@ impl std::fmt::Debug for ViewNode {
 
 // this is the only thing that has to be maybe send+sync
 #[derive(Default)]
-pub(in crate::view) enum Slot {
+pub(crate) enum Slot {
     #[default]
     Vacant,
     Inhabited(Box<dyn Erased>),

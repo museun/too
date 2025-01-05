@@ -57,8 +57,8 @@ use super::{
 /// - building the ui
 /// - rendering
 pub struct State {
-    pub(in crate::view) nodes: ViewNodes,
-    pub(in crate::view) layout: LayoutNodes,
+    pub(crate) nodes: ViewNodes,
+    pub(crate) layout: LayoutNodes,
     pub(in crate::view) render: RenderNodes,
     pub(in crate::view) input: InputState,
     pub(in crate::view) animations: Animations,
@@ -145,7 +145,10 @@ impl State {
     ///
     /// Once you build the state, you can [render](State::render) it
     #[cfg_attr(feature = "profile", profiling::function)]
-    pub fn build<R: 'static>(&mut self, rect: Rect, mut show: impl FnMut(&Ui) -> R) -> R {
+    pub fn build<R>(&mut self, rect: Rect, mut show: impl FnMut(&Ui) -> R) -> R
+    where
+        R: 'static,
+    {
         let root = self.nodes.root;
         self.layout.nodes[root].rect = rect;
 

@@ -12,12 +12,13 @@ use crate::{
     layout::{Align, Flex},
     math::{rect, vec2, Rect},
     renderer::Shape,
-    view::layout::Layer,
+    view::Debug,
     Str,
 };
 
-use super::{
-    state::Debug, test::DebugRasterizer, Interest, LayoutNodes, State, Ui, ViewId, ViewNodes,
+use crate::{
+    test::DebugRasterizer,
+    view::{Interest, Layer, LayoutNodes, State, Ui, ViewId, ViewNodes},
 };
 
 #[derive(Debug)]
