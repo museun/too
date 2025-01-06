@@ -49,7 +49,7 @@ impl Interest {
     pub const FOCUS: Self = Self(1 << 3);
 
     /// A view wants to key inputs
-    pub const FOCUS_INPUT: Self = Self(1 << 4);
+    pub const INPUT: Self = Self(1 << 4);
 
     /// A view wants to get [`ViewEvent::SelectionAdded`](crate::view::ViewEvent::SelectionAdded) and [`ViewEvent::SelectionRemoved`](crate::view::ViewEvent::SelectionRemoved) events
     pub const SELECTION_CHANGE: Self = Self(1 << 5);
@@ -87,7 +87,7 @@ impl Interest {
         self.0 & (1 << 3) != 0
     }
 
-    pub const fn is_focus_input(&self) -> bool {
+    pub const fn is_input(&self) -> bool {
         self.0 & (1 << 4) != 0
     }
 

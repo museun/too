@@ -34,7 +34,7 @@ impl View for KeyArea {
     }
 
     fn interests(&self) -> Interest {
-        Interest::FOCUS_INPUT
+        Interest::INPUT
     }
 
     fn event(&mut self, event: ViewEvent, _ctx: EventCtx) -> Handled {
@@ -45,7 +45,7 @@ impl View for KeyArea {
         self.key = Some(key);
         self.modifiers = Some(modifiers);
 
-        Handled::Sink
+        Handled::Bubble
     }
 }
 

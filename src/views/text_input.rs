@@ -185,7 +185,7 @@ impl View for TextInputView {
     }
 
     fn interests(&self) -> Interest {
-        Interest::FOCUS_INPUT | Interest::MOUSE_INSIDE
+        Interest::INPUT | Interest::MOUSE_INSIDE
     }
 
     fn event(&mut self, event: ViewEvent, ctx: EventCtx) -> Handled {

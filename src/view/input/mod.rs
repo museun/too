@@ -1,4 +1,7 @@
-use std::{cell::Cell, collections::HashMap};
+use std::{
+    cell::Cell,
+    collections::{HashMap, VecDeque},
+};
 
 use crate::{
     animation::Animations,
@@ -250,23 +253,44 @@ impl InputState {
         layout: &LayoutNodes,
         animation: &mut Animations,
     ) -> Handled {
-        let Some(id) = self.focus.notify.get() else {
-            return Handled::Bubble;
-        };
+        if let Some(id) = self.focus.notify.get() {
+            let Some(view) = layout.get(id) else {
+                return Handled::Bubble;
+            };
 
-        let Some(view) = layout.get(id) else {
-            return Handled::Bubble;
-        };
-
-        if !view.interest.is_focus_input() {
-            return Handled::Bubble;
+            if view.interest.is_input() {
+                let event = ViewEvent::KeyInput {
+                    key,
+                    modifiers: self.modifiers,
+                };
+                return self.dispatch(nodes, layout, animation, id, event);
+            }
         }
 
-        let event = ViewEvent::KeyInput {
-            key,
-            modifiers: self.modifiers,
-        };
-        self.dispatch(nodes, layout, animation, id, event)
+        // TODO build a radix trie for this instead of doing a (total) depth-first search
+        let root = nodes.root();
+        let mut queue = VecDeque::from([root]);
+        while let Some(id) = queue.pop_front() {
+            let Some(node) = layout.get(id) else {
+                continue;
+            };
+            if node.interest.is_input() {
+                let event = ViewEvent::KeyInput {
+                    key,
+                    modifiers: self.modifiers,
+                };
+                let resp = self.dispatch(nodes, layout, animation, id, event);
+                if resp.is_sink() {
+                    return resp;
+                }
+            }
+            let Some(view_node) = nodes.get(node.id) else {
+                continue;
+            };
+            queue.extend(view_node.children.iter().copied());
+        }
+
+        Handled::Bubble
     }
 
     fn mouse_moved(

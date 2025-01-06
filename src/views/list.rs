@@ -341,7 +341,7 @@ impl View for List {
 
     fn interests(&self) -> Interest {
         if self.scroll.scrollable {
-            Interest::MOUSE | Interest::FOCUS_INPUT
+            Interest::MOUSE | Interest::INPUT
         } else {
             Interest::NONE
         }
