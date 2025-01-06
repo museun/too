@@ -26,6 +26,27 @@ impl View for Root {
     }
 }
 
+#[derive(Debug)]
+pub struct Clip;
+impl Builder<'_> for Clip {
+    type View = Self;
+    type Style = ();
+}
+
+impl View for Clip {
+    type Args<'v> = Self;
+    type Response = ();
+
+    fn create(args: Self::Args<'_>) -> Self {
+        args
+    }
+
+    fn layout(&mut self, mut layout: Layout, space: Space) -> Size {
+        layout.enable_clipping();
+        space.constrain_min(self.default_layout(layout, space))
+    }
+}
+
 // TODO this is a bad name, this means input layer not render layer
 #[derive(Debug)]
 pub struct Layer;

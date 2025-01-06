@@ -230,6 +230,14 @@ impl Ui<'_> {
     {
         self.new_layer(super::Layer::Top, show)
     }
+
+    pub fn clip<R>(&self, show: impl FnOnce(&Ui) -> R) -> Response<R>
+    where
+        R: 'static,
+    {
+        self.show_children(internal_views::Clip, show)
+            .flatten_right()
+    }
 }
 
 impl Ui<'_> {

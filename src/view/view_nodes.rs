@@ -202,6 +202,7 @@ impl ViewNodes {
         node.children.truncate(node.next);
 
         while let Some(id) = queue.pop_front() {
+            // crate::debug(crate::format_str!("removing: {id:?}"));
             let Some(next) = nodes.remove(id) else {
                 unreachable!("child {id:?} should exist for {start:?}");
             };
