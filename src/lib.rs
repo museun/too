@@ -90,6 +90,9 @@ pub mod renderer;
 pub mod view;
 pub mod views;
 
+#[doc(inline)]
+pub use view::state::debug;
+
 pub mod debug;
 pub mod test;
 

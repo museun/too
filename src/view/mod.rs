@@ -1,7 +1,7 @@
 //! Types for implementing and interacting with Ui elements
 
-mod state;
-pub use state::{debug, Debug, DebugMode, State};
+pub(super) mod state;
+pub use state::{Debug, DebugMode, State};
 
 mod response;
 pub use response::Response;
