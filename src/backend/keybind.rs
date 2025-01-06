@@ -11,10 +11,12 @@ pub struct Keybind {
 
 impl PartialEq for Keybind {
     fn eq(&self, other: &Self) -> bool {
+        let (mut lhs, mut rhs) = (self.modifiers, other.modifiers);
         if matches!(self.key, Key::Char(..)) {
-            return self.key == other.key;
+            lhs = self.modifiers.remove(Modifiers::SHIFT);
+            rhs = other.modifiers.remove(Modifiers::SHIFT);
         }
-        self.key == other.key && self.modifiers == other.modifiers
+        self.key == other.key && lhs == rhs
     }
 }
 
