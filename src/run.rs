@@ -71,19 +71,29 @@ impl Default for RunConfig {
 /// Run an application with the default [`RunConfig`]
 ///
 /// This will block the current thread until the application exits.
+///
+/// # Errors
+/// Any i/o error from the terminal will be returned.
+///
+/// If execution abruptly ended before the user code was ever ran, an [`std::io::ErrorKind::Custom`] will be returned
 #[cfg(feature = "terminal")]
-pub fn run<R: 'static>(app: impl FnMut(&crate::view::Ui) -> R) -> std::io::Result<()> {
+pub fn run<R: 'static>(app: impl FnMut(&crate::view::Ui) -> R) -> std::io::Result<R> {
     application(RunConfig::default(), app)
 }
 
 /// Run an application with the provided [`RunConfig`]
 ///
 /// This will block the current thread until the application exits.
+///
+/// # Errors
+/// Any i/o error from the terminal will be returned.
+///
+/// If execution abruptly ended before the user code was ever ran, an [`std::io::ErrorKind::Custom`] will be returned
 #[cfg(feature = "terminal")]
 pub fn application<R: 'static>(
     config: RunConfig,
     mut app: impl FnMut(&crate::view::Ui) -> R,
-) -> std::io::Result<()> {
+) -> std::io::Result<R> {
     use std::time::{Duration, Instant};
 
     use crate::{
@@ -110,6 +120,7 @@ pub fn application<R: 'static>(
 
     let mut prev = Instant::now();
 
+    let mut output = None;
     'outer: loop {
         #[cfg(feature = "profile")]
         {
@@ -149,7 +160,7 @@ pub fn application<R: 'static>(
         let now = Instant::now();
         let dt = prev.elapsed();
         state.update(dt.as_secs_f32());
-        state.build(surface.rect(), |ui| app(ui));
+        output.replace(state.build(surface.rect(), |ui| app(ui)));
 
         if should_render || dt >= target {
             let mut rasterizer = CroppedSurface {
@@ -167,5 +178,10 @@ pub fn application<R: 'static>(
         }
     }
 
-    Ok(())
+    output.ok_or_else(|| {
+        std::io::Error::new(
+            std::io::ErrorKind::ConnectionRefused,
+            "user's code never ran",
+        )
+    })
 }
