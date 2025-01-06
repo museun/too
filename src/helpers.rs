@@ -146,6 +146,22 @@ impl<T> Extend<T> for Queue<T> {
     }
 }
 
+impl<T> IntoIterator for Queue<T> {
+    type Item = T;
+    type IntoIter = std::collections::vec_deque::IntoIter<T>;
+    fn into_iter(self) -> Self::IntoIter {
+        self.queue.into_iter()
+    }
+}
+
+impl<'a, T> IntoIterator for &'a Queue<T> {
+    type Item = &'a T;
+    type IntoIter = std::collections::vec_deque::Iter<'a, T>;
+    fn into_iter(self) -> Self::IntoIter {
+        (&self.queue).into_iter()
+    }
+}
+
 /// Count how many digits are in this unsigned number
 pub const fn count_digits(d: usize) -> usize {
     let (mut len, mut n) = (1, 1);
