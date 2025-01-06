@@ -3,10 +3,19 @@ use std::fmt::Write;
 use crate::backend::{Key, Modifiers};
 
 /// A keybind is a combination of a [`Key`] and some [`Modifiers`]
-#[derive(Copy, Clone, PartialEq, Eq, Hash)]
+#[derive(Copy, Clone, Eq, Hash)]
 pub struct Keybind {
     pub key: Key,
     pub modifiers: Modifiers,
+}
+
+impl PartialEq for Keybind {
+    fn eq(&self, other: &Self) -> bool {
+        if matches!(self.key, Key::Char(..)) {
+            return self.key == other.key;
+        }
+        self.key == other.key && self.modifiers == other.modifiers
+    }
 }
 
 impl std::fmt::Debug for Keybind {
