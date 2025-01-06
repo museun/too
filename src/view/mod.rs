@@ -13,7 +13,7 @@ mod filter;
 pub use filter::{Depth, Filter, Filterable};
 
 mod ui;
-pub use ui::Ui;
+pub use ui::{Name, NameExt, Ui};
 
 mod layout;
 pub use layout::{IntrinsicSize, Layer, Layout, LayoutNode, LayoutNodes, Properties};

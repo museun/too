@@ -304,6 +304,7 @@ impl<T> Lock<T> {
     /// Gets immutable borrow to the internal data
     ///
     /// ***WARNING:*** This'll deadlock if any mutable borrows are outstanding
+    #[track_caller]
     pub fn borrow(&self) -> Ref<'_, T> {
         Ref {
             inner: self.inner.read(),
@@ -313,6 +314,7 @@ impl<T> Lock<T> {
     /// Gets mutable borrow to the internal data
     ///
     /// ***WARNING:*** This'll deadlock if any immutable or mutable borrows are outstanding
+    #[track_caller]
     pub fn borrow_mut(&self) -> RefMut<'_, T> {
         RefMut {
             inner: self.inner.write(),

@@ -2,7 +2,7 @@ use std::{any::TypeId, collections::VecDeque};
 
 use slotmap::{Key, SlotMap};
 
-use super::{internal_views::Root, Erased, Ui, View, ViewId};
+use super::{internal_views::Root, ui::Name, Erased, Ui, View, ViewId};
 use crate::lock::{Lock, Ref, RefMapped, RefMut, RefMutMapped};
 
 /// The persistent tree of all of the views.
@@ -69,30 +69,51 @@ impl ViewNodes {
     }
 
     #[track_caller]
-    pub(in crate::view) fn begin_view<V>(&self, args: V::Args<'_>, ui: &Ui) -> (ViewId, V::Response)
+    pub(in crate::view) fn begin_view<V>(
+        &self,
+        args: V::Args<'_>,
+        name: Name,
+        ui: &Ui,
+    ) -> (ViewId, V::Response)
     where
         V: View,
     {
         let parent = self.current();
-        self.update_view::<V>(parent, args, ui)
+        self.update_view::<V>(parent, args, name, ui)
     }
 
-    fn update_view<V>(&self, parent: ViewId, args: V::Args<'_>, ui: &Ui) -> (ViewId, V::Response)
+    fn update_view<V>(
+        &self,
+        parent: ViewId,
+        args: V::Args<'_>,
+        name: Name,
+        ui: &Ui,
+    ) -> (ViewId, V::Response)
     where
         V: View,
     {
         let Some(id) = self.append_view(parent) else {
-            let (id, resp) = self.allocate_view::<V>(parent, args);
+            let (id, resp) = self.allocate_view::<V>(parent, args, name);
             self.stack.borrow_mut().push(id);
             return (id, resp);
         };
 
-        let type_id = self.nodes.borrow()[id].view.borrow().type_id();
-        if type_id != TypeId::of::<V>() {
-            self.remove_view(id);
-            let (id, resp) = self.allocate_view::<V>(parent, args);
-            self.stack.borrow_mut().push(id);
-            return (id, resp);
+        {
+            let node_name = self.nodes.borrow()[id].name;
+            if node_name != name {
+                self.remove_view(id);
+                let (id, resp) = self.allocate_view::<V>(parent, args, name);
+                self.stack.borrow_mut().push(id);
+                return (id, resp);
+            }
+
+            let type_id = self.nodes.borrow()[id].view.borrow().type_id();
+            if type_id != TypeId::of::<V>() {
+                self.remove_view(id);
+                let (id, resp) = self.allocate_view::<V>(parent, args, name);
+                self.stack.borrow_mut().push(id);
+                return (id, resp);
+            }
         }
 
         self.stack.borrow_mut().push(id);
@@ -125,12 +146,14 @@ impl ViewNodes {
         &self,
         parent_id: ViewId,
         args: V::Args<'_>,
+        name: Name,
     ) -> (ViewId, V::Response) {
         let view = V::create(args);
 
         let id = self.nodes.borrow_mut().insert(ViewNode {
             parent: Some(parent_id),
             view: Lock::new(Slot::new(view)),
+            name,
             ..ViewNode::default()
         });
 
@@ -280,6 +303,7 @@ pub struct ViewNode {
     pub children: Vec<ViewId>,
     pub(crate) view: Lock<Slot>,
     pub(in crate::view) next: usize,
+    pub(crate) name: Name,
 }
 
 impl std::fmt::Debug for ViewNode {

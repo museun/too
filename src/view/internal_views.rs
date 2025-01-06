@@ -27,6 +27,22 @@ impl View for Root {
 }
 
 #[derive(Debug)]
+pub struct Named;
+impl Builder<'_> for Named {
+    type View = Self;
+    type Style = ();
+}
+
+impl View for Named {
+    type Args<'v> = Self;
+    type Response = ();
+
+    fn create(args: Self::Args<'_>) -> Self {
+        args
+    }
+}
+
+#[derive(Debug)]
 pub struct Clip;
 impl Builder<'_> for Clip {
     type View = Self;

@@ -1,9 +1,11 @@
 use crate::{
     backend::Keybind,
+    hasher::hash_fnv_1a,
     layout::{Align2, Flex},
     lock::{Lock, Ref, RefMapped, RefMut},
     math::{Margin, Pos2, Rect, Size, Vec2},
     renderer::{Border, Rgba, Shape, TextShape},
+    view::internal_views::Named,
     views::{self, Constrain},
     Str,
 };
@@ -30,6 +32,75 @@ impl Painter<'_> {
             rect,
             shape: text.into(),
         });
+    }
+}
+
+/// A named key for a view.
+///
+/// When views are named, and their slot changes names they are recreated.
+///
+/// By default all views are anonymous.
+#[derive(Copy, Clone, Default, PartialEq)]
+pub enum Name {
+    #[default]
+    Anonymous,
+    Named(u64),
+}
+
+impl Name {
+    /// Create a new named key with the provided value.
+    pub const fn named(name: &str) -> Self {
+        Self::Named(hash_fnv_1a(name.as_bytes()))
+    }
+
+    /// Append a value to the key, making it conditionally unique.
+    pub const fn with(self, value: &str) -> Self {
+        match self {
+            Self::Anonymous => Self::named(value),
+            Self::Named(parent) => Self::Named(parent ^ hash_fnv_1a(value.as_bytes())),
+        }
+    }
+}
+
+impl std::fmt::Debug for Name {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::Anonymous => write!(f, "Anonymous"),
+            Self::Named(arg) => write!(f, "{arg:#0X}"),
+        }
+    }
+}
+
+/// An extension trait for making [`Name`] easier
+pub trait NameExt: Sized {
+    /// Append this key to this type, turning it into a named key.
+    fn with_key(self, value: &str) -> Name;
+}
+
+impl NameExt for Name {
+    fn with_key(self, value: &str) -> Name {
+        Name::with(self, value) // is this not recursive?
+    }
+}
+
+impl NameExt for &str {
+    fn with_key(self, value: &str) -> Name {
+        Name::named(self).with(value)
+    }
+}
+
+impl From<&str> for Name {
+    fn from(value: &str) -> Self {
+        Self::named(value)
+    }
+}
+
+impl From<Option<&str>> for Name {
+    fn from(value: Option<&str>) -> Self {
+        match value {
+            Some(value) => Self::named(value),
+            None => Self::Anonymous,
+        }
     }
 }
 
@@ -62,11 +133,49 @@ impl<'a> Ui<'a> {
 }
 
 impl Ui<'_> {
+    pub fn named<R>(&self, name: impl Into<Name>, show: impl FnOnce(&Self) -> R) -> Response<R>
+    where
+        R: 'static,
+    {
+        let name = name.into();
+        let (id, _) = self.nodes.begin_view::<Named>(Named, name, self);
+        let inner = show(self);
+        self.nodes.end_view(id);
+        Response::new(id, inner)
+    }
+
     pub fn show<'v, B>(&self, args: B) -> Response<<B::View as View>::Response>
     where
         B: Builder<'v>,
     {
         self.show_children(args, |_| {}).flatten_left()
+    }
+
+    pub fn show_named<'v, B>(
+        &self,
+        name: impl Into<Name>,
+        args: B,
+    ) -> Response<<B::View as View>::Response>
+    where
+        B: Builder<'v>,
+    {
+        self.show_children_named(name, args, |_| {}).flatten_left()
+    }
+
+    pub fn show_children_named<'v, B, R>(
+        &self,
+        named: impl Into<Name>,
+        args: B,
+        show: impl FnOnce(&Self) -> R,
+    ) -> Response<(<B::View as View>::Response, R)>
+    where
+        B: Builder<'v>,
+        R: 'static,
+    {
+        let (id, resp) = self.nodes.begin_view::<B::View>(args, named.into(), self);
+        let inner = show(self);
+        self.nodes.end_view(id);
+        Response::new(id, (resp, inner))
     }
 
     pub fn show_children<'v, B, R>(
@@ -78,7 +187,9 @@ impl Ui<'_> {
         B: Builder<'v>,
         R: 'static,
     {
-        let (id, resp) = self.nodes.begin_view::<B::View>(args, self);
+        let (id, resp) = self
+            .nodes
+            .begin_view::<B::View>(args, Name::Anonymous, self);
         let inner = show(self);
         self.nodes.end_view(id);
         Response::new(id, (resp, inner))

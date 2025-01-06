@@ -8,11 +8,11 @@ use unicode_width::UnicodeWidthStr;
 
 use crate::{
     backend::Event,
-    helpers::short_name,
+    helpers::{count_digits, short_name},
     layout::{Align, Flex},
     math::{rect, vec2, Rect},
     renderer::Shape,
-    view::Debug,
+    view::{Debug, Name},
     Str,
 };
 
@@ -24,6 +24,7 @@ use crate::{
 #[derive(Debug)]
 pub struct DebugNode {
     id: ViewId,
+    name_id: Name,
     name: String,
     debug: Vec<String>,
     children: Vec<Self>,
@@ -77,6 +78,7 @@ impl DebugNode {
 
             let mut debug_node = DebugNode {
                 id,
+                name_id: node.name,
                 name: short_name(view.type_name()),
                 debug: format!("{view:#?}").split('\n').map(String::from).collect(),
                 children,
@@ -106,8 +108,8 @@ impl DebugNode {
         let view = &node.view.borrow();
         Self {
             id: root,
+            name_id: node.name,
             name: short_name(view.type_name()),
-
             debug: format!("{view:#?}").split('\n').map(String::from).collect(),
             children,
             inner: InnerNode::FoundNode {
@@ -123,17 +125,6 @@ impl DebugNode {
 
 fn render_compact_tree(node: &DebugNode, show_sizes: bool) -> String {
     use std::fmt::Write as _;
-    const fn count_digits(d: usize) -> usize {
-        let (mut len, mut n) = (1, 1);
-        while len < 20 {
-            n *= 10;
-            if n > d {
-                return len;
-            }
-            len += 1;
-        }
-        len
-    }
 
     fn print(
         children: &[DebugNode],
@@ -150,12 +141,24 @@ fn render_compact_tree(node: &DebugNode, show_sizes: bool) -> String {
                 InnerNode::MissingLayout => geom.push(None),
             };
 
-            _ = writeln!(
-                tree,
-                "{prefix}{upper_connector}{name}({id:?})",
-                name = node.name,
-                id = node.id.data(),
-            );
+            match node.name_id {
+                Name::Anonymous => {
+                    _ = writeln!(
+                        tree,
+                        "{prefix}{upper_connector}{name}({id:?})",
+                        name = node.name,
+                        id = node.id.data(),
+                    );
+                }
+                Name::Named(name_id) => {
+                    _ = writeln!(
+                        tree,
+                        "{prefix}{upper_connector}{name}({id:?})[{name_id:#0X}]",
+                        name = node.name,
+                        id = node.id.data(),
+                    );
+                }
+            }
 
             let prefix = if is_last {
                 format!("{prefix}   ")
@@ -331,6 +334,10 @@ fn render_pretty_tree(node: &DebugNode) -> String {
                             }),
                         },
                         DebugLabel::Separator,
+                        DebugLabel::Split {
+                            min: CompactString::const_new("Id"),
+                            max: CompactString::new(format!("{:?}", node.name_id)),
+                        },
                         DebugLabel::Split {
                             min: CompactString::const_new("Interactive"),
                             max: CompactString::const_new(if interactive {
