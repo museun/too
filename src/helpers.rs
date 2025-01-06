@@ -158,7 +158,7 @@ impl<'a, T> IntoIterator for &'a Queue<T> {
     type Item = &'a T;
     type IntoIter = std::collections::vec_deque::Iter<'a, T>;
     fn into_iter(self) -> Self::IntoIter {
-        (&self.queue).into_iter()
+        self.queue.iter()
     }
 }
 

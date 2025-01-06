@@ -3,6 +3,7 @@ use std::fmt::Write;
 use crate::backend::{Key, Modifiers};
 
 /// A keybind is a combination of a [`Key`] and some [`Modifiers`]
+#[allow(clippy::derived_hash_with_manual_eq)]
 #[derive(Copy, Clone, Eq, Hash)]
 pub struct Keybind {
     pub key: Key,
