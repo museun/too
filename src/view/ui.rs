@@ -270,7 +270,6 @@ impl Ui<'_> {
         };
 
         let keybind = keybind.into();
-        // TODO normalize this. 'a' and 'A' should be separate w/ modifiers here
         if keybind == prev {
             return true;
         }
