@@ -1,5 +1,5 @@
 /// A keyboard key
-#[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
+#[derive(Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 #[non_exhaustive]
 pub enum Key {
     /// A character key, like `s` or `@`

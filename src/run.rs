@@ -75,7 +75,7 @@ impl Default for RunConfig {
 /// # Errors
 /// Any i/o error from the terminal will be returned.
 ///
-/// If execution abruptly ended before the user code was ever ran, an [`std::io::ErrorKind::Custom`] will be returned
+/// If execution abruptly ended before the user code was ever ran, an [`std::io::ErrorKind::Other`] will be returned
 #[cfg(feature = "terminal")]
 pub fn run<R: 'static>(app: impl FnMut(&crate::view::Ui) -> R) -> std::io::Result<R> {
     application(RunConfig::default(), app)
@@ -88,7 +88,7 @@ pub fn run<R: 'static>(app: impl FnMut(&crate::view::Ui) -> R) -> std::io::Resul
 /// # Errors
 /// Any i/o error from the terminal will be returned.
 ///
-/// If execution abruptly ended before the user code was ever ran, an [`std::io::ErrorKind::Custom`] will be returned
+/// If execution abruptly ended before the user code was ever ran, an [`std::io::ErrorKind::Other`] will be returned
 #[cfg(feature = "terminal")]
 pub fn application<R: 'static>(
     config: RunConfig,

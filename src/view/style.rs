@@ -97,13 +97,19 @@ pub struct Palette {
     pub foreground: Rgba,
     /// A color close to the background, but more visible
     pub surface: Rgba,
-    /// A color used to outline things. This is generally like surface, but even more visible
+    /// A color used to outline things.
+    ///
+    /// This is generally like surface, but even more visible
     pub outline: Rgba,
     /// A color used to contrast something against the background
     pub contrast: Rgba,
-    /// A color used for a primary action -- e.g. the default interaction color
+    /// A color used for a primary action
+    ///
+    /// e.g. the default interaction color
     pub primary: Rgba,
-    /// A color used for a secondary action -- e.g an interaction color that is different from the primary color
+    /// A color used for a secondary action
+    ///
+    /// e.g an interaction color that is different from the primary color
     pub secondary: Rgba,
     /// A accent color used to differentiate something from a primary and secondary color
     pub accent: Rgba,

@@ -10,12 +10,23 @@ use parking_lot::{
 };
 
 /// A (cheaply) clonable pointer
-#[derive(Clone, Default)]
+#[derive(Default)]
 pub struct Shared<T>
 where
     T: ?Sized,
 {
     inner: Arc<T>,
+}
+
+impl<T> Clone for Shared<T>
+where
+    T: ?Sized,
+{
+    fn clone(&self) -> Self {
+        Self {
+            inner: self.inner.clone(),
+        }
+    }
 }
 
 impl<T> Deref for Shared<T>

@@ -17,11 +17,11 @@ pub struct Response<T = ()> {
 impl<L, R> Response<(L, R)> {
     /// 'Flatten' the response to the 'left' side
     pub fn flatten_left(self) -> Response<L> {
-        self.map(|(l, _)| l)
+        self.map(|(left, _)| left)
     }
     /// 'Flatten' the response to the 'right' side
     pub fn flatten_right(self) -> Response<R> {
-        self.map(|(_, r)| r)
+        self.map(|(_, right)| right)
     }
     /// Split the response into 2 separate responses
     ///
