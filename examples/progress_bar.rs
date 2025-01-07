@@ -7,6 +7,6 @@ fn main() -> std::io::Result<()> {
         ui.show_children(fill_list, |ui| {
             ui.progress(value);
             ui.slider(&mut value);
-        })
+        });
     })
 }

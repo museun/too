@@ -8,8 +8,9 @@ use too::{
 };
 
 fn main() -> std::io::Result<()> {
-    let app = |ui: &Ui| ui.show(ColorSelect::default());
-    // Ok(println!("{}", too::view::debug::pretty_tree(app)))
+    let app = |ui: &Ui| {
+        ui.show(ColorSelect::default());
+    };
     too::application(
         too::RunConfig {
             debug: too::view::DebugMode::Rolling,

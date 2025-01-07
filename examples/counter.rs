@@ -13,6 +13,6 @@ fn main() -> std::io::Result<()> {
             if ui.button("Decrement").clicked() {
                 value -= 1;
             }
-        })
+        });
     })
 }
