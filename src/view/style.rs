@@ -1,37 +1,109 @@
+use std::ops::Deref;
+
 use crate::{helpers::short_name, renderer::Rgba};
 
-use super::builder::ViewMarker;
+use super::{builder::ViewMarker, Render, Ui};
 
-pub trait Style: Sized + Copy + Clone {
+#[derive(Copy, Clone, Debug, Default, PartialEq)]
+#[non_exhaustive]
+pub struct StyleOptions<T = ()> {
+    pub hovered: bool,
+    pub focused: bool,
+    pub selected: bool,
+    pub interactive: bool,
+    pub state: StyleState,
+    pub args: T,
+}
+
+impl<T> Deref for StyleOptions<T> {
+    type Target = T;
+    fn deref(&self) -> &Self::Target {
+        &self.args
+    }
+}
+
+impl StyleOptions<()> {
+    pub const fn with_args<T>(self, args: T) -> StyleOptions<T> {
+        StyleOptions {
+            args,
+            state: self.state,
+            hovered: self.hovered,
+            focused: self.focused,
+            selected: self.selected,
+            interactive: self.interactive,
+        }
+    }
+}
+
+impl<T> StyleOptions<T> {
+    pub fn resolve_color(&self, palette: &Palette, or_default: fn(&Palette) -> Rgba) -> Rgba {
+        match self.state {
+            StyleState::Hoverable if self.hovered => palette.accent,
+            StyleState::Disabled => palette.outline,
+            _ => or_default(palette),
+        }
+    }
+}
+
+#[derive(Copy, Clone, Debug, Default, PartialEq)]
+pub enum StyleState {
+    Hoverable,
+    Disabled,
+    #[default]
+    None,
+}
+
+impl StyleState {
+    pub const fn is_hoverable(&self) -> bool {
+        matches!(self, Self::Hoverable)
+    }
+
+    pub const fn is_disabled(&self) -> bool {
+        matches!(self, Self::Disabled)
+    }
+
+    pub const fn is_none(&self) -> bool {
+        matches!(self, Self::None)
+    }
+}
+
+pub trait Style: Sized + Copy + Clone + 'static {
     type Args: 'static + ViewMarker;
-    fn default(palette: &Palette, args: Self::Args) -> Self;
-    fn indirect() -> impl FnOnce(&Palette, Self::Args) -> Self {
-        move |palette, args| Self::default(palette, args)
+    fn default(palette: &Palette, options: StyleOptions<Self::Args>) -> Self;
+    fn indirect() -> impl FnOnce(&Palette, StyleOptions<Self::Args>) -> Self {
+        move |palette, options| Self::default(palette, options)
     }
 }
 
 impl Style for () {
     type Args = ();
-    fn default(_palette: &Palette, _args: Self::Args) -> Self {}
+    fn default(palette: &Palette, options: StyleOptions<Self::Args>) -> Self {
+        _ = palette;
+        _ = options;
+    }
 }
 
 enum ApplicableStyleKind<S>
 where
-    S: Style + 'static + ViewMarker,
+    S: Style + ViewMarker,
 {
     Direct(S),
     #[allow(clippy::type_complexity)]
     // we cannot type alias this because it was an associated type from the generic 'S'
-    Indirect(Box<dyn Fn(&Palette, S::Args) -> S>),
+    Indirect(Box<dyn Fn(&Palette, StyleOptions<S::Args>) -> S>),
 }
 
-pub struct ApplicableStyle<S>(ApplicableStyleKind<S>)
+pub struct ApplicableStyle<S = ()>
 where
-    S: Style + 'static + ViewMarker;
+    S: Style + ViewMarker,
+{
+    kind: ApplicableStyleKind<S>,
+    pub state: StyleState,
+}
 
 impl<S> Default for ApplicableStyle<S>
 where
-    S: Style + 'static + ViewMarker,
+    S: Style + ViewMarker,
 {
     fn default() -> Self {
         Self::new(S::default)
@@ -40,32 +112,87 @@ where
 
 impl<S> ApplicableStyle<S>
 where
-    S: Style + 'static + ViewMarker,
+    S: Style + ViewMarker,
 {
     pub fn new<T>(make: T) -> Self
     where
-        T: Fn(&Palette, S::Args) -> S + 'static + ViewMarker,
+        T: Fn(&Palette, StyleOptions<S::Args>) -> S + 'static + ViewMarker,
     {
-        Self(ApplicableStyleKind::Indirect(Box::new(move |p, a| {
-            make(p, a)
-        })))
+        Self {
+            kind: ApplicableStyleKind::Indirect(Box::new(move |p, o| make(p, o))),
+            state: StyleState::None,
+        }
     }
 
-    pub fn value(value: S) -> Self {
-        Self(ApplicableStyleKind::Direct(value))
+    pub const fn value(value: S) -> Self {
+        Self {
+            kind: ApplicableStyleKind::Direct(value),
+            state: StyleState::None,
+        }
     }
 
     pub fn deferred() -> Self {
-        Self(ApplicableStyleKind::Indirect(Box::new(move |p, a| {
-            S::indirect()(p, a)
-        })))
+        Self {
+            kind: ApplicableStyleKind::Indirect(Box::new(move |p, o| S::indirect()(p, o))),
+            state: StyleState::None,
+        }
     }
 
-    pub fn apply(&self, palette: &Palette, args: S::Args) -> S {
-        match &self.0 {
+    pub const fn merge(mut self, other: &Self) -> Self {
+        self.state = other.state;
+        self
+    }
+
+    pub const fn with_style_state(mut self, state: StyleState) -> Self {
+        self.state = state;
+        self
+    }
+
+    pub fn apply(
+        &self,
+        applicator: impl StyleApplicator,
+        map: impl FnOnce(StyleOptions<()>) -> StyleOptions<S::Args>,
+    ) -> S {
+        match &self.kind {
             &ApplicableStyleKind::Direct(value) => value,
-            ApplicableStyleKind::Indirect(indirect) => indirect(palette, args),
+            ApplicableStyleKind::Indirect(indirect) => applicator
+                .apply(self, move |palette, options| {
+                    indirect(palette, map(options))
+                }),
         }
+    }
+}
+
+pub trait StyleApplicator {
+    fn apply<S>(
+        &self,
+        style: &ApplicableStyle<S>,
+        f: impl FnOnce(&Palette, StyleOptions<()>) -> S,
+    ) -> S
+    where
+        S: Style;
+}
+
+impl StyleApplicator for &Render<'_, '_> {
+    fn apply<S: Style>(
+        &self,
+        style: &ApplicableStyle<S>,
+        f: impl FnOnce(&Palette, StyleOptions<()>) -> S,
+    ) -> S {
+        f(self.palette, self.style_options(style))
+    }
+}
+
+impl StyleApplicator for &Ui<'_> {
+    fn apply<S>(
+        &self,
+        style: &ApplicableStyle<S>,
+        f: impl FnOnce(&Palette, StyleOptions<()>) -> S,
+    ) -> S
+    where
+        S: Style,
+    {
+        f(&self.palette(), self.current_style_options(style))
     }
 }
 
@@ -82,6 +209,7 @@ where
         }
         use std::any::type_name;
         f.debug_struct("ApplicableStyle")
+            .field("state", &self.state)
             .field("args", &NoQuote(&short_name(type_name::<S::Args>())))
             .field("style", &NoQuote(&short_name(type_name::<S>())))
             .finish()

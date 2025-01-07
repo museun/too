@@ -25,7 +25,9 @@ mod view_nodes;
 pub use view_nodes::{ViewNode, ViewNodes};
 
 mod style;
-pub use style::{ApplicableStyle, Elements, Palette, Style};
+pub use style::{
+    ApplicableStyle, Elements, Palette, Style, StyleApplicator, StyleOptions, StyleState,
+};
 
 mod internal_views;
 

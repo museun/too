@@ -7,7 +7,7 @@ use crate::{
     renderer::{Pixel, Rgba},
     view::{
         ApplicableStyle, Builder, Elements, EventCtx, Handled, Interest, Layout, Palette, Render,
-        Style, Ui, View, ViewEvent,
+        Style, StyleOptions, Ui, View, ViewEvent,
     },
 };
 
@@ -35,8 +35,7 @@ pub struct ToggleStyleArgs {
 
 impl Style for ToggleStyle {
     type Args = ToggleStyleArgs;
-
-    fn default(palette: &Palette, args: ToggleStyleArgs) -> Self {
+    fn default(palette: &Palette, args: StyleOptions<ToggleStyleArgs>) -> Self {
         Self {
             track: args
                 .axis
@@ -52,12 +51,13 @@ impl Style for ToggleStyle {
         }
     }
 }
+
 impl ToggleStyle {
-    pub fn large(palette: &Palette, args: ToggleStyleArgs) -> Self {
+    pub fn large(palette: &Palette, args: StyleOptions<ToggleStyleArgs>) -> Self {
         Self::default(palette, args)
     }
 
-    pub fn small_rounded(palette: &Palette, args: ToggleStyleArgs) -> Self {
+    pub fn small_rounded(palette: &Palette, args: StyleOptions<ToggleStyleArgs>) -> Self {
         Self {
             track: args.axis.main((
                 Elements::THICK_HORIZONTAL_LINE,
@@ -69,7 +69,7 @@ impl ToggleStyle {
         }
     }
 
-    pub fn small_diamond(palette: &Palette, args: ToggleStyleArgs) -> Self {
+    pub fn small_diamond(palette: &Palette, args: StyleOptions<ToggleStyleArgs>) -> Self {
         Self {
             track: args.axis.main((
                 Elements::THICK_HORIZONTAL_LINE,
@@ -81,7 +81,7 @@ impl ToggleStyle {
         }
     }
 
-    pub fn small_square(palette: &Palette, args: ToggleStyleArgs) -> Self {
+    pub fn small_square(palette: &Palette, args: StyleOptions<ToggleStyleArgs>) -> Self {
         Self {
             track: args.axis.main((
                 Elements::THICK_HORIZONTAL_LINE,
@@ -141,14 +141,8 @@ impl<'v> Builder<'v> for ToggleSwitch<'v> {
     type View = ToggleSwitchView;
     type Style = ToggleStyle;
 
-    fn style(mut self, style: Self::Style) -> Self {
-        self.style = ApplicableStyle::value(style);
-        self
-    }
-
-    fn class(mut self, class: impl Fn(&Palette, ToggleStyleArgs) -> Self::Style + 'static) -> Self {
-        self.style = ApplicableStyle::new(class);
-        self
+    fn applicable_style(&mut self) -> Option<&mut ApplicableStyle<Self::Style>> {
+        Some(&mut self.style)
     }
 }
 
@@ -240,14 +234,12 @@ impl View for ToggleSwitchView {
         let rect = render.rect();
 
         let toggled = self.value;
-        let style = self.style.apply(
-            render.palette,
-            ToggleStyleArgs {
-                axis: self.axis,
-                toggled,
-            },
-        );
+        let args = ToggleStyleArgs {
+            axis: self.axis,
+            toggled,
+        };
 
+        let style = self.style.apply(&render, |s| s.with_args(args));
         let color = if render.is_hovered() {
             style.track_hovered.unwrap_or(style.track_color)
         } else {

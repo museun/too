@@ -5,7 +5,7 @@ use crate::{
     layout::Align,
     math::{Size, Space},
     renderer::{Attribute, Rgba, TextShape},
-    view::{ApplicableStyle, Builder, Layout, Palette, Render, Style, View},
+    view::{ApplicableStyle, Builder, Layout, Palette, Render, Style, StyleOptions, View, ViewExt},
     Str,
 };
 
@@ -16,29 +16,35 @@ pub struct LabelStyle {
 
 impl Style for LabelStyle {
     type Args = ();
-    fn default(palette: &Palette, _args: Self::Args) -> Self {
+    fn default(palette: &Palette, options: StyleOptions) -> Self {
         Self {
-            foreground: palette.foreground,
+            foreground: { options.resolve_color(palette, |palette| palette.foreground) },
         }
     }
 }
 
 impl LabelStyle {
-    pub const fn info(palette: &Palette) -> Self {
+    pub fn info(palette: &Palette, options: StyleOptions) -> Self {
         Self {
-            foreground: palette.info,
+            foreground: { options.resolve_color(palette, |palette| palette.info) },
         }
     }
 
-    pub const fn warning(palette: &Palette) -> Self {
+    pub fn warning(palette: &Palette, options: StyleOptions) -> Self {
         Self {
-            foreground: palette.warning,
+            foreground: { options.resolve_color(palette, |palette| palette.warning) },
         }
     }
 
-    pub const fn danger(palette: &Palette) -> Self {
+    pub fn success(palette: &Palette, options: StyleOptions) -> Self {
         Self {
-            foreground: palette.danger,
+            foreground: { options.resolve_color(palette, |palette| palette.success) },
+        }
+    }
+
+    pub fn danger(palette: &Palette, options: StyleOptions) -> Self {
+        Self {
+            foreground: { options.resolve_color(palette, |palette| palette.danger) },
         }
     }
 }
@@ -64,7 +70,7 @@ impl Label {
 
     pub fn fg(self, fg: impl Into<Rgba>) -> Self {
         let foreground = fg.into();
-        self.class(move |_p, ()| LabelStyle { foreground })
+        self.style(LabelStyle { foreground })
     }
 
     pub fn italic(self) -> Self {
@@ -113,14 +119,8 @@ impl Builder<'_> for Label {
     type View = Self;
     type Style = LabelStyle;
 
-    fn style(mut self, style: Self::Style) -> Self {
-        self.style = ApplicableStyle::value(style);
-        self
-    }
-
-    fn class(mut self, style: impl Fn(&Palette, ()) -> Self::Style + 'static) -> Self {
-        self.style = ApplicableStyle::new(style);
-        self
+    fn applicable_style(&mut self) -> Option<&mut ApplicableStyle<Self::Style>> {
+        Some(&mut self.style)
     }
 }
 
@@ -137,7 +137,8 @@ impl View for Label {
     }
 
     fn draw(&mut self, mut render: Render) {
-        let style = self.style.apply(render.palette, ());
+        let style = self.style.apply(&render, std::convert::identity);
+
         render.text(
             TextShape::new(&self.label)
                 .fg(style.foreground)

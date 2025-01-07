@@ -342,9 +342,11 @@ impl LayoutNodes {
             .unwrap();
 
         let new_layer = self.interest.current_layer_root() == Some(id);
-        if !interest.is_none() {
-            self.interest.insert(id, interest);
-        }
+        // BUG this not happening could be a huge performance problem
+        // we should have a second hit test that doesn't do layering logic
+        // if !interest.is_none() {
+        self.interest.insert(id, interest);
+        // }
         if new_layer {
             self.interest.pop_layer();
         }

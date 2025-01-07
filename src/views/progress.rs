@@ -4,7 +4,9 @@ use crate::{
     layout::Axis,
     math::{lerp, normalize, Pos2, Size, Space},
     renderer::{Pixel, Rgba},
-    view::{ApplicableStyle, Builder, Elements, Layout, Palette, Render, Style, View},
+    view::{
+        ApplicableStyle, Builder, Elements, Layout, Palette, Render, Style, StyleOptions, View,
+    },
 };
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
@@ -20,7 +22,7 @@ pub struct ProgressStyle {
 impl Style for ProgressStyle {
     type Args = Axis;
 
-    fn default(palette: &Palette, args: Self::Args) -> Self {
+    fn default(palette: &Palette, args: StyleOptions<Axis>) -> Self {
         Self {
             unfilled_color: palette.outline,
             filled_color: palette.primary,
@@ -33,7 +35,7 @@ impl Style for ProgressStyle {
 }
 
 impl ProgressStyle {
-    pub fn medium_filled(palette: &Palette, axis: Axis) -> Self {
+    pub fn medium_filled(palette: &Palette, axis: StyleOptions<Axis>) -> Self {
         Self {
             unfilled: axis.main((Elements::MEDIUM_RECT, Elements::MEDIUM_RECT)),
             filled: axis.main((Elements::MEDIUM_RECT, Elements::MEDIUM_RECT)),
@@ -41,7 +43,7 @@ impl ProgressStyle {
         }
     }
 
-    pub fn filled(palette: &Palette, axis: Axis) -> Self {
+    pub fn filled(palette: &Palette, axis: StyleOptions<Axis>) -> Self {
         Self {
             unfilled: axis.main((Elements::LARGE_RECT, Elements::LARGE_RECT)),
             filled: axis.main((Elements::LARGE_RECT, Elements::LARGE_RECT)),
@@ -49,7 +51,7 @@ impl ProgressStyle {
         }
     }
 
-    pub fn thin(palette: &Palette, axis: Axis) -> Self {
+    pub fn thin(palette: &Palette, axis: StyleOptions<Axis>) -> Self {
         Self {
             unfilled: axis.main((Elements::HORIZONTAL_LINE, Elements::VERTICAL_LINE)),
             filled: axis.main((Elements::HORIZONTAL_LINE, Elements::VERTICAL_LINE)),
@@ -57,7 +59,7 @@ impl ProgressStyle {
         }
     }
 
-    pub fn thick(palette: &Palette, axis: Axis) -> Self {
+    pub fn thick(palette: &Palette, axis: StyleOptions<Axis>) -> Self {
         Self {
             unfilled: axis.main((
                 Elements::THICK_HORIZONTAL_LINE,
@@ -71,7 +73,7 @@ impl ProgressStyle {
         }
     }
 
-    pub fn thin_dashed(palette: &Palette, axis: Axis) -> Self {
+    pub fn thin_dashed(palette: &Palette, axis: StyleOptions<Axis>) -> Self {
         Self {
             unfilled: axis.main((Elements::DASH_HORIZONTAL_LINE, Elements::DASH_VERTICAL_LINE)),
             filled: axis.main((Elements::DASH_HORIZONTAL_LINE, Elements::DASH_VERTICAL_LINE)),
@@ -79,7 +81,7 @@ impl ProgressStyle {
         }
     }
 
-    pub fn thick_dashed(palette: &Palette, axis: Axis) -> Self {
+    pub fn thick_dashed(palette: &Palette, axis: StyleOptions<Axis>) -> Self {
         Self {
             unfilled: axis.main((
                 Elements::THICK_DASH_HORIZONTAL_LINE,
@@ -136,14 +138,8 @@ impl Builder<'_> for Progress {
     type View = Self;
     type Style = ProgressStyle;
 
-    fn style(mut self, style: Self::Style) -> Self {
-        self.style = ApplicableStyle::value(style);
-        self
-    }
-
-    fn class(mut self, class: impl Fn(&Palette, Axis) -> Self::Style + 'static) -> Self {
-        self.style = ApplicableStyle::new(class);
-        self
+    fn applicable_style(&mut self) -> Option<&mut ApplicableStyle<Self::Style>> {
+        Some(&mut self.style)
     }
 }
 
@@ -165,7 +161,7 @@ impl View for Progress {
         let rect = render.rect();
         let axis = self.axis;
 
-        let style = self.style.apply(render.palette, self.axis);
+        let style = self.style.apply(&render, |s| s.with_args(self.axis));
 
         let color = if render.is_hovered() {
             style.unfilled_hovered.unwrap_or(style.unfilled_color)

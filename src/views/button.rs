@@ -6,8 +6,8 @@ use crate::{
     math::{Margin, Size, Space},
     renderer::{Rgba, TextShape},
     view::{
-        ApplicableStyle, Builder, EventCtx, Handled, Interest, Layout, Palette, Render, Style, Ui,
-        View, ViewEvent,
+        ApplicableStyle, Builder, EventCtx, Handled, Interest, Layout, Palette, Render, Style,
+        StyleOptions, Ui, View, ViewEvent,
     },
     Str,
 };
@@ -30,50 +30,55 @@ pub struct ButtonStyle {
 
 impl Style for ButtonStyle {
     type Args = ButtonState;
-    fn default(palette: &Palette, args: Self::Args) -> Self {
+    fn default(palette: &Palette, args: StyleOptions<ButtonState>) -> Self {
         Self::common(palette, args, palette.outline, palette.foreground)
     }
 }
 
 impl ButtonStyle {
-    pub fn success(palette: &Palette, state: ButtonState) -> Self {
+    pub fn success(palette: &Palette, options: StyleOptions<ButtonState>) -> Self {
         let fg = if palette.is_dark() {
             palette.background
         } else {
             palette.foreground
         };
-        Self::common(palette, state, palette.success, fg)
+        Self::common(palette, options, palette.success, fg)
     }
 
-    pub fn info(palette: &Palette, state: ButtonState) -> Self {
+    pub fn info(palette: &Palette, options: StyleOptions<ButtonState>) -> Self {
         let fg = if palette.is_dark() {
             palette.background
         } else {
             palette.foreground
         };
-        Self::common(palette, state, palette.info, fg)
+        Self::common(palette, options, palette.info, fg)
     }
 
-    pub fn warning(palette: &Palette, state: ButtonState) -> Self {
+    pub fn warning(palette: &Palette, options: StyleOptions<ButtonState>) -> Self {
         let fg = if palette.is_dark() {
             palette.background
         } else {
             palette.foreground
         };
-        Self::common(palette, state, palette.warning, fg)
+        Self::common(palette, options, palette.warning, fg)
     }
 
-    pub fn danger(palette: &Palette, state: ButtonState) -> Self {
+    pub fn danger(palette: &Palette, options: StyleOptions<ButtonState>) -> Self {
         let fg = if palette.is_dark() {
             palette.background
         } else {
             palette.foreground
         };
-        Self::common(palette, state, palette.danger, fg)
+        Self::common(palette, options, palette.danger, fg)
     }
 
-    fn common(palette: &Palette, state: ButtonState, primary: Rgba, mut text_color: Rgba) -> Self {
-        let background = match state {
+    fn common(
+        palette: &Palette,
+        options: StyleOptions<ButtonState>,
+        primary: Rgba,
+        mut text_color: Rgba,
+    ) -> Self {
+        let background = match options.args {
             ButtonState::Hovered => palette.accent,
             ButtonState::Held => palette.secondary,
             ButtonState::Clicked => palette.primary,
@@ -151,14 +156,8 @@ impl Builder<'_> for Button {
     type View = Self;
     type Style = ButtonStyle;
 
-    fn style(mut self, style: Self::Style) -> Self {
-        self.style = ApplicableStyle::value(style);
-        self
-    }
-
-    fn class(mut self, style: impl Fn(&Palette, ButtonState) -> Self::Style + 'static) -> Self {
-        self.style = ApplicableStyle::new(style);
-        self
+    fn applicable_style(&mut self) -> Option<&mut ApplicableStyle<Self::Style>> {
+        Some(&mut self.style)
     }
 }
 
@@ -225,7 +224,7 @@ impl View for Button {
     }
 
     fn draw(&mut self, mut render: Render) {
-        let style = self.style.apply(render.palette, self.state);
+        let style = self.style.apply(&render, |s| s.with_args(self.state));
 
         render
             .fill_bg(style.background)

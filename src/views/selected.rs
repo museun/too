@@ -1,11 +1,12 @@
 use crate::{
     renderer::Rgba,
-    view::{ApplicableStyle, Builder, Palette, Style, Ui, View},
+    view::{ApplicableStyle, Builder, Palette, Style, StyleOptions, Ui, View, ViewExt},
     Str,
 };
 
 use super::label::{label, LabelStyle};
 
+// TODO make this simpler
 #[derive(Debug, Copy, Clone)]
 pub struct SelectedStyle {
     pub text_color: Rgba,
@@ -19,7 +20,7 @@ pub struct SelectedStyle {
 
 impl Style for SelectedStyle {
     type Args = bool;
-    fn default(palette: &Palette, _args: Self::Args) -> Self {
+    fn default(palette: &Palette, _args: StyleOptions<bool>) -> Self {
         Self {
             text_color: palette.foreground,
             background: palette.outline,
@@ -31,11 +32,11 @@ impl Style for SelectedStyle {
 }
 
 impl SelectedStyle {
-    pub fn hovered(palette: &Palette, selected: bool) -> Self {
+    pub fn hovered(palette: &Palette, args: StyleOptions<bool>) -> Self {
         Self {
             hovered_text: Some(palette.surface),
             hovered_background: Some(palette.secondary),
-            ..Self::default(palette, selected)
+            ..Self::default(palette, args)
         }
     }
 }
@@ -51,14 +52,9 @@ pub struct Selected<'a> {
 impl<'v> Builder<'v> for Selected<'v> {
     type View = SelectedView;
     type Style = SelectedStyle;
-    fn style(mut self, style: Self::Style) -> Self {
-        self.style = ApplicableStyle::value(style);
-        self
-    }
 
-    fn class(mut self, class: impl Fn(&Palette, bool) -> Self::Style + 'static) -> Self {
-        self.style = ApplicableStyle::new(class);
-        self
+    fn applicable_style(&mut self) -> Option<&mut ApplicableStyle<Self::Style>> {
+        Some(&mut self.style)
     }
 }
 
@@ -82,7 +78,7 @@ impl View for SelectedView {
     fn update(&mut self, args: Self::Args<'_>, ui: &Ui) -> Self::Response {
         let resp = ui
             .mouse_area(|ui| {
-                let style = self.style.apply(&ui.palette(), *args.value);
+                let style = self.style.apply(ui, |s| s.with_args(*args.value));
 
                 let hovered = ui.is_hovered();
                 let fill = match (hovered, *args.value) {

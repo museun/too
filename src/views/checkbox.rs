@@ -1,6 +1,6 @@
 use crate::{
     renderer::Rgba,
-    view::{ApplicableStyle, Builder, Palette, Style, Ui, View},
+    view::{ApplicableStyle, Builder, Palette, Style, StyleOptions, Ui, View, ViewExt},
     Str,
 };
 
@@ -17,7 +17,7 @@ pub struct CheckboxStyle {
 impl Style for CheckboxStyle {
     type Args = bool;
 
-    fn default(palette: &Palette, _args: Self::Args) -> Self {
+    fn default(palette: &Palette, _options: StyleOptions<bool>) -> Self {
         Self {
             checked: "🗹",
             unchecked: "☐",
@@ -28,16 +28,16 @@ impl Style for CheckboxStyle {
 }
 
 impl CheckboxStyle {
-    pub fn markdown(palette: &Palette, checked: bool) -> Self {
+    pub fn markdown(palette: &Palette, options: StyleOptions<bool>) -> Self {
         Self {
             checked: "[X]",
             unchecked: "[ ]",
-            ..Self::default(palette, checked)
+            ..Self::default(palette, options)
         }
     }
 
-    pub fn ascii(palette: &Palette, checked: bool) -> Self {
-        Self::default(palette, checked)
+    pub fn ascii(palette: &Palette, options: StyleOptions<bool>) -> Self {
+        Self::default(palette, options)
     }
 }
 
@@ -53,14 +53,8 @@ impl<'v> Builder<'v> for Checkbox<'v> {
     type View = CheckboxView;
     type Style = CheckboxStyle;
 
-    fn style(mut self, style: Self::Style) -> Self {
-        self.style = ApplicableStyle::value(style);
-        self
-    }
-
-    fn class(mut self, style: impl Fn(&Palette, bool) -> Self::Style + 'static) -> Self {
-        self.style = ApplicableStyle::new(style);
-        self
+    fn applicable_style(&mut self) -> Option<&mut ApplicableStyle<Self::Style>> {
+        Some(&mut self.style)
     }
 }
 
@@ -84,7 +78,7 @@ impl View for CheckboxView {
     fn update(&mut self, args: Self::Args<'_>, ui: &Ui) -> Self::Response {
         let resp = ui
             .mouse_area(|ui| {
-                let style = self.style.apply(&ui.palette(), *args.value);
+                let style = self.style.apply(ui, |s| s.with_args(*args.value));
 
                 let foreground = if ui.is_hovered() {
                     style.hovered_color.unwrap_or(style.text_color)

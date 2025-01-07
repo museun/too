@@ -7,7 +7,7 @@ use crate::{
     renderer::{Pixel, Rgba},
     view::{
         ApplicableStyle, Builder, Elements, EventCtx, Handled, Interest, Layout, Palette, Render,
-        Style, Ui, View, ViewEvent,
+        Style, StyleOptions, Ui, View, ViewEvent,
     },
 };
 
@@ -71,7 +71,7 @@ pub struct ScrollStyle {
 impl Style for ScrollStyle {
     type Args = Axis;
 
-    fn default(palette: &Palette, args: Self::Args) -> Self {
+    fn default(palette: &Palette, args: StyleOptions<Axis>) -> Self {
         Self {
             knob: args.main((
                 Elements::THICK_HORIZONTAL_LINE,
@@ -145,7 +145,7 @@ impl List {
             return;
         }
 
-        let style = self.style.apply(render.palette, self.axis);
+        let style = self.style.apply(&*render, |s| s.with_args(self.axis));
 
         let rect = render.local_rect();
         let extent = self.axis.cross(rect.right_bottom() - 1);
@@ -300,14 +300,8 @@ impl Builder<'_> for List {
     type View = Self;
     type Style = ScrollStyle;
 
-    fn style(mut self, style: Self::Style) -> Self {
-        self.style = ApplicableStyle::value(style);
-        self
-    }
-
-    fn class(mut self, class: impl Fn(&Palette, Axis) -> Self::Style + 'static) -> Self {
-        self.style = ApplicableStyle::new(class);
-        self
+    fn applicable_style(&mut self) -> Option<&mut ApplicableStyle<Self::Style>> {
+        Some(&mut self.style)
     }
 }
 

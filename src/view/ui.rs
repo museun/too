@@ -13,7 +13,8 @@ use crate::{
 use super::{
     filter::{Filter, Filterable},
     input::InputState,
-    internal_views, Builder, LayoutNodes, Palette, Response, State, View, ViewId, ViewNodes,
+    internal_views, ApplicableStyle, Builder, LayoutNodes, Palette, Response, State, Style,
+    StyleOptions, View, ViewId, ViewNodes,
 };
 
 impl Filterable for Ui<'_> {
@@ -254,6 +255,17 @@ impl Ui<'_> {
         self.size_changed
     }
 
+    pub fn current_style_options(&self, style: &ApplicableStyle<impl Style>) -> StyleOptions<()> {
+        StyleOptions {
+            hovered: self.is_hovered(),
+            focused: self.is_focused(),
+            selected: self.is_selected(),
+            interactive: self.is_interactive(),
+            state: style.state,
+            args: (),
+        }
+    }
+
     pub fn palette(&self) -> Ref<'_, Palette> {
         self.palette.borrow()
     }
@@ -276,8 +288,28 @@ impl Ui<'_> {
         false
     }
 
+    pub fn is_mouse_over(&self, id: ViewId) -> bool {
+        let pos = self.cursor_pos();
+        self.layout.rect(id).filter(|c| c.contains(pos)).is_some()
+    }
+
+    pub fn is_mouse_over_current(&self) -> bool {
+        self.is_mouse_over(self.nodes.current())
+    }
+
     pub fn cursor_pos(&self) -> Pos2 {
         self.input.mouse_pos()
+    }
+
+    pub fn is_selected(&self) -> bool {
+        self.input.is_selected(self.nodes.current())
+    }
+
+    pub fn is_interactive(&self) -> bool {
+        self.layout
+            .get(self.nodes.current())
+            .filter(|c| c.interactive)
+            .is_some()
     }
 
     pub fn is_hovered(&self) -> bool {
@@ -288,8 +320,12 @@ impl Ui<'_> {
         self.input.is_hovered(self.nodes.parent())
     }
 
+    pub fn is_id_focused(&self, id: ViewId) -> bool {
+        self.input.is_focused(id)
+    }
+
     pub fn is_focused(&self) -> bool {
-        self.input.is_focused(self.nodes.current())
+        self.is_id_focused(self.nodes.current())
     }
 
     pub fn is_parent_focused(&self) -> bool {
@@ -298,6 +334,10 @@ impl Ui<'_> {
 
     pub fn set_focus(&self, id: impl Into<Option<ViewId>>) {
         self.input.set_focus(id.into());
+    }
+
+    pub fn current_focus_id(&self) -> Option<ViewId> {
+        self.input.focus()
     }
 }
 
