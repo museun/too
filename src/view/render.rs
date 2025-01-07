@@ -10,7 +10,8 @@ use crate::{
 };
 
 use super::{
-    input::InputState, Filter, Filterable, Layer, LayoutNodes, Palette, ViewId, ViewNodes,
+    input::InputState, ApplicableStyle, Filter, Filterable, Layer, LayoutNodes, Palette, Style,
+    StyleOptions, ViewId, ViewNodes,
 };
 
 impl Filterable for Render<'_, '_> {
@@ -76,6 +77,17 @@ impl Render<'_, '_> {
         self.rect.translate(-self.rect.left_top().to_vec2())
     }
 
+    pub fn style_options(&self, style: &ApplicableStyle<impl Style>) -> StyleOptions<()> {
+        StyleOptions {
+            hovered: self.is_hovered(),
+            focused: self.is_focused(),
+            selected: self.is_selected(),
+            interactive: self.is_interactive(),
+            state: style.state,
+            args: (),
+        }
+    }
+
     /// Is the current view focused?
     pub fn is_focused(&self) -> bool {
         self.input.is_focused(self.current)
@@ -84,6 +96,19 @@ impl Render<'_, '_> {
     /// Is the current view hovered?
     pub fn is_hovered(&self) -> bool {
         self.input.is_hovered(self.current)
+    }
+
+    /// Is the current view selected?
+    pub fn is_selected(&self) -> bool {
+        self.input.is_selected(self.current)
+    }
+
+    /// Is the current view interactive?
+    pub fn is_interactive(&self) -> bool {
+        self.layout
+            .get(self.current)
+            .filter(|c| c.interactive)
+            .is_some()
     }
 
     /// Is the current view's parent focused?

@@ -10,8 +10,8 @@ use crate::{
     math::{pos2, Size, Space},
     renderer::{Attribute, Grapheme, Pixel, Rgba},
     view::{
-        ApplicableStyle, Builder, EventCtx, Handled, Interest, Layout, Palette, Render, Style, Ui,
-        View, ViewEvent,
+        ApplicableStyle, Builder, EventCtx, Handled, Interest, Layout, Palette, Render, Style,
+        StyleOptions, Ui, View, ViewEvent,
     },
 };
 
@@ -29,9 +29,8 @@ pub struct TextInputStyle {
 }
 
 impl Style for TextInputStyle {
-    type Args = bool;
-
-    fn default(palette: &Palette, _focused: Self::Args) -> Self {
+    type Args = ();
+    fn default(palette: &Palette, _args: StyleOptions) -> Self {
         Self {
             background: palette.surface,
             placeholder: palette.secondary,
@@ -76,17 +75,8 @@ impl<'v> Builder<'v> for TextInput<'v> {
     type View = TextInputView;
     type Style = TextInputStyle;
 
-    fn style(mut self, style: Self::Style) -> Self {
-        self.style = ApplicableStyle::value(style);
-        self
-    }
-
-    fn class(
-        mut self,
-        class: impl Fn(&Palette, <Self::Style as crate::view::Style>::Args) -> Self::Style + 'static,
-    ) -> Self {
-        self.style = ApplicableStyle::new(class);
-        self
+    fn applicable_style(&mut self) -> Option<&mut ApplicableStyle<Self::Style>> {
+        Some(&mut self.style)
     }
 }
 
@@ -313,7 +303,7 @@ impl View for TextInputView {
     }
 
     fn draw(&mut self, mut render: Render) {
-        let style = self.style.apply(render.palette, render.is_focused());
+        let style = self.style.apply(&render, std::convert::identity);
 
         render.fill_bg(if self.enabled {
             style.background

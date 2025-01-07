@@ -187,6 +187,11 @@ impl InputState {
         self.intersections.hit.contains(&id)
     }
 
+    /// Is this id selected?
+    pub fn is_selected(&self, id: ViewId) -> bool {
+        self.selection() == Some(id)
+    }
+
     #[cfg_attr(feature = "profile", profiling::function)]
     pub(super) fn update(
         &mut self,
@@ -253,6 +258,7 @@ impl InputState {
         layout: &LayoutNodes,
         animation: &mut Animations,
     ) -> Handled {
+        // let the focus get it first, incase they are going to sink it
         if let Some(id) = self.focus.notify.get() {
             let Some(view) = layout.get(id) else {
                 return Handled::Bubble;
@@ -263,7 +269,11 @@ impl InputState {
                     key,
                     modifiers: self.modifiers,
                 };
-                return self.dispatch(nodes, layout, animation, id, event);
+                let resp = self.dispatch(nodes, layout, animation, id, event);
+                // if they sink it, don't continue the dispatch
+                if resp.is_sink() {
+                    return resp;
+                }
             }
         }
 

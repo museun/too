@@ -2,12 +2,13 @@ use std::marker::PhantomData;
 
 use crate::{
     renderer::Rgba,
-    view::{ApplicableStyle, Builder, Palette, Style, Ui, View},
+    view::{ApplicableStyle, Builder, Palette, Style, StyleOptions, Ui, View, ViewExt},
     Str,
 };
 
 use super::label::{label, LabelStyle};
 
+// TODO make this simpler
 #[derive(Debug, Copy, Clone)]
 pub struct RadioStyle {
     pub selected: Option<&'static str>,
@@ -24,7 +25,7 @@ pub struct RadioStyle {
 
 impl Style for RadioStyle {
     type Args = bool;
-    fn default(palette: &Palette, _args: Self::Args) -> Self {
+    fn default(palette: &Palette, _args: StyleOptions<bool>) -> Self {
         Self {
             selected: None,
             unselected: None,
@@ -38,11 +39,11 @@ impl Style for RadioStyle {
 }
 
 impl RadioStyle {
-    pub fn hovered(palette: &Palette, selected: bool) -> Self {
+    pub fn hovered(palette: &Palette, args: StyleOptions<bool>) -> Self {
         Self {
             hovered_text: Some(palette.surface),
             hovered_background: Some(palette.secondary),
-            ..Self::default(palette, selected)
+            ..Self::default(palette, args)
         }
     }
 }
@@ -58,17 +59,8 @@ impl<'v, V: PartialEq + 'static> Builder<'v> for Radio<'v, V> {
     type View = RadioView<V>;
     type Style = RadioStyle;
 
-    fn style(mut self, style: Self::Style) -> Self {
-        self.style = ApplicableStyle::value(style);
-        self
-    }
-
-    fn class(
-        mut self,
-        class: impl Fn(&Palette, <Self::Style as crate::view::Style>::Args) -> Self::Style + 'static,
-    ) -> Self {
-        self.style = ApplicableStyle::new(class);
-        self
+    fn applicable_style(&mut self) -> Option<&mut ApplicableStyle<Self::Style>> {
+        Some(&mut self.style)
     }
 }
 
@@ -109,7 +101,7 @@ where
         let resp = ui
             .mouse_area(|ui| {
                 let selected = args.value == *args.existing;
-                let style = self.style.apply(&ui.palette(), selected);
+                let style = self.style.apply(ui, |s| s.with_args(selected));
 
                 let hovered = ui.is_hovered();
                 let fill = match (hovered, selected) {

@@ -7,7 +7,7 @@ use crate::{
     renderer::{Pixel, Rgba},
     view::{
         ApplicableStyle, Builder, Elements, EventCtx, Handled, Interest, Layout, Palette, Render,
-        Style, Ui, View, ViewEvent,
+        Style, StyleOptions, Ui, View, ViewEvent,
     },
 };
 
@@ -24,7 +24,7 @@ pub struct SliderStyle {
 impl Style for SliderStyle {
     type Args = Axis;
 
-    fn default(palette: &Palette, args: Self::Args) -> Self {
+    fn default(palette: &Palette, args: StyleOptions<Axis>) -> Self {
         Self {
             track_color: palette.outline,
             knob_color: palette.primary,
@@ -44,7 +44,7 @@ impl Style for SliderStyle {
 
 impl SliderStyle {
     // TODO why isn't this default style? (its selected as the default in the builder)
-    pub fn small_rounded(palette: &Palette, axis: Axis) -> Self {
+    pub fn small_rounded(palette: &Palette, axis: StyleOptions<Axis>) -> Self {
         Self {
             knob: Elements::CIRCLE,
             track: axis.main((Elements::HORIZONTAL_LINE, Elements::VERTICAL_LINE)),
@@ -52,7 +52,7 @@ impl SliderStyle {
         }
     }
 
-    pub fn small_diamond(palette: &Palette, axis: Axis) -> Self {
+    pub fn small_diamond(palette: &Palette, axis: StyleOptions<Axis>) -> Self {
         Self {
             knob: Elements::DIAMOND,
             track: axis.main((Elements::HORIZONTAL_LINE, Elements::VERTICAL_LINE)),
@@ -60,7 +60,7 @@ impl SliderStyle {
         }
     }
 
-    pub fn small_square(palette: &Palette, axis: Axis) -> Self {
+    pub fn small_square(palette: &Palette, axis: StyleOptions<Axis>) -> Self {
         Self {
             knob: Elements::SMALL_RECT,
             track: axis.main((Elements::HORIZONTAL_LINE, Elements::VERTICAL_LINE)),
@@ -68,7 +68,7 @@ impl SliderStyle {
         }
     }
 
-    pub fn large(palette: &Palette, axis: Axis) -> Self {
+    pub fn large(palette: &Palette, axis: StyleOptions<Axis>) -> Self {
         Self {
             knob: Elements::LARGE_RECT,
             track: Elements::MEDIUM_RECT,
@@ -76,7 +76,7 @@ impl SliderStyle {
         }
     }
 
-    pub fn large_filled(palette: &Palette, axis: Axis) -> Self {
+    pub fn large_filled(palette: &Palette, axis: StyleOptions<Axis>) -> Self {
         Self {
             knob: Elements::LARGE_RECT,
             track: Elements::LARGE_RECT,
@@ -134,14 +134,8 @@ impl<'v> Builder<'v> for Slider<'v> {
     type View = SliderView;
     type Style = SliderStyle;
 
-    fn style(mut self, style: Self::Style) -> Self {
-        self.style = ApplicableStyle::value(style);
-        self
-    }
-
-    fn class(mut self, class: impl Fn(&Palette, Axis) -> Self::Style + 'static) -> Self {
-        self.style = ApplicableStyle::new(class);
-        self
+    fn applicable_style(&mut self) -> Option<&mut ApplicableStyle<Self::Style>> {
+        Some(&mut self.style)
     }
 }
 
@@ -225,7 +219,7 @@ impl View for SliderView {
     }
 
     fn draw(&mut self, mut render: Render) {
-        let style = self.style.apply(render.palette, self.axis);
+        let style = self.style.apply(&render, |s| s.with_args(self.axis));
 
         let track_color = if render.is_hovered() {
             style.track_hovered.unwrap_or(style.track_color)

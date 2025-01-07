@@ -9,7 +9,7 @@ mod background;
 pub use background::Background;
 
 mod border;
-pub use border::{border, frame, BorderStyle, BorderStyleArgs, Frame};
+pub use border::{border, frame, BorderStyle, Frame};
 
 mod button;
 pub use button::{button, Button, ButtonResponse, ButtonStyle};
@@ -79,9 +79,11 @@ pub use toggle_switch::{
 mod wrap;
 pub use wrap::{horizontal_wrap, vertical_wrap, Wrap};
 
+// pub mod focus_ring;
+
 // pub mod drop_down;
 // pub mod scrollable;
-// pub mod focus_ring;
+
 // pub mod split_view;
 
 // tree view (why not)

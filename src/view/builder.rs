@@ -4,8 +4,8 @@ use crate::{
 };
 
 use super::{
-    EventCtx, Handled, Interest, IntrinsicSize, Layout, Palette, Render, Response, Style, Ui,
-    ViewEvent,
+    ApplicableStyle, EventCtx, Handled, Interest, IntrinsicSize, Layout, Palette, Render, Response,
+    Style, StyleOptions, StyleState, Ui, ViewEvent,
 };
 
 /// Builders are required to build and update views
@@ -67,19 +67,18 @@ use super::{
 pub trait Builder<'v>: Sized {
     /// The target [`View`] for this builder
     type View: View<Args<'v> = Self>;
+    /// The [`Style`] for this builder's [`View`]
+    ///
+    /// If your view does not do any styling, setting this to () is sufficient
     type Style: Style;
 
-    fn style(self, style: Self::Style) -> Self {
-        _ = style;
-        self
-    }
-
-    fn class(
-        self,
-        class: impl Fn(&Palette, <Self::Style as Style>::Args) -> Self::Style + 'static,
-    ) -> Self {
-        _ = class;
-        self
+    /// Tries to get mutable access to this builders style.
+    ///
+    /// If your view implements styling, this allows your type to be used with the style builders off of [`ViewExt`].
+    ///
+    /// If you intend to allow those methods on your type, then returning `Some(&mut self.your_style)` is sufficient.
+    fn applicable_style(&mut self) -> Option<&mut ApplicableStyle<Self::Style>> {
+        None
     }
 }
 
@@ -100,6 +99,85 @@ pub trait ViewExt<'v>: Builder<'v> {
         R: 'static,
     {
         ui.show_children(self, show)
+    }
+
+    /// A precomputed style.
+    fn style(mut self, style: Self::Style) -> Self {
+        if let Some(existing) = self.applicable_style() {
+            *existing = ApplicableStyle::value(style).merge(existing);
+        }
+        self
+    }
+
+    /// Conditionally use a precomputed style
+    fn style_if(self, style: Self::Style, condition: bool) -> Self {
+        self.or(move |this| this.style(style), condition)
+    }
+
+    /// A style class that is generated on demand.
+    fn class(
+        mut self,
+        class: impl Fn(&Palette, StyleOptions<<Self::Style as Style>::Args>) -> Self::Style + 'static,
+    ) -> Self {
+        if let Some(style) = self.applicable_style() {
+            *style = ApplicableStyle::new(class).merge(style);
+        }
+        self
+    }
+
+    /// Conditionally use a style class that is generated on demand.
+    fn class_if(
+        self,
+        class: impl Fn(&Palette, StyleOptions<<Self::Style as Style>::Args>) -> Self::Style + 'static,
+        condition: bool,
+    ) -> Self {
+        self.or(move |this| this.class(class), condition)
+    }
+
+    /// Chain a conditional to this builder
+    fn or(self, f: impl FnOnce(Self) -> Self, condition: bool) -> Self {
+        if condition {
+            return f(self);
+        }
+        self
+    }
+
+    /// Sets the style to be in the disabled state
+    fn disabled(mut self) -> Self {
+        if let Some(style) = self.applicable_style() {
+            style.state = StyleState::Disabled;
+        }
+        self
+    }
+
+    /// Sets the style to be in the hoverable state
+    fn hoverable(mut self) -> Self {
+        if let Some(style) = self.applicable_style() {
+            style.state = StyleState::Hoverable;
+        }
+        self
+    }
+
+    /// Conditionally sets the style to be in the disabled state
+    fn disabled_if(mut self, disabled: bool) -> Self {
+        if let Some(state) = self
+            .applicable_style()
+            .and_then(|c| disabled.then_some(&mut c.state))
+        {
+            *state = StyleState::Disabled;
+        }
+        self
+    }
+
+    /// Conditionally sets the style to be in the hoverable state
+    fn hoverable_if(mut self, hoverable: bool) -> Self {
+        if let Some(state) = self
+            .applicable_style()
+            .and_then(|c| hoverable.then_some(&mut c.state))
+        {
+            *state = StyleState::Hoverable;
+        }
+        self
     }
 }
 

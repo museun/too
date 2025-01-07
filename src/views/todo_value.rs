@@ -1,6 +1,6 @@
 use crate::{
     renderer::{Attribute, Rgba},
-    view::{ApplicableStyle, Builder, Palette, Style, Ui, View},
+    view::{ApplicableStyle, Builder, Palette, Style, StyleOptions, Ui, View, ViewExt},
     Str,
 };
 
@@ -16,7 +16,7 @@ pub struct TodoStyle {
 impl Style for TodoStyle {
     type Args = bool;
 
-    fn default(palette: &Palette, _selected: bool) -> Self {
+    fn default(palette: &Palette, _args: StyleOptions<bool>) -> Self {
         Self {
             selected: Attribute::STRIKEOUT | Attribute::FAINT,
             text_color: palette.foreground,
@@ -36,14 +36,8 @@ impl<'v> Builder<'v> for TodoValue<'v> {
     type View = TodoValueView;
     type Style = TodoStyle;
 
-    fn style(mut self, style: Self::Style) -> Self {
-        self.style = ApplicableStyle::value(style);
-        self
-    }
-
-    fn class(mut self, class: impl Fn(&Palette, bool) -> Self::Style + 'static) -> Self {
-        self.style = ApplicableStyle::new(class);
-        self
+    fn applicable_style(&mut self) -> Option<&mut ApplicableStyle<Self::Style>> {
+        Some(&mut self.style)
     }
 }
 
@@ -67,7 +61,7 @@ impl View for TodoValueView {
     fn update(&mut self, args: Self::Args<'_>, ui: &Ui) -> Self::Response {
         let resp = ui
             .mouse_area(|ui| {
-                let style = self.style.apply(&ui.palette(), *args.value);
+                let style = self.style.apply(ui, |s| s.with_args(*args.value));
 
                 let foreground = if ui.is_hovered() {
                     style.hovered_color.unwrap_or(style.text_color)

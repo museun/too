@@ -2,7 +2,9 @@ use crate::{
     layout::{Axis, Flex},
     math::{Size, Space},
     renderer::{Pixel, Rgba},
-    view::{ApplicableStyle, Builder, Elements, Layout, Palette, Render, Style, View},
+    view::{
+        ApplicableStyle, Builder, Elements, Layout, Palette, Render, Style, StyleOptions, View,
+    },
 };
 
 #[derive(Debug, Copy, Clone)]
@@ -12,6 +14,8 @@ pub struct Expander;
 impl Builder<'_> for Expander {
     type View = Self;
     type Style = ();
+
+
 }
 
 impl View for Expander {
@@ -45,62 +49,61 @@ pub struct SeparatorStyle {
 
 impl Style for SeparatorStyle {
     type Args = Axis;
-
-    fn default(palette: &Palette, args: Self::Args) -> Self {
-        Self::thick(palette, args)
+    fn default(palette: &Palette, options: StyleOptions<Axis>) -> Self {
+        Self::thick(palette, options)
     }
 }
 
 impl SeparatorStyle {
-    pub fn double(palette: &Palette, axis: Axis) -> Self {
+    pub fn double(palette: &Palette, options: StyleOptions<Axis>) -> Self {
         Self {
             fg: palette.outline,
             bg: None,
-            pixel: axis.cross((
+            pixel: options.cross((
                 Elements::DOUBLE_HORIZONATAL_LINE,
                 Elements::DOUBLE_VERTICAL_LINE,
             )),
         }
     }
 
-    pub fn thick(palette: &Palette, axis: Axis) -> Self {
+    pub fn thick(palette: &Palette, options: StyleOptions<Axis>) -> Self {
         Self {
             fg: palette.outline,
             bg: None,
-            pixel: axis.cross((
+            pixel: options.cross((
                 Elements::THICK_HORIZONTAL_LINE,
                 Elements::THICK_VERTICAL_LINE,
             )),
         }
     }
 
-    pub fn thin(palette: &Palette, axis: Axis) -> Self {
+    pub fn thin(palette: &Palette, options: StyleOptions<Axis>) -> Self {
         Self {
             fg: palette.outline,
             bg: None,
-            pixel: axis.cross((
+            pixel: options.cross((
                 Elements::HORIZONTAL_LINE, //
                 Elements::VERTICAL_LINE,
             )),
         }
     }
 
-    pub fn thin_dashed(palette: &Palette, axis: Axis) -> Self {
+    pub fn thin_dashed(palette: &Palette, options: StyleOptions<Axis>) -> Self {
         Self {
             fg: palette.outline,
             bg: None,
-            pixel: axis.cross((
+            pixel: options.cross((
                 Elements::DASH_HORIZONTAL_LINE, //
                 Elements::DASH_VERTICAL_LINE,
             )),
         }
     }
 
-    pub fn thick_dashed(palette: &Palette, axis: Axis) -> Self {
+    pub fn thick_dashed(palette: &Palette, options: StyleOptions<Axis>) -> Self {
         Self {
             fg: palette.outline,
             bg: None,
-            pixel: axis.cross((
+            pixel: options.cross((
                 Elements::THICK_DASH_HORIZONTAL_LINE,
                 Elements::THICK_DASH_VERTICAL_LINE,
             )),
@@ -124,14 +127,8 @@ impl Builder<'_> for Separator {
     type View = Self;
     type Style = SeparatorStyle;
 
-    fn style(mut self, style: Self::Style) -> Self {
-        self.style = ApplicableStyle::value(style);
-        self
-    }
-
-    fn class(mut self, style: impl Fn(&Palette, Axis) -> Self::Style + 'static) -> Self {
-        self.style = ApplicableStyle::new(style);
-        self
+    fn applicable_style(&mut self) -> Option<&mut ApplicableStyle<Self::Style>> {
+        Some(&mut self.style)
     }
 }
 
@@ -155,7 +152,7 @@ impl View for Separator {
 
     fn draw(&mut self, mut render: Render) {
         let axis = render.parent_axis();
-        let style = self.style.apply(render.palette, axis);
+        let style = self.style.apply(&render, |s| s.with_args(axis));
 
         let mut pixel = Pixel::new(style.pixel).fg(style.fg);
         if let Some(bg) = style.bg {

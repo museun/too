@@ -9,15 +9,11 @@ use crate::{
     layout::Align,
     math::{pos2, Size, Space},
     renderer::{Border, Grapheme, Pixel, Rgba},
-    view::{ApplicableStyle, Builder, Interest, Layout, Palette, Render, Style, View},
+    view::{
+        ApplicableStyle, Builder, Interest, Layout, Palette, Render, Style, StyleOptions, View,
+    },
     Str,
 };
-
-#[derive(Copy, Clone, Debug, PartialEq, Eq)]
-pub struct BorderStyleArgs {
-    pub hovered: bool,
-    pub focused: bool,
-}
 
 #[derive(Copy, Clone, Debug)]
 pub struct BorderStyle {
@@ -28,8 +24,8 @@ pub struct BorderStyle {
 }
 
 impl Style for BorderStyle {
-    type Args = BorderStyleArgs;
-    fn default(palette: &Palette, _args: Self::Args) -> Self {
+    type Args = ();
+    fn default(palette: &Palette, _options: StyleOptions) -> Self {
         Self {
             title: palette.foreground,
             border: palette.outline,
@@ -40,11 +36,11 @@ impl Style for BorderStyle {
 }
 
 impl BorderStyle {
-    pub fn interactive(palette: &Palette, hovered: bool, focused: bool) -> Self {
+    pub fn interactive(palette: &Palette, options: StyleOptions) -> Self {
         Self {
             border_focused: Some(palette.contrast),
             border_hovered: Some(palette.secondary),
-            ..Self::default(palette, BorderStyleArgs { hovered, focused })
+            ..Self::default(palette, options)
         }
     }
 }
@@ -88,14 +84,8 @@ impl Builder<'_> for Frame {
     type View = Self;
     type Style = BorderStyle;
 
-    fn style(mut self, style: Self::Style) -> Self {
-        self.style = ApplicableStyle::value(style);
-        self
-    }
-
-    fn class(mut self, style: impl Fn(&Palette, BorderStyleArgs) -> Self::Style + 'static) -> Self {
-        self.style = ApplicableStyle::new(style);
-        self
+    fn applicable_style(&mut self) -> Option<&mut ApplicableStyle<Self::Style>> {
+        Some(&mut self.style)
     }
 }
 
@@ -146,13 +136,7 @@ impl View for Frame {
         let is_hovered = render.is_hovered();
         let is_focused = render.is_focused();
 
-        let style = self.style.apply(
-            render.palette,
-            BorderStyleArgs {
-                hovered: is_hovered,
-                focused: is_focused,
-            },
-        );
+        let style = self.style.apply(&render, std::convert::identity);
 
         let color = match (is_focused, is_hovered) {
             (true, true) => style
