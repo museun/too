@@ -1,12 +1,11 @@
 //! Some premade views, with their builders, styles and responses.
-// TODO ensure any builder can be constructed from itself as well
 // TODO sort the shorthands
 
 mod aligned;
 pub use aligned::{aligned, Aligned};
 
 mod background;
-pub use background::Background;
+pub use background::{background, Background};
 
 mod border;
 pub use border::{border, frame, BorderStyle, Frame};
@@ -16,9 +15,6 @@ pub use button::{button, Button, ButtonResponse, ButtonStyle};
 
 mod checkbox;
 pub use checkbox::{checkbox, Checkbox, CheckboxStyle};
-
-// mod collapsible;
-// pub use collapsible::{collapsible, Collapsible,  CollapsibleStyle};
 
 mod constrain;
 pub use constrain::{Constrain, Unconstrained};
@@ -78,27 +74,3 @@ pub use toggle_switch::{
 
 mod wrap;
 pub use wrap::{horizontal_wrap, vertical_wrap, Wrap};
-
-// pub mod focus_ring;
-
-// pub mod drop_down;
-// pub mod scrollable;
-
-// pub mod split_view;
-
-// tree view (why not)
-// drop down
-// split view
-// link (hyperlink support. OSC 8 https://github.com/Alhadis/OSC8-Adoption/)
-// panel (docking)
-//
-// stack (? z-index layering)
-//
-//
-// floating window
-//
-// canvas
-// animate
-//
-//
-// rgba | hsva | hsla selector
