@@ -5,7 +5,7 @@ mod aligned;
 pub use aligned::{aligned, Aligned};
 
 mod background;
-pub use background::{background, Background};
+pub use background::Background;
 
 mod border;
 pub use border::{border, frame, BorderStyle, Frame};
