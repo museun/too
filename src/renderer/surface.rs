@@ -26,6 +26,15 @@ impl Surface {
         }
     }
 
+    pub fn get(&self, pos: Pos2) -> Option<&Cell> {
+        if !self.rect().contains(pos) {
+            return None;
+        }
+
+        let index = Self::pos_to_index(pos, self.size.x);
+        self.back.get(index)
+    }
+
     pub fn get_mut(&mut self, pos: Pos2) -> Option<&mut Cell> {
         if !self.rect().contains(pos) {
             return None;
