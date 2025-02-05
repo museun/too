@@ -375,11 +375,21 @@ impl Debug {
         Self::with(|c| *c.mode.borrow_mut() = debug_mode);
     }
 
+    /// Gets the currently set debug mode
+    pub fn current_debug_mode() -> DebugMode {
+        Self::with(|c| *c.mode.borrow())
+    }
+
     /// Set where the debug overlay should be drawn.
     ///
     /// See [`Anchor2`] for options
     pub fn set_debug_anchor(anchor: Anchor2) {
         Self::with(|c| *c.anchor.borrow_mut() = anchor);
+    }
+
+    /// Gets the currently set debug anchor
+    pub fn current_debug_anchor() -> Anchor2 {
+        Self::with(|c| *c.anchor.borrow())
     }
 
     /// Is the debug overlay enabled? (E.g. is it on?)
