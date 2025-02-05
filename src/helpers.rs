@@ -2,7 +2,7 @@
 
 use std::collections::VecDeque;
 
-pub use crate::hasher::{BuildIntHasher, DefaultIntHasher, IntHasher};
+pub use crate::hasher::{hash_fnv_1a, BuildIntHasher, DefaultIntHasher, IntHasher};
 
 /// Converts a long Rust type name into a shorter, more readable one
 pub fn short_name(name: &str) -> String {
