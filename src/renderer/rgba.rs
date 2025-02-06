@@ -207,8 +207,8 @@ impl Rgba {
             ((a * l as i32 + (255 - a) * r as i32) / 255) as u8
         }
         let r = blend(a, self.red(), other.red());
-        let g = blend(a, self.blue(), other.blue());
-        let b = blend(a, self.green(), other.green());
+        let g = blend(a, self.green(), other.green());
+        let b = blend(a, self.blue(), other.blue());
         Self(r, g, b, a as u8)
     }
 
