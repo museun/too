@@ -341,20 +341,28 @@ impl std::str::FromStr for Rgba {
             rgb(r, g, b, a) \
             or #RRGGBB \
             or #RRGGBBAA \
-            or #RGB \
-            or #RGBA";
+            or #RGB";
 
         if let Some(input) = input.strip_prefix('#') {
             return match input.len() {
-                3 | 4 => u16::from_str_radix(input, 16)
+                3 => u16::from_str_radix(input, 16)
                     .map_err(|_| "invalid hex digits")
                     .map(Self::from_u16),
-                6 | 8 => u32::from_str_radix(input, 16)
+
+                6 => u32::from_str_radix(input, 16)
+                    .map_err(|_| "invalid hex digits")
+                    .map(|num| {
+                        let [_, r, g, b] = num.to_be_bytes();
+                        Self(r, g, b, 0xFF)
+                    }),
+
+                8 => u32::from_str_radix(input, 16)
                     .map_err(|_| "invalid hex digits")
                     .map(|num| {
                         let [r, g, b, a] = num.to_be_bytes();
                         Self(r, g, b, a)
                     }),
+
                 _ => Err(ERR),
             };
         }
