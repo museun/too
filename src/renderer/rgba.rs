@@ -304,7 +304,7 @@ impl std::fmt::Debug for Rgba {
 impl std::fmt::LowerHex for Rgba {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let Self(r, g, b, a) = self;
-        if f.alternate() {
+        if !f.alternate() {
             write!(f, "0x")?;
         } else {
             write!(f, "#")?;
@@ -320,7 +320,7 @@ impl std::fmt::LowerHex for Rgba {
 impl std::fmt::UpperHex for Rgba {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let Self(r, g, b, a) = self;
-        if f.alternate() {
+        if !f.alternate() {
             write!(f, "0x")?;
         } else {
             write!(f, "#")?;
