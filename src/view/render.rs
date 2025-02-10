@@ -380,12 +380,13 @@ pub struct CroppedSurface<'a> {
 
 impl CroppedSurface<'_> {
     pub fn get_mut(&mut self, pos: impl Into<Pos2>) -> Option<&mut Cell> {
-        // let offset = self.clip_rect.left_top();
-        // let pos = pos.into() + offset;
-        // if !self.clip_rect.contains(pos) {
-        //     return None;
-        // }
-        self.surface.get_mut(pos.into())
+        // FIXME why was this commented out?
+        let offset = self.clip_rect.left_top();
+        let pos = pos.into() + offset;
+        if !self.clip_rect.contains(pos) {
+            return None;
+        }
+        self.surface.get_mut(pos)
     }
 
     #[inline]

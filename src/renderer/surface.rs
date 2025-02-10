@@ -76,7 +76,6 @@ impl Surface {
         }
     }
 
-    #[cfg_attr(feature = "profile", profiling::function)]
     #[allow(dead_code)]
     fn set_line(&mut self, line: i32, start: i32, end: i32, pixel: Pixel) {
         let y = Self::pos_to_index(pos2(0, line), self.size.x);
@@ -135,25 +134,12 @@ impl Surface {
         }
 
         let new = size.x as usize * size.y as usize;
-        // self.front = vec![Cell::Empty; new];
-        // self.back = vec![Cell::Pixel(Pixel::DEFAULT); new];
 
         self.front.resize(new, Cell::Empty);
         self.front.fill(Cell::Empty);
 
         self.back.resize(new, Cell::Pixel(Pixel::DEFAULT));
         self.back.fill(Cell::Pixel(Pixel::DEFAULT));
-
-        // let old = self.size.x as usize * self.size.y as usize;
-        // let diff = old.saturating_sub(new.abs_diff(old));
-
-        // self.front.resize(new, Cell::Empty);
-        // self.back.resize(new, Cell::Pixel(Pixel::DEFAULT));
-
-        // if old != diff {
-        //     self.front[..diff].fill(Cell::Empty);
-        //     self.back[..diff].fill(Cell::Pixel(Pixel::DEFAULT));
-        // }
 
         self.size = size;
     }
