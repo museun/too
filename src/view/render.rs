@@ -396,7 +396,26 @@ impl CroppedSurface<'_> {
         if !self.clip_rect.contains(pos) {
             return false;
         }
-        self.surface.set(pos, cell);
+
+        match cell.into() {
+            Cell::Grapheme(grapheme) => {
+                for (i, g) in grapheme.cluster.grapheme_indices(true).map(|(i, g)| {
+                    let g = Grapheme::new(g)
+                        .fg(grapheme.fg)
+                        .bg(grapheme.bg)
+                        .attribute(grapheme.attribute);
+                    (i, g)
+                }) {
+                    // TODO y
+                    self.surface.set(pos + pos2(i as i32, 0), g);
+                }
+            }
+            cell @ (Cell::Pixel(..) | Cell::Empty) => {
+                self.surface.set(pos, cell);
+            }
+            _ => {}
+        }
+
         true
     }
 }
