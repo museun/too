@@ -112,6 +112,7 @@ impl Cell {
         }
     }
 
+    // TODO this function shouldn't even exist in the first place
     pub(crate) fn merge(mut this: &mut Self, other: Self) {
         fn merge_fg(left_fg: &mut Color, right_fg: Color) {
             if let (Color::Reset | Color::Set(..), ..) = (right_fg, &left_fg) {
@@ -128,40 +129,40 @@ impl Cell {
         }
 
         match (&mut this, other) {
-            (Self::Grapheme(ref mut left), Self::Grapheme(mut right)) => {
+            (Self::Grapheme(ref mut left), Self::Grapheme(right)) => {
                 merge_fg(&mut left.fg, right.fg);
                 merge_bg(&mut left.bg, right.bg);
                 left.attribute = right.attribute;
-                left.cluster = std::mem::take(&mut right.cluster);
+                left.cluster = right.cluster;
             }
-            (Self::Grapheme(ref mut left), Self::Pixel(right)) => {
+
+            (Self::Grapheme(ref mut left), Self::Pixel(mut right)) => {
                 merge_fg(&mut left.fg, right.fg);
                 merge_bg(&mut left.bg, right.bg);
-                let pixel = Pixel {
-                    char: right.char,
-                    fg: left.fg,
-                    bg: left.bg,
-                    attribute: right.attribute,
+
+                if !right.bg.has_transparency() {
+                    right.fg = left.fg;
+                    right.bg = left.bg;
+                    *this = Self::Pixel(right)
                 };
-                *this = Self::Pixel(pixel)
             }
+
             (Self::Pixel(ref mut left), Self::Grapheme(mut right)) => {
                 merge_fg(&mut left.fg, right.fg);
                 merge_bg(&mut left.bg, right.bg);
-                let grapheme = Grapheme {
-                    cluster: std::mem::take(&mut right.cluster),
-                    fg: left.fg,
-                    bg: left.bg,
-                    attribute: right.attribute,
-                };
-                *this = Self::Grapheme(grapheme)
+
+                if !right.bg.has_transparency() {
+                    right.fg = left.fg;
+                    right.bg = left.bg;
+                }
+                *this = Self::Grapheme(right)
             }
 
             (Self::Pixel(ref mut left), Self::Pixel(right)) => {
                 merge_fg(&mut left.fg, right.fg);
                 merge_bg(&mut left.bg, right.bg);
                 left.attribute = right.attribute;
-                left.char = right.char;
+                left.char = right.char
             }
 
             (_, right @ (Self::Grapheme(..) | Self::Pixel(..))) => *this = right,
@@ -235,6 +236,10 @@ pub struct Pixel {
     attribute: Attribute,
 }
 
+impl Pixel {
+    pub(crate) const SOLID: char = ' ';
+}
+
 impl Default for Pixel {
     fn default() -> Self {
         Self::DEFAULT
@@ -243,13 +248,12 @@ impl Default for Pixel {
 
 impl From<Rgba> for Pixel {
     fn from(value: Rgba) -> Self {
-        Self::new(' ').bg(value)
+        Self::new(Self::SOLID).bg(value)
     }
 }
 
 fn compare(left: &str, right: char) -> bool {
-    let mut b: [u8; 4] = [0; 4];
-    left == right.encode_utf8(&mut b)
+    left == right.encode_utf8(&mut [0; 4])
 }
 
 impl Pixel {
@@ -301,7 +305,7 @@ pub struct Grapheme {
     pub(crate) cluster: CompactString,
     pub(crate) fg: Color,
     pub(crate) bg: Color,
-    attribute: Attribute,
+    pub(crate) attribute: Attribute,
 }
 
 impl Grapheme {
@@ -524,6 +528,11 @@ impl Color {
             Self::Set(rgba) => Some(*rgba),
             _ => None,
         }
+    }
+
+    /// If this color is set, does it have an alpha value?
+    pub fn has_transparency(&self) -> bool {
+        self.as_rgba().filter(|&Rgba(.., a)| a != 0xFF).is_some()
     }
 }
 
