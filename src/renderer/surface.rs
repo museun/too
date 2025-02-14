@@ -21,9 +21,13 @@ impl Surface {
     pub fn update(&mut self, event: &Event) {
         match event {
             &Event::Resize(size) => self.resize(size),
-            Event::SwitchAltScreen => Self::reset(&mut self.front, Cell::Empty),
+            Event::SwitchAltScreen => self.clear(),
             _ => {}
         }
+    }
+
+    pub fn clear(&mut self) {
+        self.front.fill(Cell::Empty);
     }
 
     pub fn get(&self, pos: Pos2) -> Option<&Cell> {
@@ -241,14 +245,6 @@ impl Surface {
                 // assert!(!matches!(*front, Cell::Empty));
                 Some((Self::index_to_pos(i, width), &*front))
             })
-    }
-
-    #[cfg_attr(feature = "profile", profiling::function)]
-    fn reset(buf: &mut [Cell], cell: impl Into<Cell>) {
-        let cell = cell.into();
-        for x in buf {
-            *x = cell.clone()
-        }
     }
 
     const fn pos_to_index(pos: Pos2, w: i32) -> usize {
