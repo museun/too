@@ -14,8 +14,6 @@ pub struct Expander;
 impl Builder<'_> for Expander {
     type View = Self;
     type Style = ();
-
-
 }
 
 impl View for Expander {

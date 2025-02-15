@@ -33,7 +33,7 @@ impl View for Toggle {
 
     fn update(&mut self, args: Self::Args<'_>, _ui: &Ui) -> Self::Response {
         let prev = self.state;
-        self.state ^= args.state;
+        self.state = args.state;
         ToggleResponse {
             changed: self.state != prev,
         }

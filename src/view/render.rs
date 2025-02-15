@@ -378,15 +378,26 @@ pub struct CroppedSurface<'a> {
     pub surface: &'a mut Surface,
 }
 
-impl CroppedSurface<'_> {
+impl<'a> CroppedSurface<'a> {
+    pub fn new(clip_rect: Rect, surface: &'a mut Surface) -> Self {
+        Self { clip_rect, surface }
+    }
+
+    pub const fn rect(&self) -> Rect {
+        self.clip_rect
+    }
+
     pub fn get_mut(&mut self, pos: impl Into<Pos2>) -> Option<&mut Cell> {
-        // FIXME why was this commented out?
         let offset = self.clip_rect.left_top();
         let pos = pos.into() + offset;
         if !self.clip_rect.contains(pos) {
             return None;
         }
         self.surface.get_mut(pos)
+    }
+
+    pub fn fill(&mut self, pixel: impl Into<Pixel>) {
+        self.surface.fill(self.clip_rect, pixel);
     }
 
     #[inline]

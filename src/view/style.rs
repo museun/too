@@ -67,7 +67,7 @@ impl StyleState {
     }
 }
 
-pub trait Style: Sized + Copy + Clone + 'static {
+pub trait Style: Sized + Clone + 'static {
     type Args: 'static + ViewMarker;
     fn default(palette: &Palette, options: StyleOptions<Self::Args>) -> Self;
     fn indirect() -> impl FnOnce(&Palette, StyleOptions<Self::Args>) -> Self {
@@ -154,7 +154,7 @@ where
         map: impl FnOnce(StyleOptions<()>) -> StyleOptions<S::Args>,
     ) -> S {
         match &self.kind {
-            &ApplicableStyleKind::Direct(value) => value,
+            ApplicableStyleKind::Direct(value) => value.clone(),
             ApplicableStyleKind::Indirect(indirect) => applicator
                 .apply(self, move |palette, options| {
                     indirect(palette, map(options))

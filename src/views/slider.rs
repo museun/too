@@ -213,7 +213,7 @@ impl View for SliderView {
     }
 
     fn layout(&mut self, _layout: Layout, space: Space) -> Size {
-        let main = self.axis.main((20.0, 1.0));
+        let main = self.axis.main((20.0, 10.0));
         let size = self.axis.pack(main, 1.0);
         space.fit(size)
     }

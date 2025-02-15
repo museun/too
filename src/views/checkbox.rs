@@ -1,3 +1,5 @@
+use std::borrow::Cow;
+
 use crate::{
     renderer::Rgba,
     view::{ApplicableStyle, Builder, Palette, Style, StyleOptions, Ui, View, ViewExt},
@@ -6,10 +8,10 @@ use crate::{
 
 use super::label::LabelStyle;
 
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Clone)]
 pub struct CheckboxStyle {
-    pub checked: &'static str,
-    pub unchecked: &'static str,
+    pub checked: Cow<'static, str>,
+    pub unchecked: Cow<'static, str>,
     pub text_color: Rgba,
     pub hovered_color: Option<Rgba>,
 }
@@ -19,8 +21,8 @@ impl Style for CheckboxStyle {
 
     fn default(palette: &Palette, _options: StyleOptions<bool>) -> Self {
         Self {
-            checked: "🗹",
-            unchecked: "☐",
+            checked: Cow::Borrowed("🗹"),
+            unchecked: Cow::Borrowed("☐"),
             text_color: palette.foreground,
             hovered_color: Some(palette.contrast),
         }
@@ -30,8 +32,8 @@ impl Style for CheckboxStyle {
 impl CheckboxStyle {
     pub fn markdown(palette: &Palette, options: StyleOptions<bool>) -> Self {
         Self {
-            checked: "[X]",
-            unchecked: "[ ]",
+            checked: Cow::Borrowed("[X]"),
+            unchecked: Cow::Borrowed("[ ]"),
             ..Self::default(palette, options)
         }
     }
@@ -76,6 +78,9 @@ impl View for CheckboxView {
     }
 
     fn update(&mut self, args: Self::Args<'_>, ui: &Ui) -> Self::Response {
+        self.label = args.label;
+        self.style = args.style;
+
         let resp = ui
             .mouse_area(|ui| {
                 let style = self.style.apply(ui, |s| s.with_args(*args.value));

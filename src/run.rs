@@ -81,6 +81,105 @@ pub fn run<R: 'static>(app: impl FnMut(&crate::view::Ui) -> R) -> std::io::Resul
     application(RunConfig::default(), app)
 }
 
+pub fn application2<R: 'static, T>(
+    config: RunConfig,
+    mut something: T,
+    mut hook_render: impl FnMut(&mut crate::renderer::Surface, &Palette, &mut T),
+    mut app: impl FnMut(&crate::view::Ui, &mut T) -> R,
+) -> std::io::Result<R> {
+    use std::time::{Duration, Instant};
+
+    use crate::{
+        backend::{Backend, Event, EventReader},
+        renderer::Surface,
+        term::{Config as TermConfig, Term},
+        view::{CroppedSurface, Debug, State},
+    };
+
+    let mut term = Term::setup(
+        TermConfig::default()
+            .hook_panics(config.hook_panics)
+            .ctrl_c_quits(config.ctrl_c_quits)
+            .ctrl_z_switches(config.ctrl_z_switches),
+    )?;
+    let mut surface = Surface::new(term.size());
+
+    let mut state = State::new(config.palette, config.animation);
+    Debug::set_debug_mode(config.debug);
+    Debug::set_debug_anchor(config.debug_anchor);
+
+    let target = Duration::from_secs_f32(1.0 / config.fps.max(1.0));
+    let max_budget = (target / 2).max(Duration::from_millis(1));
+
+    let mut prev = Instant::now();
+
+    let mut output = None;
+    'outer: loop {
+        #[cfg(feature = "profile")]
+        {
+            profiling::finish_frame!();
+        }
+
+        let mut should_render = false;
+        let mut last_resize = None;
+
+        let start = Instant::now();
+        while let Some(ev) = term.try_read_event() {
+            if ev.is_quit() {
+                break 'outer;
+            }
+
+            if start.elapsed() >= max_budget {
+                break;
+            }
+
+            if let Event::Resize(size) = ev {
+                last_resize = Some(size);
+                continue;
+            }
+
+            surface.update(&ev);
+            state.event(&ev);
+            should_render = true;
+        }
+
+        if let Some(size) = last_resize {
+            let ev = Event::Resize(size);
+            surface.update(&ev);
+            state.event(&ev);
+            should_render = true;
+        }
+
+        let now = Instant::now();
+        let dt = prev.elapsed();
+        state.update(dt.as_secs_f32());
+        output.replace(state.build(surface.rect(), |ui| app(ui, &mut something)));
+
+        if should_render || dt >= target {
+            let mut rasterizer = CroppedSurface {
+                clip_rect: surface.rect(),
+                surface: &mut surface,
+            };
+            state.render(&mut rasterizer);
+            hook_render(&mut surface, &state.palette(), &mut something);
+            surface.render(&mut term.writer())?;
+            prev = now;
+        }
+
+        let elapsed = prev.elapsed();
+        if elapsed < target {
+            std::thread::sleep(target - elapsed);
+        }
+    }
+
+    output.ok_or_else(|| {
+        std::io::Error::new(
+            std::io::ErrorKind::ConnectionRefused,
+            "user's code never ran",
+        )
+    })
+}
+
 /// Run an application with the provided [`RunConfig`]
 ///
 /// This will block the current thread until the application exits.

@@ -98,6 +98,9 @@ where
     }
 
     fn update(&mut self, args: Self::Args<'_>, ui: &Ui) -> Self::Response {
+        self.label = args.label;
+        self.style = args.style;
+
         let resp = ui
             .mouse_area(|ui| {
                 let selected = args.value == *args.existing;

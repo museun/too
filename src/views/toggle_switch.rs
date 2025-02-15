@@ -226,7 +226,7 @@ impl View for ToggleSwitchView {
     }
 
     fn layout(&mut self, _: Layout, space: Space) -> Size {
-        let main = self.axis.main((4.0, 2.0));
+        let main = self.axis.main((4.0, 3.0));
         space.fit(self.axis.pack(main, 1.0))
     }
 

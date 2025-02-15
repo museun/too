@@ -104,6 +104,7 @@ impl Rgba {
             _ => panic!("invalid color. syntax: #RRGGBB | #RRGGBBAA | #RGB | #RGBA"),
         };
 
+        // TODO rgb(r, g, b, ?a) parsing at compile time
         Self(pack(rh, rl), pack(gh, gl), pack(bh, bl), pack(ah, al))
     }
 
@@ -341,11 +342,12 @@ impl std::str::FromStr for Rgba {
             rgb(r, g, b, a) \
             or #RRGGBB \
             or #RRGGBBAA \
-            or #RGB";
+            or #RGB \
+            or #RGBA";
 
         if let Some(input) = input.strip_prefix('#') {
             return match input.len() {
-                3 => u16::from_str_radix(input, 16)
+                3 | 4 => u16::from_str_radix(input, 16)
                     .map_err(|_| "invalid hex digits")
                     .map(Self::from_u16),
 

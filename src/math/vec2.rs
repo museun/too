@@ -90,6 +90,7 @@ impl std::ops::Mul<i32> for Vec2 {
 impl std::ops::Div<i32> for Vec2 {
     type Output = Self;
     fn div(self, rhs: i32) -> Self::Output {
+        // TODO this needs to do a ceil_div
         vec2(self.x / rhs, self.y / rhs)
     }
 }

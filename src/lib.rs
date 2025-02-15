@@ -114,7 +114,7 @@ pub use compact_str::format_compact as ඞ_dont_use_this_because_semver;
 #[cfg(feature = "terminal")]
 mod run;
 #[cfg(feature = "terminal")]
-pub use run::{application, run, RunConfig};
+pub use run::{application, application2, run, RunConfig};
 
 #[doc = include_str!("../README.md")]
 #[cfg(doctest)]

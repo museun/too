@@ -34,6 +34,7 @@ impl Rect {
         }
     }
 
+    // TODO this needs to clamp to `size`
     pub fn from_center_size(center: Pos2, size: Vec2) -> Self {
         Self {
             min: center - (size / 2),
@@ -206,6 +207,41 @@ impl Rect {
 
     pub const fn left_bottom(&self) -> Pos2 {
         pos2(self.left(), self.bottom())
+    }
+
+    // TODO this should return an option of we cannot split the rect
+    pub fn split_off_left(self, left: u16) -> (Self, Self) {
+        let left = left as i32;
+        let a = Rect::from_min_size(self.left_top(), vec2(left, self.max.y));
+        let b = Rect::from_min_size(self.left_top() + vec2(left, 0), self.size() - vec2(left, 0));
+        (a, b)
+    }
+
+    // TODO this should return an option of we cannot split the rect
+    pub fn split_off_right(self, right: u16) -> (Self, Self) {
+        let right = right as i32;
+        let a = Rect::from_min_size(self.right_top() - vec2(right, 0), vec2(right, self.max.y));
+        let b = Rect::from_min_size(self.left_top(), self.size() - vec2(right, 0));
+        (a, b)
+    }
+
+    // TODO this should return an option of we cannot split the rect
+    pub fn split_off_top(self, top: u16) -> (Self, Self) {
+        let top = top as i32;
+        let a = Rect::from_min_size(self.left_top(), vec2(self.max.x, top));
+        let b = Rect::from_min_size(self.left_top() + vec2(0, top), self.size() - vec2(0, top));
+        (a, b)
+    }
+
+    // TODO this should return an option of we cannot split the rect
+    pub fn split_off_bottom(self, bottom: u16) -> (Self, Self) {
+        let bottom = bottom as i32;
+        let a = Rect::from_min_size(
+            self.left_bottom() - vec2(0, bottom),
+            vec2(self.max.x, bottom),
+        );
+        let b = Rect::from_min_size(self.left_top(), self.size() - vec2(0, bottom));
+        (a, b)
     }
 
     // TODO spacing
